@@ -7,15 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E4C480172D58FCCB00C5F8A7 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E4C480162D58FCCB00C5F8A7 /* Auth */; };
-		E4C480192D58FCCB00C5F8A7 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = E4C480182D58FCCB00C5F8A7 /* Functions */; };
-		E4C4801B2D58FCCB00C5F8A7 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E4C4801A2D58FCCB00C5F8A7 /* PostgREST */; };
-		E4C4801D2D58FCCB00C5F8A7 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = E4C4801C2D58FCCB00C5F8A7 /* Realtime */; };
-		E4C4801F2D58FCCB00C5F8A7 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E4C4801E2D58FCCB00C5F8A7 /* Storage */; };
+		E48DD6EE2D78738A000308CC /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6ED2D78738A000308CC /* PostgREST */; };
+		E48DD6F02D78738A000308CC /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6EF2D78738A000308CC /* Storage */; };
+		E48DD6F32D787391000308CC /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6F22D787391000308CC /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		E4024B2B2D3F399E007C855C /* Tekken8 Frame Data.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tekken8 Frame Data.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E48DD6CE2D769BB4000308CC /* NetworkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NetworkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -26,6 +25,14 @@
 			);
 			target = E4024B2A2D3F399E007C855C /* Tekken8 Frame Data */;
 		};
+		E47BC7632D81380B00FA2C1C /* Exceptions for "Tekken8 Frame Data" folder in "NetworkTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Network/Supabase/SupabaseManageable.swift,
+				Network/Supabase/SupabaseManager.swift,
+			);
+			target = E48DD6CD2D769BB4000308CC /* NetworkTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,8 +40,14 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E4024B3D2D3F399F007C855C /* Exceptions for "Tekken8 Frame Data" folder in "Tekken8 Frame Data" target */,
+				E47BC7632D81380B00FA2C1C /* Exceptions for "Tekken8 Frame Data" folder in "NetworkTests" target */,
 			);
 			path = "Tekken8 Frame Data";
+			sourceTree = "<group>";
+		};
+		E48DD6CF2D769BB4000308CC /* NetworkTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NetworkTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -44,11 +57,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E4C4801B2D58FCCB00C5F8A7 /* PostgREST in Frameworks */,
-				E4C480192D58FCCB00C5F8A7 /* Functions in Frameworks */,
-				E4C480172D58FCCB00C5F8A7 /* Auth in Frameworks */,
-				E4C4801F2D58FCCB00C5F8A7 /* Storage in Frameworks */,
-				E4C4801D2D58FCCB00C5F8A7 /* Realtime in Frameworks */,
+				E48DD6F02D78738A000308CC /* Storage in Frameworks */,
+				E48DD6EE2D78738A000308CC /* PostgREST in Frameworks */,
+				E48DD6F32D787391000308CC /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E48DD6CB2D769BB4000308CC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +77,8 @@
 			isa = PBXGroup;
 			children = (
 				E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */,
+				E48DD6CF2D769BB4000308CC /* NetworkTests */,
+				E48DD6F12D787391000308CC /* Frameworks */,
 				E4024B2C2D3F399E007C855C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -67,8 +87,16 @@
 			isa = PBXGroup;
 			children = (
 				E4024B2B2D3F399E007C855C /* Tekken8 Frame Data.app */,
+				E48DD6CE2D769BB4000308CC /* NetworkTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E48DD6F12D787391000308CC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -91,15 +119,35 @@
 			);
 			name = "Tekken8 Frame Data";
 			packageProductDependencies = (
-				E4C480162D58FCCB00C5F8A7 /* Auth */,
-				E4C480182D58FCCB00C5F8A7 /* Functions */,
-				E4C4801A2D58FCCB00C5F8A7 /* PostgREST */,
-				E4C4801C2D58FCCB00C5F8A7 /* Realtime */,
-				E4C4801E2D58FCCB00C5F8A7 /* Storage */,
+				E48DD6ED2D78738A000308CC /* PostgREST */,
+				E48DD6EF2D78738A000308CC /* Storage */,
+				E48DD6F22D787391000308CC /* Supabase */,
 			);
 			productName = "Tekken8 Frame Data";
 			productReference = E4024B2B2D3F399E007C855C /* Tekken8 Frame Data.app */;
 			productType = "com.apple.product-type.application";
+		};
+		E48DD6CD2D769BB4000308CC /* NetworkTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E48DD6D42D769BB4000308CC /* Build configuration list for PBXNativeTarget "NetworkTests" */;
+			buildPhases = (
+				E48DD6CA2D769BB4000308CC /* Sources */,
+				E48DD6CB2D769BB4000308CC /* Frameworks */,
+				E48DD6CC2D769BB4000308CC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E48DD6CF2D769BB4000308CC /* NetworkTests */,
+			);
+			name = NetworkTests;
+			packageProductDependencies = (
+			);
+			productName = NetworkTests;
+			productReference = E48DD6CE2D769BB4000308CC /* NetworkTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -114,6 +162,9 @@
 					E4024B2A2D3F399E007C855C = {
 						CreatedOnToolsVersion = 16.2;
 					};
+					E48DD6CD2D769BB4000308CC = {
+						CreatedOnToolsVersion = 16.2;
+					};
 				};
 			};
 			buildConfigurationList = E4024B262D3F399E007C855C /* Build configuration list for PBXProject "Tekken8 Frame Data" */;
@@ -126,7 +177,7 @@
 			mainGroup = E4024B222D3F399E007C855C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E4024B2C2D3F399E007C855C /* Products */;
@@ -134,12 +185,20 @@
 			projectRoot = "";
 			targets = (
 				E4024B2A2D3F399E007C855C /* Tekken8 Frame Data */,
+				E48DD6CD2D769BB4000308CC /* NetworkTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		E4024B292D3F399E007C855C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E48DD6CC2D769BB4000308CC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -156,11 +215,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E48DD6CA2D769BB4000308CC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		E4024B3F2D3F399F007C855C /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -193,6 +261,8 @@
 		};
 		E4024B402D3F399F007C855C /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -342,6 +412,40 @@
 			};
 			name = Release;
 		};
+		E48DD6D22D769BB4000308CC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZX8V36P46K;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.NetworkTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E48DD6D32D769BB4000308CC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZX8V36P46K;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.NetworkTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -363,10 +467,19 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		E48DD6D42D769BB4000308CC /* Build configuration list for PBXNativeTarget "NetworkTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E48DD6D22D769BB4000308CC /* Debug */,
+				E48DD6D32D769BB4000308CC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+		E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
 			requirement = {
@@ -377,30 +490,20 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		E4C480162D58FCCB00C5F8A7 /* Auth */ = {
+		E48DD6ED2D78738A000308CC /* PostgREST */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Auth;
-		};
-		E4C480182D58FCCB00C5F8A7 /* Functions */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Functions;
-		};
-		E4C4801A2D58FCCB00C5F8A7 /* PostgREST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = PostgREST;
 		};
-		E4C4801C2D58FCCB00C5F8A7 /* Realtime */ = {
+		E48DD6EF2D78738A000308CC /* Storage */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Realtime;
-		};
-		E4C4801E2D58FCCB00C5F8A7 /* Storage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E4C480152D58FCCB00C5F8A7 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Storage;
+		};
+		E48DD6F22D787391000308CC /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

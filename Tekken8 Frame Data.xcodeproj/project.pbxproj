@@ -12,26 +12,38 @@
 		E48DD6F32D787391000308CC /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6F22D787391000308CC /* Supabase */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E417378A2D8BD7FC00FE79E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E4024B232D3F399E007C855C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E4024B2A2D3F399E007C855C;
+			remoteInfo = "Tekken8 Frame Data";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		E4024B2B2D3F399E007C855C /* Tekken8 Frame Data.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tekken8 Frame Data.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E48DD6CE2D769BB4000308CC /* NetworkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NetworkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E41737862D8BD7FC00FE79E1 /* SupabaseAPITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SupabaseAPITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E4024B3D2D3F399F007C855C /* Exceptions for "Tekken8 Frame Data" folder in "Tekken8 Frame Data" target */ = {
+		E41736F22D8A6F8500FE79E1 /* Exceptions for "Tekken8 Frame Data" folder in "Tekken8 Frame Data" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = E4024B2A2D3F399E007C855C /* Tekken8 Frame Data */;
 		};
-		E47BC7632D81380B00FA2C1C /* Exceptions for "Tekken8 Frame Data" folder in "NetworkTests" target */ = {
+		E41737912D8BD84200FE79E1 /* Exceptions for "Tekken8 Frame Data" folder in "SupabaseAPITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Model/Character.swift,
+				Model/Move.swift,
 				Network/Supabase/SupabaseManageable.swift,
 				Network/Supabase/SupabaseManager.swift,
 			);
-			target = E48DD6CD2D769BB4000308CC /* NetworkTests */;
+			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -39,15 +51,15 @@
 		E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				E4024B3D2D3F399F007C855C /* Exceptions for "Tekken8 Frame Data" folder in "Tekken8 Frame Data" target */,
-				E47BC7632D81380B00FA2C1C /* Exceptions for "Tekken8 Frame Data" folder in "NetworkTests" target */,
+				E41736F22D8A6F8500FE79E1 /* Exceptions for "Tekken8 Frame Data" folder in "Tekken8 Frame Data" target */,
+				E41737912D8BD84200FE79E1 /* Exceptions for "Tekken8 Frame Data" folder in "SupabaseAPITests" target */,
 			);
 			path = "Tekken8 Frame Data";
 			sourceTree = "<group>";
 		};
-		E48DD6CF2D769BB4000308CC /* NetworkTests */ = {
+		E41737872D8BD7FC00FE79E1 /* SupabaseAPITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = NetworkTests;
+			path = SupabaseAPITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -63,7 +75,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E48DD6CB2D769BB4000308CC /* Frameworks */ = {
+		E41737832D8BD7FC00FE79E1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -77,8 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */,
-				E48DD6CF2D769BB4000308CC /* NetworkTests */,
-				E48DD6F12D787391000308CC /* Frameworks */,
+				E41737872D8BD7FC00FE79E1 /* SupabaseAPITests */,
 				E4024B2C2D3F399E007C855C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -87,16 +98,9 @@
 			isa = PBXGroup;
 			children = (
 				E4024B2B2D3F399E007C855C /* Tekken8 Frame Data.app */,
-				E48DD6CE2D769BB4000308CC /* NetworkTests.xctest */,
+				E41737862D8BD7FC00FE79E1 /* SupabaseAPITests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		E48DD6F12D787391000308CC /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -127,26 +131,27 @@
 			productReference = E4024B2B2D3F399E007C855C /* Tekken8 Frame Data.app */;
 			productType = "com.apple.product-type.application";
 		};
-		E48DD6CD2D769BB4000308CC /* NetworkTests */ = {
+		E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E48DD6D42D769BB4000308CC /* Build configuration list for PBXNativeTarget "NetworkTests" */;
+			buildConfigurationList = E417378C2D8BD7FC00FE79E1 /* Build configuration list for PBXNativeTarget "SupabaseAPITests" */;
 			buildPhases = (
-				E48DD6CA2D769BB4000308CC /* Sources */,
-				E48DD6CB2D769BB4000308CC /* Frameworks */,
-				E48DD6CC2D769BB4000308CC /* Resources */,
+				E41737822D8BD7FC00FE79E1 /* Sources */,
+				E41737832D8BD7FC00FE79E1 /* Frameworks */,
+				E41737842D8BD7FC00FE79E1 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E417378B2D8BD7FC00FE79E1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				E48DD6CF2D769BB4000308CC /* NetworkTests */,
+				E41737872D8BD7FC00FE79E1 /* SupabaseAPITests */,
 			);
-			name = NetworkTests;
+			name = SupabaseAPITests;
 			packageProductDependencies = (
 			);
-			productName = NetworkTests;
-			productReference = E48DD6CE2D769BB4000308CC /* NetworkTests.xctest */;
+			productName = SupabaseAPITests;
+			productReference = E41737862D8BD7FC00FE79E1 /* SupabaseAPITests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -162,8 +167,9 @@
 					E4024B2A2D3F399E007C855C = {
 						CreatedOnToolsVersion = 16.2;
 					};
-					E48DD6CD2D769BB4000308CC = {
+					E41737852D8BD7FC00FE79E1 = {
 						CreatedOnToolsVersion = 16.2;
+						TestTargetID = E4024B2A2D3F399E007C855C;
 					};
 				};
 			};
@@ -185,7 +191,7 @@
 			projectRoot = "";
 			targets = (
 				E4024B2A2D3F399E007C855C /* Tekken8 Frame Data */,
-				E48DD6CD2D769BB4000308CC /* NetworkTests */,
+				E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */,
 			);
 		};
 /* End PBXProject section */
@@ -198,7 +204,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E48DD6CC2D769BB4000308CC /* Resources */ = {
+		E41737842D8BD7FC00FE79E1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -215,7 +221,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E48DD6CA2D769BB4000308CC /* Sources */ = {
+		E41737822D8BD7FC00FE79E1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -223,6 +229,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E417378B2D8BD7FC00FE79E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E4024B2A2D3F399E007C855C /* Tekken8 Frame Data */;
+			targetProxy = E417378A2D8BD7FC00FE79E1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E4024B3F2D3F399F007C855C /* Debug */ = {
@@ -412,37 +426,39 @@
 			};
 			name = Release;
 		};
-		E48DD6D22D769BB4000308CC /* Debug */ = {
+		E417378D2D8BD7FC00FE79E1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZX8V36P46K;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.NetworkTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.SupabaseAPITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tekken8 Frame Data.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tekken8 Frame Data";
 			};
 			name = Debug;
 		};
-		E48DD6D32D769BB4000308CC /* Release */ = {
+		E417378E2D8BD7FC00FE79E1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZX8V36P46K;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.NetworkTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.SupabaseAPITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tekken8 Frame Data.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tekken8 Frame Data";
 			};
 			name = Release;
 		};
@@ -467,11 +483,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E48DD6D42D769BB4000308CC /* Build configuration list for PBXNativeTarget "NetworkTests" */ = {
+		E417378C2D8BD7FC00FE79E1 /* Build configuration list for PBXNativeTarget "SupabaseAPITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E48DD6D22D769BB4000308CC /* Debug */,
-				E48DD6D32D769BB4000308CC /* Release */,
+				E417378D2D8BD7FC00FE79E1 /* Debug */,
+				E417378E2D8BD7FC00FE79E1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

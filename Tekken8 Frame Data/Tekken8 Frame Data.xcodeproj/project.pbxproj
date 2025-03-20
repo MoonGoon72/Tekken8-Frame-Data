@@ -42,6 +42,7 @@
 				Model/Move.swift,
 				Network/Supabase/SupabaseManageable.swift,
 				Network/Supabase/SupabaseManager.swift,
+				Secrets.xcconfig,
 			);
 			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;
 		};
@@ -428,6 +429,8 @@
 		};
 		E417378D2D8BD7FC00FE79E1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -446,6 +449,8 @@
 		};
 		E417378E2D8BD7FC00FE79E1 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = E4024B2D2D3F399E007C855C /* Tekken8 Frame Data */;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;

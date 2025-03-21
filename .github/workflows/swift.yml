@@ -14,7 +14,7 @@ jobs:
 
     runs-on: macos-latest
     env:
-      working-directory: ../Tekken8 Frame Data
+      working-directory: ./Tekken8 Frame Data
     steps:
     - uses: actions/checkout@v4
     - name: Build

@@ -23,6 +23,15 @@ final class SupabaseManager: SupabaseManageable {
         client = SupabaseClient(supabaseURL: url, supabaseKey: apiKey)
     }
     
+    func fetchCharacter() async throws -> [Character] {
+        let characters: [Character] = try await client
+            .from("character")
+            .select()
+            .execute()
+            .value
+        return characters
+    }
+    
     func fetchFrame() async throws -> [Move] {
         let moves: [Move] = try await client
             .from("move")

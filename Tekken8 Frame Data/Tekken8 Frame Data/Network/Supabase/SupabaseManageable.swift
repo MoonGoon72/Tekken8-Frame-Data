@@ -8,5 +8,6 @@
 import Foundation
 
 protocol SupabaseManageable {
+    func fetchCharacter() async throws -> [Character]
     func fetchFrame() async throws -> [Move]
 }

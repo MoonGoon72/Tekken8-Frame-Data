@@ -7,12 +7,14 @@
 
 import Foundation
 
-struct Character: Decodable {
+struct Character: Decodable, Hashable {
     let id: Int
     let name: String
+    let imageURL: String
     
     enum CodingKeys: String, CodingKey {
         case id
         case name
+        case imageURL = "image_url"
     }
 }

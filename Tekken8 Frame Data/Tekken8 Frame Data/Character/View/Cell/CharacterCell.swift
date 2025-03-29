@@ -25,10 +25,9 @@ struct CharacterCell: View, ReuseIdentifiable {
                     .background(Color.gray.opacity(0.3))
                     .clipShape(.rect(cornerRadius: 15))
                     .task {
-                        image = await ImageCacheManager.shared.fetchImage(for: character.imageURL)
+                        image = await ImageCacheManager.shared.fetch(for: character.imageURL)
                     }
             }
-            
             Spacer()
             Text(character.name)
             Spacer()

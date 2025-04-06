@@ -15,7 +15,6 @@ final class ImageCacheManager: CacheManageable {
     
     func fetch(for url: String) async -> UIImage? {
         let key = NSString(string: url)
-        
         if let cacheImage = cache.object(forKey: key) { return cacheImage }
         
         if let diskImage = loadFromDisk(for: url) {

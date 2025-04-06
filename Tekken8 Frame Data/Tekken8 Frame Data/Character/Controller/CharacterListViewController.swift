@@ -8,13 +8,14 @@
 import SwiftUI
 import UIKit
 
-class CharacterListViewController: UIViewController {
+final class CharacterListViewController: UIViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Character>
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
     
     private let supabaseManager = SupabaseManager()
-    private var dataSource: CharacterDataSource?
     private let characterListView: CharacterListView
+    private let characterViewModel = CharacterListViewModel()
+    private var dataSource: CharacterDataSource?
     private var characters: [Character] = []
     
     init() {
@@ -48,8 +49,12 @@ class CharacterListViewController: UIViewController {
                 let fetchedCharacters: [Character] = try await supabaseManager.fetchCharacter()
                 characters = fetchedCharacters
                 updateSnapshot()
+                
+                for character in characters {
+                    characterViewModel.loadImage(for: character)
+                }
             } catch {
-                print("❌ Error fetching characters: \(error)")
+                NSLog("❌ Error fetching characters: \(error)")
             }
         }
     }
@@ -63,8 +68,10 @@ private extension CharacterListViewController {
         { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
-                CharacterCell(character: itemIdentifier)
+                CharacterCell(character: itemIdentifier, viewModel: self.characterViewModel)
             }
+            cell.layer.borderWidth = 0.5
+            cell.layer.cornerRadius = 5
             return cell
         }
     }

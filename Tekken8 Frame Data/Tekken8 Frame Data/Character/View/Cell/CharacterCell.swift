@@ -10,32 +10,32 @@ import SwiftUI
 
 struct CharacterCell: View, ReuseIdentifiable {
     var character: Character
-    @State private var image: UIImage? = nil
+    @ObservedObject var viewModel: CharacterListViewModel
     
     var body: some View {
-        HStack {
-            if let image {
+        HStack(alignment: .center) {
+            if let image = viewModel.image(for: character) {
                 Image(uiImage: image)
                     .resizable()
-                    .frame(width: 80, height: 80)
+                    .scaledToFit()
+                    .frame(height: 80)
                     .clipShape(.rect(cornerRadius: 15))
             } else {
-                ProgressView()
-                    .frame(width: 80, height: 80)
+                Image("mokujin")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 80)
                     .background(Color.gray.opacity(0.3))
                     .clipShape(.rect(cornerRadius: 15))
-                    .task {
-                        image = await ImageCacheManager.shared.fetch(for: character.imageURL)
-                    }
             }
-            Spacer()
             Text(character.name)
+                .font(.title2)
+                .padding(.leading, 5)
             Spacer()
         }
-        .padding()
     }
 }
 
 #Preview {
-    CharacterCell(character: Character(id: 1, name: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"))
+    CharacterCell(character: Character(id: 1, name: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"), viewModel: CharacterListViewModel())
 }

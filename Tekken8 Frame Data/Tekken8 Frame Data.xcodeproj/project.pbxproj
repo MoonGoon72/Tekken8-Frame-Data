@@ -38,7 +38,7 @@
 		E41737912D8BD84200FE79E1 /* Exceptions for "Tekken8 Frame Data" folder in "SupabaseAPITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Model/Character.swift,
+				Character/Model/Character.swift,
 				Model/Move.swift,
 				Network/Supabase/SupabaseManageable.swift,
 				Network/Supabase/SupabaseManager.swift,

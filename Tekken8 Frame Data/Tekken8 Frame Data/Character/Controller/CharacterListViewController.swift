@@ -12,7 +12,7 @@ import UIKit
 final class CharacterListViewController: UIViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Character>
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
-    
+    // TODO: supabaseManager 객체 관리 방향성 정하기
     private let supabaseManager = SupabaseManager()
     private let characterCollectionView: CharacterCollectionView
     private let characterViewModel = CharacterListViewModel()
@@ -34,7 +34,7 @@ final class CharacterListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        setupDiffalbeDataSource()
+        setupDiffableDataSource()
         setupSearchController()
         setupDelegation()
     }
@@ -109,7 +109,7 @@ extension CharacterListViewController: UISearchResultsUpdating {
 // MARK: - UICollectionViewDiffableDataSource method
 
 private extension CharacterListViewController {
-    func setupDiffalbeDataSource() {
+    func setupDiffableDataSource() {
         dataSource = CharacterDataSource( collectionView: characterCollectionView.characterCollectionView)
         { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)

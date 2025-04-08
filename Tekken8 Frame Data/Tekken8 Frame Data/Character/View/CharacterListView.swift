@@ -22,12 +22,6 @@ final class CharacterListView: UIView {
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: CharacterCell.reuseIdentifier)
         return collectionView
     }()
-    private let searchBar: UISearchBar = {
-        let searchBar = UISearchBar()
-        searchBar.placeholder = Texts.placeholder
-        
-        return searchBar
-    }()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -44,7 +38,6 @@ final class CharacterListView: UIView {
     }
     
     func setupSubViews() {
-        addSubview(searchBar)
         addSubview(characterCollectionView)
     }
     
@@ -58,21 +51,10 @@ private extension CharacterListView {
         characterCollectionView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
-            searchBar.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
-            searchBar.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 60),
-            
-            characterCollectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 20),
-            characterCollectionView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-            characterCollectionView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
-            characterCollectionView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
+            characterCollectionView.topAnchor.constraint(equalTo: self.topAnchor),
+            characterCollectionView.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            characterCollectionView.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            characterCollectionView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
         ])
-    }
-}
-
-private extension CharacterListView {
-    enum Texts {
-        static let placeholder = "캐릭터 이름을 입력해주세요."
     }
 }

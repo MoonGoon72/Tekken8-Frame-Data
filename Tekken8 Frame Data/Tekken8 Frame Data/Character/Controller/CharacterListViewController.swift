@@ -17,6 +17,7 @@ final class CharacterListViewController: UIViewController {
     private let characterViewModel = CharacterListViewModel()
     private var dataSource: CharacterDataSource?
     private var characters: [Character] = []
+    private var filteredCharacters: [Character] = []
     
     init() {
         characterListView = CharacterListView()
@@ -34,6 +35,7 @@ final class CharacterListViewController: UIViewController {
         super.viewDidLoad()
         
         setupDiffalbeDataSource()
+        setupSearchController()
     }
     
     override func loadView() {
@@ -48,7 +50,7 @@ final class CharacterListViewController: UIViewController {
             do {
                 let fetchedCharacters: [Character] = try await supabaseManager.fetchCharacter()
                 characters = fetchedCharacters
-                updateSnapshot()
+                updateSnapshot(for: characters)
                 
                 for character in characters {
                     characterViewModel.loadImage(for: character)
@@ -76,14 +78,64 @@ private extension CharacterListViewController {
         }
     }
     
-    func updateSnapshot() {
+    func updateSnapshot(for characters: [Character]) {
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
         snapshot.appendItems(characters)
-        dataSource?.apply(snapshot, animatingDifferences: true)
+        dataSource?.apply(snapshot, animatingDifferences: false)
+    }
+}
+
+// MARK: - UISearchController method
+
+private extension CharacterListViewController {
+    func setupSearchController() {
+        let searchController = UISearchController(searchResultsController: nil)
+        
+        searchController.delegate = self
+        searchController.searchResultsUpdater = self
+        searchController.searchBar.placeholder = Texts.placeholder
+        navigationItem.searchController = searchController
+    }
+}
+
+// MARK: - UISearchController Delegate
+
+extension CharacterListViewController: UISearchControllerDelegate {
+    func willDismissSearchController(_ searchController: UISearchController) {
+        updateSnapshot(for: characters)
+    }
+}
+
+// MARK: - UISearchBar Delegate
+
+extension CharacterListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+}
+
+// MARK: - UISearchResultsUpdating
+
+extension CharacterListViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        
+        if text.isEmpty {
+            updateSnapshot(for: characters)
+        } else {
+            filteredCharacters = characters.filter { $0.name.contains(text)}
+            updateSnapshot(for: filteredCharacters)
+        }
     }
 }
 
 private enum Section {
     case main
+}
+
+private extension CharacterListViewController {
+    enum Texts {
+        static let placeholder = "캐릭터 이름을 입력해주세요."
+    }
 }

@@ -14,19 +14,19 @@ final class CharacterListViewController: UIViewController {
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
     
     private let supabaseManager = SupabaseManager()
-    private let characterListView: CharacterListView
+    private let characterCollectionView: CharacterCollectionView
     private let characterViewModel = CharacterListViewModel()
     private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
     init() {
-        characterListView = CharacterListView()
+        characterCollectionView = CharacterCollectionView()
         
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
-        characterListView = CharacterListView()
+        characterCollectionView = CharacterCollectionView()
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -36,14 +36,19 @@ final class CharacterListViewController: UIViewController {
         
         setupDiffalbeDataSource()
         setupSearchController()
+        setupDelegation()
     }
     
     override func loadView() {
         super.loadView()
         
-        view = characterListView
+        view = characterCollectionView
         fetchCharacters()
         bindViewModel()
+    }
+    
+    private func setupDelegation() {
+        characterCollectionView.setCollectionViewDelegate(self)
     }
     
     private func fetchCharacters() {
@@ -62,11 +67,50 @@ final class CharacterListViewController: UIViewController {
     }
 }
 
+// MARK: - UISearchController method
+
+private extension CharacterListViewController {
+    func setupSearchController() {
+        let searchController = UISearchController(searchResultsController: nil)
+        
+        searchController.delegate = self
+        searchController.searchResultsUpdater = self
+        searchController.searchBar.placeholder = Texts.placeholder
+        navigationItem.searchController = searchController
+    }
+}
+
+// MARK: UISearchController conformance
+
+extension CharacterListViewController: UISearchControllerDelegate {
+    func willDismissSearchController(_ searchController: UISearchController) {
+        characterViewModel.resetFilter()
+    }
+}
+
+// MARK: UISearchBar conformance
+
+extension CharacterListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+}
+
+// MARK: UISearchResultsUpdating conformance
+
+extension CharacterListViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        
+        characterViewModel.filter(by: text)
+    }
+}
+
 // MARK: - UICollectionViewDiffableDataSource method
 
 private extension CharacterListViewController {
     func setupDiffalbeDataSource() {
-        dataSource = CharacterDataSource( collectionView: characterListView.characterCollectionView)
+        dataSource = CharacterDataSource( collectionView: characterCollectionView.characterCollectionView)
         { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
@@ -86,42 +130,12 @@ private extension CharacterListViewController {
     }
 }
 
-// MARK: - UISearchController method
+// MARK: - UICollectionViewDelegate Conformance
 
-private extension CharacterListViewController {
-    func setupSearchController() {
-        let searchController = UISearchController(searchResultsController: nil)
-        
-        searchController.delegate = self
-        searchController.searchResultsUpdater = self
-        searchController.searchBar.placeholder = Texts.placeholder
-        navigationItem.searchController = searchController
-    }
-}
-
-// MARK: - UISearchController Delegate
-
-extension CharacterListViewController: UISearchControllerDelegate {
-    func willDismissSearchController(_ searchController: UISearchController) {
-        characterViewModel.resetFilter()
-    }
-}
-
-// MARK: - UISearchBar Delegate
-
-extension CharacterListViewController: UISearchBarDelegate {
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
-    }
-}
-
-// MARK: - UISearchResultsUpdating
-
-extension CharacterListViewController: UISearchResultsUpdating {
-    func updateSearchResults(for searchController: UISearchController) {
-        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
-        
-        characterViewModel.filter(by: text)
+extension CharacterListViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        print(characterViewModel.characters[indexPath.row])
+        // 네비게이션
     }
 }
 

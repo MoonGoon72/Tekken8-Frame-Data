@@ -1,5 +1,5 @@
 //
-//  CharacterListView.swift
+//  CharacterCollectionView.swift
 //  Tekken8 Frame Data
 //
 //  Created by 문영균 on 3/27/25.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class CharacterListView: UIView {
+final class CharacterCollectionView: UIView {
     
     // MARK: Subviews
     
@@ -37,16 +37,22 @@ final class CharacterListView: UIView {
         setupLayout()
     }
     
-    func setupSubViews() {
+    private func setupSubViews() {
         addSubview(characterCollectionView)
     }
     
-    func setupLayout() {
+    private func setupLayout() {
         setupCollectionViewLayouts()
+    }
+    
+    // MARK: Custom method
+    
+    func setCollectionViewDelegate(_ delegate: UICollectionViewDelegate) {
+        characterCollectionView.delegate = delegate
     }
 }
 
-private extension CharacterListView {
+private extension CharacterCollectionView {
     func setupCollectionViewLayouts() {
         characterCollectionView.translatesAutoresizingMaskIntoConstraints = false
         

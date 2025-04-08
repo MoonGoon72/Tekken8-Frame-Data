@@ -18,21 +18,30 @@ struct CharacterCell: View, ReuseIdentifiable {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 80)
-                    .clipShape(.rect(cornerRadius: 15))
+                    .frame(height: Constants.Literals.characterImageHeight)
+                    .clipShape(.rect(cornerRadius: Constants.Literals.characterImageCornerRadius))
             } else {
                 Image("mokujin")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 80)
-                    .background(Color.gray.opacity(0.3))
-                    .clipShape(.rect(cornerRadius: 15))
+                    .frame(height: Constants.Literals.characterImageHeight)
+                    .clipShape(.rect(cornerRadius: Constants.Literals.characterImageCornerRadius))
             }
             Text(character.name)
                 .font(.title2)
-                .padding(.leading, 5)
+                .padding(.leading, Constants.Literals.cellPadding)
             Spacer()
+            Image(systemName: "chevron.right")
+                .padding(.trailing, Constants.Literals.cellPadding)
         }
+    }
+}
+
+private enum Constants {
+    enum Literals {
+        static let characterImageHeight = 80.0
+        static let characterImageCornerRadius = 15.0
+        static let cellPadding = 5.0
     }
 }
 

@@ -5,6 +5,7 @@
 //  Created by 문영균 on 3/23/25.
 //
 
+import Combine
 import SwiftUI
 import UIKit
 
@@ -15,9 +16,8 @@ final class CharacterListViewController: UIViewController {
     private let supabaseManager = SupabaseManager()
     private let characterListView: CharacterListView
     private let characterViewModel = CharacterListViewModel()
+    private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
-    private var characters: [Character] = []
-    private var filteredCharacters: [Character] = []
     
     init() {
         characterListView = CharacterListView()
@@ -43,22 +43,22 @@ final class CharacterListViewController: UIViewController {
         
         view = characterListView
         fetchCharacters()
+        bindViewModel()
     }
     
     private func fetchCharacters() {
         Task {
-            do {
-                let fetchedCharacters: [Character] = try await supabaseManager.fetchCharacter()
-                characters = fetchedCharacters
-                updateSnapshot(for: characters)
-                
-                for character in characters {
-                    characterViewModel.loadImage(for: character)
-                }
-            } catch {
-                NSLog("❌ Error fetching characters: \(error)")
-            }
+            characterViewModel.fetchCharacters(using: supabaseManager)
         }
+    }
+    
+    private func bindViewModel() {
+        filteredCancellable = characterViewModel
+            .$filteredCharacters
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] filteredCharacters in
+                self?.updateSnapshot(for: filteredCharacters)
+            }
     }
 }
 
@@ -103,7 +103,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UISearchControllerDelegate {
     func willDismissSearchController(_ searchController: UISearchController) {
-        updateSnapshot(for: characters)
+        characterViewModel.resetFilter()
     }
 }
 
@@ -121,12 +121,7 @@ extension CharacterListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
         
-        if text.isEmpty {
-            updateSnapshot(for: characters)
-        } else {
-            filteredCharacters = characters.filter { $0.name.contains(text)}
-            updateSnapshot(for: filteredCharacters)
-        }
+        characterViewModel.filter(by: text)
     }
 }
 

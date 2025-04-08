@@ -11,6 +11,35 @@ import UIKit
 @MainActor
 final class CharacterListViewModel: ObservableObject {
     @Published private(set) var characterImages: [Int: UIImage] = [:]
+    @Published private(set) var filteredCharacters: [Character] = []
+    private(set) var characters: [Character] = []
+    
+    func fetchCharacters(using manager: SupabaseManageable) {
+        Task {
+            do {
+                let fetchedCharacters: [Character] = try await manager.fetchCharacter()
+                characters = fetchedCharacters
+                filteredCharacters = characters
+                for character in characters {
+                    loadImage(for: character)
+                }
+            } catch {
+                NSLog("❌ Error fetching characters: \(error)")
+            }
+        }
+    }
+    
+    func filter(by keyword: String) {
+        if keyword.isEmpty {
+            filteredCharacters = characters
+        } else {
+            filteredCharacters = characters.filter { $0.name.contains(keyword) }
+        }
+    }
+    
+    func resetFilter() {
+        filteredCharacters = characters
+    }
     
     func loadImage(for character: Character) {
         Task {

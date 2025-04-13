@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class CharacterCollectionView: UIView {
+final class CharacterCollectionView: BaseView {
     
     // MARK: Subviews
     
@@ -23,25 +23,17 @@ final class CharacterCollectionView: UIView {
         return collectionView
     }()
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        
-        setupSubViews()
-        setupLayout()
-    }
+    // MARK: CharacterCollectionView's lifecycle
     
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
+    override func setupSubviews() {
+        super.setupSubviews()
         
-        setupSubViews()
-        setupLayout()
-    }
-    
-    private func setupSubViews() {
         addSubview(characterCollectionView)
     }
     
-    private func setupLayout() {
+    override func setupSubviewLayouts() {
+        super.setupSubviewLayouts()
+        
         setupCollectionViewLayouts()
     }
     

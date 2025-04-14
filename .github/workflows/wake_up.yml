@@ -12,3 +12,8 @@ jobs:
       - name: Send request
         run: |
           curl --request GET --url https://synuqdeicduarvjzgezw.supabase.co/rest/v1/
+          
+          curl 'https://synuqdeicduarvjzgezw.supabase.co/rest/v1/character?select=*' \
+          -H "apikey: ${ secrets.API_KEY }" \
+          -H "Authorization: Bearer ${ secrets.API_KEY }"
+          

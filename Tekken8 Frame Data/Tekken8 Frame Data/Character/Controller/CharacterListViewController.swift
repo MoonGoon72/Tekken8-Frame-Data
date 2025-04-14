@@ -9,13 +9,13 @@ import Combine
 import SwiftUI
 import UIKit
 
-final class CharacterListViewController: UIViewController {
+final class CharacterListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Character>
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
     // TODO: supabaseManager 객체 관리 방향성 정하기
     private let supabaseManager = SupabaseManager()
     private let characterCollectionView: CharacterCollectionView
-    private let characterViewModel = CharacterListViewModel()
+    private let characterListViewModel = CharacterListViewModel()
     private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
@@ -31,39 +31,46 @@ final class CharacterListViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        setupDiffableDataSource()
-        setupSearchController()
-        setupDelegation()
-    }
-    
     override func loadView() {
         super.loadView()
         
         view = characterCollectionView
         fetchCharacters()
-        bindViewModel()
     }
     
-    private func setupDelegation() {
+    override func setupDelegation() {
+        super.setupDelegation()
+        
         characterCollectionView.setCollectionViewDelegate(self)
     }
     
-    private func fetchCharacters() {
-        Task {
-            characterViewModel.fetchCharacters(using: supabaseManager)
-        }
+    override func setupDataSource() {
+        super.setupDataSource()
+        
+        setupDiffableDataSource()
     }
     
-    private func bindViewModel() {
-        filteredCancellable = characterViewModel
+    override func setupNavigationBar() {
+        super.setupNavigationBar()
+        
+        setupSearchController()
+    }
+    
+    override func bindViewModel() {
+        super.bindViewModel()
+        
+        filteredCancellable = characterListViewModel
             .$filteredCharacters
             .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredCharacters in
                 self?.updateSnapshot(for: filteredCharacters)
             }
+    }
+    
+    private func fetchCharacters() {
+        Task {
+            characterListViewModel.fetchCharacters(using: supabaseManager)
+        }
     }
 }
 
@@ -84,7 +91,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UISearchControllerDelegate {
     func willDismissSearchController(_ searchController: UISearchController) {
-        characterViewModel.resetFilter()
+        characterListViewModel.resetFilter()
     }
 }
 
@@ -102,7 +109,7 @@ extension CharacterListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
         
-        characterViewModel.filter(by: text)
+        characterListViewModel.filter(by: text)
     }
 }
 
@@ -114,7 +121,7 @@ private extension CharacterListViewController {
         { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
-                CharacterCell(character: itemIdentifier, viewModel: self.characterViewModel)
+                CharacterCell(character: itemIdentifier, viewModel: self.characterListViewModel)
             }
             cell.layer.borderWidth = 0.5
             cell.layer.cornerRadius = 5
@@ -134,7 +141,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print(characterViewModel.characters[indexPath.row])
+        print(characterListViewModel.characters[indexPath.row])
         // 네비게이션
     }
 }

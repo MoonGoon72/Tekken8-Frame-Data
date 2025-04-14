@@ -11,4 +11,4 @@ jobs:
       - uses: actions/checkout@v4
       - name: Send request
         run: |
-          curl --request GET --url https://synuqdeicduarvjzgezw.supabase.co
+          curl --request GET --url https://synuqdeicduarvjzgezw.supabase.co/rest/v1/

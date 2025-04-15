@@ -77,6 +77,7 @@ final class CharacterListViewController: BaseViewController {
 // MARK: - UISearchController method
 
 private extension CharacterListViewController {
+    // FIXME: setup은 굳이 extension으로 뺴줄 필요가 있을까? delegate는 delegate용 함수에 넣어주자.
     func setupSearchController() {
         let searchController = UISearchController(searchResultsController: nil)
         
@@ -141,8 +142,9 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print(characterListViewModel.characters[indexPath.row])
-        // 네비게이션
+        let character = characterListViewModel.characters[indexPath.row]
+        let moveListViewController = MoveListViewController(character: character)
+        navigationController?.pushViewController(moveListViewController, animated: true)
     }
 }
 

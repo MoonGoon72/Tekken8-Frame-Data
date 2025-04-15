@@ -39,7 +39,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Character/Model/Character.swift,
-				Model/Move.swift,
+				Move/Model/Move.swift,
 				Network/Supabase/SupabaseManageable.swift,
 				Network/Supabase/SupabaseManager.swift,
 				Secrets.xcconfig,

@@ -32,10 +32,11 @@ final class SupabaseManager: SupabaseManageable {
         return characters
     }
     
-    func fetchFrame() async throws -> [Move] {
+    func fetchMoves(characterName name: String) async throws -> [Move] {
         let moves: [Move] = try await client
             .from("move")
             .select()
+            .eq("character_name", value: name)
             .execute()
             .value
         return moves

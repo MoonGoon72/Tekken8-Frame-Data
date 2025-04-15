@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Move: Decodable {
+struct Move: Decodable, Hashable {
     let id: Int
     let characterName: String
     let section: String

@@ -36,7 +36,7 @@ final class SupabaseManager: SupabaseManageable {
         let moves: [Move] = try await client
             .from("move")
             .select()
-            .eq("character_name", value: "니나 윌리엄스")
+            .eq("character_name", value: name)
             .execute()
             .value
         return moves

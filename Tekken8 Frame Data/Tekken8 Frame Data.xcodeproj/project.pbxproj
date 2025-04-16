@@ -40,8 +40,8 @@
 			membershipExceptions = (
 				Character/Model/Character.swift,
 				Move/Model/Move.swift,
-				Network/Supabase/SupabaseManageable.swift,
-				Network/Supabase/SupabaseManager.swift,
+				Repository/Network/Supabase/SupabaseManageable.swift,
+				Repository/Network/Supabase/SupabaseManager.swift,
 				Secrets.xcconfig,
 			);
 			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;

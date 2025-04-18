@@ -13,11 +13,16 @@ final class CharacterListViewModel: ObservableObject {
     @Published private(set) var characterImages: [Int: UIImage] = [:]
     @Published private(set) var filteredCharacters: [Character] = []
     private(set) var characters: [Character] = []
+    private let repository: CharacterRepository
     
-    func fetchCharacters(using manager: SupabaseManageable) {
+    init(characterRepository repository: CharacterRepository) {
+        self.repository = repository
+    }
+    
+    func fetchCharacters() {
         Task {
             do {
-                let fetchedCharacters: [Character] = try await manager.fetchCharacter()
+                let fetchedCharacters: [Character] = try await repository.fetchCharacters()
                 characters = fetchedCharacters
                 filteredCharacters = characters
                 for character in characters {

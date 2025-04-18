@@ -13,17 +13,19 @@ final class MoveListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<String, Move>
     private typealias MoveDataSource = UICollectionViewDiffableDataSource<String, Move>
     
-    private let supabaseManager = SupabaseManager()
     private let moveListView: MoveListView
     private let moveListViewModel: MoveListViewModel
+    private let container: DIConatiner
     private let searchController: UISearchController
     private var filteredCancellable: AnyCancellable?
     private var dataSource: MoveDataSource?
     
     private let character: Character
     
-    init(character: Character) {
+    init(character: Character, moveListViewModel viewModel: MoveListViewModel, container: DIConatiner) {
         moveListView = MoveListView()
+        moveListViewModel = viewModel
+        self.container = container
         searchController = UISearchController(searchResultsController: nil)
         self.character = character
         

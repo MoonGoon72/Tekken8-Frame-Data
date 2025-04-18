@@ -16,7 +16,7 @@ struct Move: Decodable, Hashable {
     let judgment: String
     let damage: String
     let startup: String
-    let `guard`: String
+    let guardFrame: String
     let hit: String
     let counter: String
     let additionalInfo: String
@@ -30,7 +30,7 @@ struct Move: Decodable, Hashable {
         case judgment = "judgment"
         case damage = "damage"
         case startup = "startup"
-        case `guard` = "guard"
+        case guardFrame = "guard"
         case hit = "hit"
         case counter = "counter"
         case additionalInfo = "additional_info"

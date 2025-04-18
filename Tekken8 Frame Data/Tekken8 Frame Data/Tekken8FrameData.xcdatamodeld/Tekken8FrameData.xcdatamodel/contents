@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D81" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
-    <entity name="CharacterEntity" representedClassName="CharacterEntity" syncable="YES" codeGenerationType="class"/>
-    <entity name="MoveEntity" representedClassName="MoveEntity" syncable="YES" codeGenerationType="class"/>
+    <entity name="CharacterEntity" representedClassName="CharacterEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="imageURL" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="MoveEntity" representedClassName="MoveEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="additionalInfo" optional="YES" attributeType="String"/>
+        <attribute name="characterName" optional="YES" attributeType="String"/>
+        <attribute name="command" optional="YES" attributeType="String"/>
+        <attribute name="counter" optional="YES" attributeType="String"/>
+        <attribute name="damage" optional="YES" attributeType="String"/>
+        <attribute name="guardFrame" optional="YES" attributeType="String"/>
+        <attribute name="hit" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="judgment" optional="YES" attributeType="String"/>
+        <attribute name="section" optional="YES" attributeType="String"/>
+        <attribute name="skillName" optional="YES" attributeType="String"/>
+        <attribute name="startup" optional="YES" attributeType="String"/>
+    </entity>
 </model>

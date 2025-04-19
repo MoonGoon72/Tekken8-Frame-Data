@@ -16,6 +16,6 @@ final class DefaultCharacterRepository: CharacterRepository {
     }
     
     func fetchCharacters() async throws -> [Character] {
-        try await manager.fetchCharacter()
+        try await manager.fetchCharacter().sorted { $0.name < $1.name }
     }
 }

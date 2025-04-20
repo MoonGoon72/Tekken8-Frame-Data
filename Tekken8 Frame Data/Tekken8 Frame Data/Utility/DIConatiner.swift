@@ -8,16 +8,22 @@
 import Foundation
 
 final class DIConatiner {
-    private let manager: SupabaseManageable = SupabaseManager()
+    private let coreDataManager: CoreDataManageable
+    private let supabaseManager: SupabaseManageable
+    
+    init() {
+        coreDataManager = CoreDataManager()
+        supabaseManager = SupabaseManager()
+    }
     
     @MainActor func makeCharacterListViewController() -> CharacterListViewController {
-        let repository = DefaultCharacterRepository(manager: manager)
+        let repository = DefaultCharacterRepository(manager: supabaseManager, coreData: coreDataManager)
         let viewModel = CharacterListViewModel(characterRepository: repository)
         return CharacterListViewController(characterListViewModel: viewModel, container: self)
     }
     
     @MainActor func makeMoveListViewController(character: Character) -> MoveListViewController {
-        let repository = DefaultMoveRepository(manager: manager)
+        let repository = DefaultMoveRepository(manager: supabaseManager, coreData: coreDataManager)
         let viewModel = MoveListViewModel(moveRepository: repository)
         return MoveListViewController(character: character, moveListViewModel: viewModel, container: self)
     }

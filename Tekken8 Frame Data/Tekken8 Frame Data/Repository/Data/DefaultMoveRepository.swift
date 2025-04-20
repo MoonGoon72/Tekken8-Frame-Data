@@ -10,9 +10,11 @@ import Foundation
 
 final class DefaultMoveRepository: MoveRepository {
     private let manager: SupabaseManageable
+    private let coreData: CoreDataManageable
     
-    init(manager: SupabaseManageable) {
+    init(manager: SupabaseManageable, coreData: CoreDataManageable) {
         self.manager = manager
+        self.coreData = coreData
     }
     
     func fetchMoves(characterName name: String) async throws -> [Move] {

@@ -15,14 +15,14 @@ final class MoveListViewController: BaseViewController {
     
     private let moveListView: MoveListView
     private let moveListViewModel: MoveListViewModel
-    private let container: DIConatiner
+    private let container: DIContainer
     private let searchController: UISearchController
     private var filteredCancellable: AnyCancellable?
     private var dataSource: MoveDataSource?
     
     private let character: Character
     
-    init(character: Character, moveListViewModel viewModel: MoveListViewModel, container: DIConatiner) {
+    init(character: Character, moveListViewModel viewModel: MoveListViewModel, container: DIContainer) {
         moveListView = MoveListView()
         moveListViewModel = viewModel
         self.container = container

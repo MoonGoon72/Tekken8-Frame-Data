@@ -1,5 +1,5 @@
 //
-//  DIConatiner.swift
+//  DIContainer.swift
 //  Tekken8 Frame Data
 //
 //  Created by 문영균 on 4/18/25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class DIConatiner {
+final class DIContainer {
     private let coreDataManager: CoreDataManageable
     private let supabaseManager: SupabaseManageable
     

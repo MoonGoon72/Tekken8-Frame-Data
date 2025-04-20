@@ -15,11 +15,11 @@ final class CharacterListViewController: BaseViewController {
     // TODO: supabaseManager 객체 관리 방향성 정하기
     private let characterCollectionView: CharacterCollectionView
     private let characterListViewModel: CharacterListViewModel
-    private let container: DIConatiner
+    private let container: DIContainer
     private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
-    init(characterListViewModel viewModel: CharacterListViewModel, container: DIConatiner) {
+    init(characterListViewModel viewModel: CharacterListViewModel, container: DIContainer) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
         self.container = container

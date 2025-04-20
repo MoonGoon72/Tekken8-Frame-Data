@@ -6,7 +6,6 @@
 //
 
 import CoreData
-import Foundation
 
 final class DefaultCharacterRepository: CharacterRepository {
     private let manager: SupabaseManageable
@@ -18,6 +17,24 @@ final class DefaultCharacterRepository: CharacterRepository {
     }
     
     func fetchCharacters() async throws -> [Character] {
-        try await manager.fetchCharacter().sorted { $0.name < $1.name }
+        let request = CharacterEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        
+        if let result = try? coreData.fetch(request), !result.isEmpty {
+            return result.map({ CharacterDTO(entity: $0).toDomain() }).sorted { $0.name < $1.name }
+        }
+        
+        let fetchedCharacters = try await manager.fetchCharacter().sorted { $0.name < $1.name }
+        try addToCoreData(fetchedCharacters)
+        
+        return fetchedCharacters
+    }
+    
+    private func addToCoreData(_ data: [Character]) throws {
+        data.forEach { item in
+            let dto = CharacterDTO(domain: item)
+            dto.toEntity(in: coreData.context)
+        }
+        try coreData.saveContext()
     }
 }

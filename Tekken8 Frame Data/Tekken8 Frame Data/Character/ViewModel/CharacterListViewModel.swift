@@ -10,7 +10,7 @@ import UIKit
 
 @MainActor
 final class CharacterListViewModel: ObservableObject {
-    @Published private(set) var characterImages: [Int: UIImage] = [:]
+    @Published private(set) var characterImages: [Int64: UIImage] = [:]
     @Published private(set) var filteredCharacters: [Character] = []
     private(set) var characters: [Character] = []
     private let repository: CharacterRepository

@@ -20,6 +20,6 @@ struct MoveCell: View, ReuseIdentifiable {
 }
 
 #Preview {
-    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillName: "쉐캔", command: "6n23rp", judgment: "중", damage: "100", startup: "15f", guardFrame: "+7", hit: "+14", counter: "+26", additionalInfo: "개사기")
+    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillName: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startup: "15f", guardFrame: "+7", hit: "+14", counter: "+26", additionalInfo: "개사기")
     MoveCell(move: move)
 }

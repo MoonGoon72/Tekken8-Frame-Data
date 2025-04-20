@@ -8,24 +8,26 @@
 import Foundation
 
 struct Move: Decodable, Hashable {
-    let id: Int
+    let id: Int64
     let characterName: String
     let section: String
-    let skillName: String
-    let command: String
-    let judgment: String
-    let damage: String
-    let startup: String
-    let guardFrame: String
-    let hit: String
-    let counter: String
-    let additionalInfo: String
+    let skillName: String?
+    let skillNickname: String?
+    let command: String?
+    let judgment: String?
+    let damage: String?
+    let startup: String?
+    let guardFrame: String?
+    let hit: String?
+    let counter: String?
+    let additionalInfo: String?
     
     enum CodingKeys: String, CodingKey {
         case id
         case characterName = "character_name"
         case section = "section"
         case skillName = "skill_name"
+        case skillNickname = "skill_nickname"
         case command = "command"
         case judgment = "judgment"
         case damage = "damage"

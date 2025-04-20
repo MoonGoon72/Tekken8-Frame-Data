@@ -22,7 +22,6 @@ final class MoveListViewModel {
             do {
                 let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
                 filteredMoves = fetchedMoves
-                print(fetchedMoves)
             } catch {
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }

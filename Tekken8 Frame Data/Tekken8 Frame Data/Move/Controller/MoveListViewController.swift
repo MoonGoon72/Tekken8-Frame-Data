@@ -13,17 +13,19 @@ final class MoveListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<String, Move>
     private typealias MoveDataSource = UICollectionViewDiffableDataSource<String, Move>
     
-    private let supabaseManager = SupabaseManager()
     private let moveListView: MoveListView
-    private let moveCollectionViewModel: MoveCollectionViewModel = MoveCollectionViewModel()
+    private let moveListViewModel: MoveListViewModel
+    private let container: DIContainer
     private let searchController: UISearchController
     private var filteredCancellable: AnyCancellable?
     private var dataSource: MoveDataSource?
     
     private let character: Character
     
-    init(character: Character) {
+    init(character: Character, moveListViewModel viewModel: MoveListViewModel, container: DIContainer) {
         moveListView = MoveListView()
+        moveListViewModel = viewModel
+        self.container = container
         searchController = UISearchController(searchResultsController: nil)
         self.character = character
         
@@ -63,7 +65,7 @@ final class MoveListViewController: BaseViewController {
     override func bindViewModel() {
         super.bindViewModel()
         
-        filteredCancellable = moveCollectionViewModel
+        filteredCancellable = moveListViewModel
             .$filteredMoves
             .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredMoves in
@@ -73,7 +75,7 @@ final class MoveListViewController: BaseViewController {
     
     private func fetchMoves() {
         Task {
-            moveCollectionViewModel.fetchMoves(using: supabaseManager, characterName: character.name)
+            moveListViewModel.fetchMoves(characterName: character.name)
         }
     }
 }

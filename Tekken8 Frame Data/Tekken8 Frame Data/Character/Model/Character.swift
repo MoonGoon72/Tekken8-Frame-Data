@@ -8,7 +8,7 @@
 import Foundation
 
 struct Character: Decodable, Hashable {
-    let id: Int
+    let id: Int64
     let name: String
     let imageURL: String
     

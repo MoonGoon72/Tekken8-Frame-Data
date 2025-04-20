@@ -13,24 +13,25 @@ final class CharacterListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Character>
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
     // TODO: supabaseManager 객체 관리 방향성 정하기
-    private let supabaseManager = SupabaseManager()
     private let characterCollectionView: CharacterCollectionView
-    private let characterListViewModel = CharacterListViewModel()
+    private let characterListViewModel: CharacterListViewModel
+    private let container: DIContainer
     private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
-    init() {
+    init(characterListViewModel viewModel: CharacterListViewModel, container: DIContainer) {
         characterCollectionView = CharacterCollectionView()
+        characterListViewModel = viewModel
+        self.container = container
         
         super.init(nibName: nil, bundle: nil)
     }
     
-    required init?(coder: NSCoder) {
-        characterCollectionView = CharacterCollectionView()
-        
-        super.init(nibName: nil, bundle: nil)
+    @MainActor required init?(coder: NSCoder) {
+
+        fatalError("init(coder:) has not been implemented")
     }
-    
+        
     override func loadView() {
         super.loadView()
         
@@ -69,7 +70,7 @@ final class CharacterListViewController: BaseViewController {
     
     private func fetchCharacters() {
         Task {
-            characterListViewModel.fetchCharacters(using: supabaseManager)
+            characterListViewModel.fetchCharacters()
         }
     }
 }
@@ -77,7 +78,6 @@ final class CharacterListViewController: BaseViewController {
 // MARK: - UISearchController method
 
 private extension CharacterListViewController {
-    // FIXME: setup은 굳이 extension으로 뺴줄 필요가 있을까? delegate는 delegate용 함수에 넣어주자.
     func setupSearchController() {
         let searchController = UISearchController(searchResultsController: nil)
         
@@ -118,7 +118,7 @@ extension CharacterListViewController: UISearchResultsUpdating {
 
 private extension CharacterListViewController {
     func setupDiffableDataSource() {
-        dataSource = CharacterDataSource( collectionView: characterCollectionView.characterCollectionView)
+        dataSource = CharacterDataSource(collectionView: characterCollectionView.characterCollectionView)
         { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
@@ -143,7 +143,7 @@ private extension CharacterListViewController {
 extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let character = characterListViewModel.characters[indexPath.row]
-        let moveListViewController = MoveListViewController(character: character)
+        let moveListViewController = container.makeMoveListViewController(character: character)
         navigationController?.pushViewController(moveListViewController, animated: true)
     }
 }

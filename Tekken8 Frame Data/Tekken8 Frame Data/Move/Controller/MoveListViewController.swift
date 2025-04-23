@@ -120,8 +120,6 @@ private extension MoveListViewController {
             cell.contentConfiguration = UIHostingConfiguration {
                 MoveCell(move: itemIdentifier)
             }
-            cell.layer.borderWidth = 0.5
-            cell.layer.cornerRadius = 5
             return cell
         }
     }

@@ -75,7 +75,7 @@ final class MoveListViewController: BaseViewController {
     
     private func fetchMoves() {
         Task {
-            moveListViewModel.fetchMoves(characterName: character.name)
+            moveListViewModel.fetchMoves(characterName: character.nameEN)
         }
     }
 }

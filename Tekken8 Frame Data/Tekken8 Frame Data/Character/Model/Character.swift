@@ -9,12 +9,14 @@ import Foundation
 
 struct Character: Decodable, Hashable {
     let id: Int64
-    let name: String
+    let nameEN: String
+    let nameKR: String
     let imageURL: String
     
     enum CodingKeys: String, CodingKey {
         case id
-        case name
+        case nameEN = "name_en"
+        case nameKR = "name_kr"
         case imageURL = "image_url"
     }
 }

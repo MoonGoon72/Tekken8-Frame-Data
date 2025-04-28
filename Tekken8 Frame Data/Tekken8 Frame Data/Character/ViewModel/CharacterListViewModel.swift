@@ -38,7 +38,7 @@ final class CharacterListViewModel: ObservableObject {
         if keyword.isEmpty {
             filteredCharacters = characters
         } else {
-            filteredCharacters = characters.filter { $0.name.contains(keyword) }
+            filteredCharacters = characters.filter { $0.nameKR.contains(keyword) || $0.nameEN.contains(keyword) }
         }
     }
     

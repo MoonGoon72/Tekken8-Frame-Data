@@ -3,7 +3,8 @@
     <entity name="CharacterEntity" representedClassName="CharacterEntity" syncable="YES" codeGenerationType="class">
         <attribute name="id" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="imageURL" attributeType="String"/>
-        <attribute name="name" attributeType="String"/>
+        <attribute name="nameEN" attributeType="String"/>
+        <attribute name="nameKR" optional="YES" attributeType="String"/>
         <relationship name="moves" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MoveEntity"/>
     </entity>
     <entity name="MoveEntity" representedClassName="MoveEntity" syncable="YES" codeGenerationType="class">

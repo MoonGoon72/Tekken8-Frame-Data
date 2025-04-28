@@ -127,8 +127,9 @@ private extension MoveListViewController {
     func updateSnapshot(for moves: [Move]) {
         var snapshot = Snapshot()
         let section = moves.map { $0.section }
+        let sortedItem = moves.sorted { $0.id < $1.id }
         snapshot.appendSections(section.count > 0 ? Array(Set(section))  : ["default"])
-        snapshot.appendItems(moves)
+        snapshot.appendItems(sortedItem)
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }

@@ -11,48 +11,54 @@ struct MoveDTO {
     let id: Int64
     let characterName: String
     let section: String
-    let skillName: String?
+    let skillNameEN: String
+    let skillNameKR: String?
     let skillNickname: String?
     let command: String?
     let judgment: String?
     let damage: String?
-    let startup: String?
+    let startupFrame: String?
     let guardFrame: String?
-    let hit: String?
-    let counter: String?
-    let additionalInfo: String?
+    let hitFrame: String?
+    let counterFrame: String?
+    let attribute: String?
+    let description: String?
     
     
     init(entity: MoveEntity) {
         id = entity.id
         characterName = entity.characterName ?? "알 수 없음"
         section = entity.section ?? "알 수 없는 섹션"
-        skillName = entity.skillName
+        skillNameEN = entity.skillNameEN ?? "알 수 없는 기술 명"
+        skillNameKR = entity.skillNameKR
         skillNickname = entity.skillNickname
         command = entity.command
         judgment = entity.judgment
         damage = entity.damage
-        startup = entity.startup
+        startupFrame = entity.startupFrame
         guardFrame = entity.guardFrame
-        hit = entity.hit
-        counter = entity.counter
-        additionalInfo = entity.additionalInfo
+        hitFrame = entity.hitFrame
+        counterFrame = entity.counterFrame
+        attribute = entity.attribute
+        description = entity.descriptions
     }
     
     init(domain: Move) {
         id = Int64(domain.id)
         characterName = domain.characterName
         section = domain.section
-        skillName = domain.skillName
+        skillNameEN = domain.skillNameEN
+        skillNameKR = domain.skillNameKR
         skillNickname = domain.skillNickname
         command = domain.command
         judgment = domain.judgment
         damage = domain.damage
-        startup = domain.startup
+        startupFrame = domain.startupFrame
         guardFrame = domain.guardFrame
-        hit = domain.hit
-        counter = domain.counter
-        additionalInfo = domain.additionalInfo
+        hitFrame = domain.hitFrame
+        counterFrame = domain.counterFrame
+        attribute = domain.attribute
+        description = domain.description
     }
     
     func toDomain() -> Move {
@@ -60,16 +66,18 @@ struct MoveDTO {
             id: id,
             characterName: characterName,
             section: section,
-            skillName: skillName,
+            skillNameEN: skillNameEN,
+            skillNameKR: skillNameKR,
             skillNickname: skillNickname,
             command: command,
             judgment: judgment,
             damage: damage,
-            startup: startup,
+            startupFrame: startupFrame,
             guardFrame: guardFrame,
-            hit: hit,
-            counter: counter,
-            additionalInfo: additionalInfo
+            hitFrame: hitFrame,
+            counterFrame: counterFrame,
+            attribute: attribute,
+            description: description
         )
     }
     
@@ -79,16 +87,18 @@ struct MoveDTO {
         entity.id = id
         entity.characterName = characterName
         entity.section = section
-        entity.skillName = skillName
+        entity.skillNameEN = skillNameEN
+        entity.skillNameKR = skillNameKR
         entity.skillNickname = skillNickname
         entity.command = command
         entity.judgment = judgment
         entity.damage = damage
-        entity.startup = startup
+        entity.startupFrame = startupFrame
         entity.guardFrame = guardFrame
-        entity.hit = hit
-        entity.counter = counter
-        entity.additionalInfo = additionalInfo
+        entity.hitFrame = hitFrame
+        entity.counterFrame = counterFrame
+        entity.attribute = attribute
+        entity.descriptions = description
         return entity
     }
 }

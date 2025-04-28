@@ -8,19 +8,21 @@
         <relationship name="moves" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MoveEntity"/>
     </entity>
     <entity name="MoveEntity" representedClassName="MoveEntity" syncable="YES" codeGenerationType="class">
-        <attribute name="additionalInfo" optional="YES" attributeType="String"/>
+        <attribute name="attribute" optional="YES" attributeType="String"/>
         <attribute name="characterName" attributeType="String"/>
         <attribute name="command" optional="YES" attributeType="String"/>
-        <attribute name="counter" optional="YES" attributeType="String"/>
+        <attribute name="counterFrame" optional="YES" attributeType="String"/>
         <attribute name="damage" optional="YES" attributeType="String"/>
+        <attribute name="descriptions" optional="YES" attributeType="String"/>
         <attribute name="guardFrame" optional="YES" attributeType="String"/>
-        <attribute name="hit" optional="YES" attributeType="String"/>
+        <attribute name="hitFrame" optional="YES" attributeType="String"/>
         <attribute name="id" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="judgment" optional="YES" attributeType="String"/>
         <attribute name="section" optional="YES" attributeType="String"/>
-        <attribute name="skillName" optional="YES" attributeType="String"/>
+        <attribute name="skillNameEN" optional="YES" attributeType="String"/>
+        <attribute name="skillNameKR" optional="YES" attributeType="String"/>
         <attribute name="skillNickname" optional="YES" attributeType="String"/>
-        <attribute name="startup" optional="YES" attributeType="String"/>
+        <attribute name="startupFrame" optional="YES" attributeType="String"/>
         <relationship name="character" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CharacterEntity"/>
     </entity>
 </model>

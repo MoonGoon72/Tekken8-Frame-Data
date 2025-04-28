@@ -24,6 +24,7 @@ final class MoveListView: BaseView {
         )
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
         let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         let layout = UICollectionViewCompositionalLayout(section: section)
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)

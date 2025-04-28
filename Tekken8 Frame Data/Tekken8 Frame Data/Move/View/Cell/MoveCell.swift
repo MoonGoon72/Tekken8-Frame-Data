@@ -14,7 +14,7 @@ struct MoveCell: View, ReuseIdentifiable {
         VStack(alignment: .leading, spacing: 8) {
             // 기술명 + 커맨드
             HStack {
-                Text(move.skillName ?? "")
+                Text(move.skillNameEN ?? "")
                     .font(.headline)
                 Spacer()
                 Text(move.command ?? "")
@@ -43,7 +43,7 @@ struct MoveCell: View, ReuseIdentifiable {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("⏱ 발동")
-                    Text(move.startup ?? "-")
+                    Text(move.startupFrame ?? "-")
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("🛡 가드")
@@ -51,17 +51,17 @@ struct MoveCell: View, ReuseIdentifiable {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("✅ 히트")
-                    Text(move.hit ?? "-")
+                    Text(move.hitFrame ?? "-")
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("⚡️ 카운터")
-                    Text(move.counter ?? "-")
+                    Text(move.counterFrame ?? "-")
                 }
             }
             .font(.caption)
 
             // 추가 설명
-            if let info = move.additionalInfo, !info.isEmpty {
+            if let info = move.description, !info.isEmpty {
                 Text("📌 \(info)")
                     .font(.footnote)
                     .foregroundColor(.secondary)
@@ -90,6 +90,6 @@ struct CommandView: View {
 }
 
 #Preview {
-    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillName: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startup: "15f", guardFrame: "+7", hit: "+14", counter: "+26", additionalInfo: "개사기")
+    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillNameEN: "shake cancel", skillNameKR: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startupFrame: "15f", guardFrame: "+7", hitFrame: "+14", counterFrame: "+26", attribute: "", description: "개사기")
     MoveCell(move: move)
 }

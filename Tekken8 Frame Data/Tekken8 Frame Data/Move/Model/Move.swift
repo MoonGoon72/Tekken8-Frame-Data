@@ -11,30 +11,34 @@ struct Move: Decodable, Hashable {
     let id: Int64
     let characterName: String
     let section: String
-    let skillName: String?
+    let skillNameEN: String
+    let skillNameKR: String?
     let skillNickname: String?
     let command: String?
     let judgment: String?
     let damage: String?
-    let startup: String?
+    let startupFrame: String?
     let guardFrame: String?
-    let hit: String?
-    let counter: String?
-    let additionalInfo: String?
+    let hitFrame: String?
+    let counterFrame: String?
+    let attribute: String?
+    let description: String?
     
     enum CodingKeys: String, CodingKey {
         case id
         case characterName = "character_name"
         case section = "section"
-        case skillName = "skill_name"
+        case skillNameEN = "skill_name_en"
+        case skillNameKR = "skill_name_kr"
         case skillNickname = "skill_nickname"
         case command = "command"
         case judgment = "judgment"
         case damage = "damage"
-        case startup = "startup"
-        case guardFrame = "guard"
-        case hit = "hit"
-        case counter = "counter"
-        case additionalInfo = "additional_info"
+        case startupFrame = "startup_frame"
+        case guardFrame = "guard_frame"
+        case hitFrame = "hit_frame"
+        case counterFrame = "counter_frame"
+        case attribute
+        case description
     }
 }

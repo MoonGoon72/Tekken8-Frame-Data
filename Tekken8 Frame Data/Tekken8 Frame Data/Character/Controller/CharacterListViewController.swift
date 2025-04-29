@@ -12,10 +12,11 @@ import UIKit
 final class CharacterListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Character>
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
-    // TODO: supabaseManager 객체 관리 방향성 정하기
+
     private let characterCollectionView: CharacterCollectionView
     private let characterListViewModel: CharacterListViewModel
     private let container: DIContainer
+    private let searchController: UISearchController
     private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
@@ -23,6 +24,7 @@ final class CharacterListViewController: BaseViewController {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
         self.container = container
+        searchController = UISearchController(searchResultsController: nil)
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -43,6 +45,7 @@ final class CharacterListViewController: BaseViewController {
         super.setupDelegation()
         
         characterCollectionView.setCollectionViewDelegate(self)
+        searchController.delegate = self
     }
     
     override func setupDataSource() {
@@ -79,8 +82,6 @@ final class CharacterListViewController: BaseViewController {
 
 private extension CharacterListViewController {
     func setupSearchController() {
-        let searchController = UISearchController(searchResultsController: nil)
-        
         searchController.delegate = self
         searchController.searchResultsUpdater = self
         searchController.searchBar.placeholder = Texts.placeholder
@@ -108,7 +109,8 @@ extension CharacterListViewController: UISearchBarDelegate {
 
 extension CharacterListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
-        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        else { return }
         
         characterListViewModel.filter(by: text)
     }

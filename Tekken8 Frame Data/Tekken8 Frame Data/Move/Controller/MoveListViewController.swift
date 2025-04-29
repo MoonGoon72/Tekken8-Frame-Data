@@ -84,13 +84,15 @@ final class MoveListViewController: BaseViewController {
 
 extension MoveListViewController: UISearchControllerDelegate, UISearchResultsUpdating {
     func willDismissSearchController(_ searchController: UISearchController) {
-        // 나가면 초기화하는 로직
+        moveListViewModel.resetFilter()
     }
     
     func updateSearchResults(for searchController: UISearchController) {
-        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        else { return }
         
         // 필터링 로직
+        moveListViewModel.filter(by: text)
     }
 }
 
@@ -108,6 +110,7 @@ private extension MoveListViewController {
     private func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.searchBar.placeholder = Texts.placeholder
+        navigationItem.searchController = searchController
     }
 }
 

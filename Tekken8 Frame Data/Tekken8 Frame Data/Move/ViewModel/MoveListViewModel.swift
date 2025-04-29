@@ -22,9 +22,30 @@ final class MoveListViewModel {
             do {
                 let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
                 filteredMoves = fetchedMoves
+                moves = fetchedMoves
             } catch {
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }
         }
+    }
+    
+    func filter(by keyword: String) {
+        let keyword = keyword.lowercased()
+        if keyword.isEmpty {
+            filteredMoves = moves
+        } else {
+            filteredMoves = moves.filter { move in
+                let enMatch = move.skillNameEN.lowercased().contains(keyword)
+                let krMatch = move.skillNameKR?.lowercased().contains(keyword) ?? false
+                let nickMatch = move.skillNickname?.lowercased().contains(keyword) ?? false
+                let commandMatch = move.command?.lowercased().contains(keyword) ?? false
+                
+                return enMatch || krMatch || nickMatch || commandMatch
+            }
+        }
+    }
+    
+    func resetFilter() {
+        filteredMoves = moves
     }
 }

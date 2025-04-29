@@ -40,7 +40,7 @@ final class CharacterCollectionView: BaseView {
     override func setupStyles() {
         super.setupStyles()
         
-        characterCollectionView.backgroundColor = .tk8Background
+        characterCollectionView.backgroundColor = .tkBackground
     }
     
     // MARK: Custom method

@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E4024B2A2D3F399E007C855C"
-               BuildableName = "Tekken8 Frame Data.app"
-               BlueprintName = "Tekken8 Frame Data"
-               ReferencedContainer = "container:Tekken8 Frame Data.xcodeproj">
+               BuildableName = "TK8.app"
+               BlueprintName = "TK8"
+               ReferencedContainer = "container:TK8.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -38,7 +38,7 @@
                BlueprintIdentifier = "E41737852D8BD7FC00FE79E1"
                BuildableName = "SupabaseAPITests.xctest"
                BlueprintName = "SupabaseAPITests"
-               ReferencedContainer = "container:Tekken8 Frame Data.xcodeproj">
+               ReferencedContainer = "container:TK8.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -58,9 +58,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4024B2A2D3F399E007C855C"
-            BuildableName = "Tekken8 Frame Data.app"
-            BlueprintName = "Tekken8 Frame Data"
-            ReferencedContainer = "container:Tekken8 Frame Data.xcodeproj">
+            BuildableName = "TK8.app"
+            BlueprintName = "TK8"
+            ReferencedContainer = "container:TK8.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -75,9 +75,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4024B2A2D3F399E007C855C"
-            BuildableName = "Tekken8 Frame Data.app"
-            BlueprintName = "Tekken8 Frame Data"
-            ReferencedContainer = "container:Tekken8 Frame Data.xcodeproj">
+            BuildableName = "TK8.app"
+            BlueprintName = "TK8"
+            ReferencedContainer = "container:TK8.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

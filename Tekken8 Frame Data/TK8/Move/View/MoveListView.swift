@@ -53,7 +53,7 @@ final class MoveListView: BaseView {
     override func setupStyles() {
         super.setupStyles()
         
-        moveCollectionView.backgroundColor = .tk8Background
+        moveCollectionView.backgroundColor = .tkBackground
     }
     
     // MARK: Custom Method

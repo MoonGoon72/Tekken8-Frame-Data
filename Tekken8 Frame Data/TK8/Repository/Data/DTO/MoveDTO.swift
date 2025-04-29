@@ -39,7 +39,7 @@ struct MoveDTO {
         guardFrame = entity.guardFrame
         hitFrame = entity.hitFrame
         counterFrame = entity.counterFrame
-        attribute = entity.attribute
+        attribute = entity.attribute ?? ""
         description = entity.descriptions
     }
     

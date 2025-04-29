@@ -22,8 +22,7 @@ final class DefaultMoveRepository: MoveRepository {
         request.predicate = NSPredicate(format: "characterName == %@", name)
         
         if let result = try? coreData.fetch(request), !result.isEmpty {
-            // TODO: 커맨드 정렬 로직은 생각을 좀 더 해볼 것
-            return result.map({ MoveDTO(entity: $0).toDomain() }).sorted { $0.command ?? "" < $1.command ?? ""}
+            return result.map({ MoveDTO(entity: $0).toDomain() })
         }
         
         let fetchedMoves = try await manager.fetchMoves(characterName: name)

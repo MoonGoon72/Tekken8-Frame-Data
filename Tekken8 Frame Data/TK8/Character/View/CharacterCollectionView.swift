@@ -37,6 +37,12 @@ final class CharacterCollectionView: BaseView {
         setupCollectionViewLayouts()
     }
     
+    override func setupStyles() {
+        super.setupStyles()
+        
+        characterCollectionView.backgroundColor = .tk8Background
+    }
+    
     // MARK: Custom method
     
     func setCollectionViewDelegate(_ delegate: UICollectionViewDelegate) {

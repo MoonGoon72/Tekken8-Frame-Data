@@ -16,6 +16,10 @@ struct MoveCell: View, ReuseIdentifiable {
             HStack {
                 Text(move.skillNameEN)
                     .font(.headline)
+                    .padding(.horizontal, 3)
+                if let attribute = move.attribute, attribute != "" {
+                    AttributeView(attributes: attribute)
+                }
                 Spacer()
                 Text(move.skillNameKR ?? "")
                     .font(.subheadline)
@@ -25,35 +29,38 @@ struct MoveCell: View, ReuseIdentifiable {
             
             // 판정
             JudgmentView(judgment: move.judgment ?? "-")
-//            HStack(spacing: 8) {
-//                Text(move.judgment ?? "")
-//                    .font(.caption)
-//                    .padding(4)
-//                    .background(Color.gray.opacity(0.2))
-//                    .cornerRadius(4)
-//            }
 
             // 데미지, 발동 등 주요 수치
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("💥 데미지")
+                    Text("데미지")
+                        .font(.system(size: 15))
                     Text(move.damage ?? "-")
+                        .font(.system(size: 13))
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("⏱ 발동")
+                    Text("발동")
+                        .font(.system(size: 15))
                     Text(move.startupFrame ?? "-")
+                        .font(.system(size: 13))
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("🛡 가드")
+                    Text("가드")
+                        .font(.system(size: 15))
                     Text(move.guardFrame ?? "-")
+                        .font(.system(size: 13))
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("✅ 히트")
+                    Text("히트")
+                        .font(.system(size: 15))
                     Text(move.hitFrame ?? "-")
+                        .font(.system(size: 13))
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("⚡️ 카운터")
+                    Text("카운터")
+                        .font(.system(size: 15))
                     Text(move.counterFrame ?? "-")
+                        .font(.system(size: 13))
                 }
             }
             .font(.caption)
@@ -75,6 +82,25 @@ struct MoveCell: View, ReuseIdentifiable {
     private func descriptionPrettyPrinter(_ description: String) -> String {
         let newDescription = description.replacingOccurrences(of: "| ", with: "\n")
         return newDescription
+    }
+}
+
+struct AttributeView: View {
+    let attributes: String
+    let token: [String]
+    
+    init(attributes: String) {
+        self.attributes = attributes
+        token = attributes.components(separatedBy: ",")
+    }
+    var body: some View {
+        ForEach(Array(token.enumerated()), id: \.0) { _, attribute in
+            Image(attribute)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .padding(.horizontal, 3)
+        }
     }
 }
 
@@ -133,7 +159,7 @@ struct CommandView: View {
 }
 
 private enum Constants {
-
+    
 }
 
 #Preview {

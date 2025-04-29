@@ -50,6 +50,12 @@ final class MoveListView: BaseView {
         setupCollectionViewLayouts()
     }
     
+    override func setupStyles() {
+        super.setupStyles()
+        
+        moveCollectionView.backgroundColor = .tk8Background
+    }
+    
     // MARK: Custom Method
     
     func setCollectionViewDelegate(_ delegate: UICollectionViewDelegate) {

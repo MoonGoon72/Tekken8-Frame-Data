@@ -126,8 +126,6 @@ private extension CharacterListViewController {
             cell.contentConfiguration = UIHostingConfiguration {
                 CharacterCell(character: itemIdentifier, viewModel: self.characterListViewModel)
             }
-            cell.layer.borderWidth = 0.5
-            cell.layer.cornerRadius = 5
             return cell
         }
     }

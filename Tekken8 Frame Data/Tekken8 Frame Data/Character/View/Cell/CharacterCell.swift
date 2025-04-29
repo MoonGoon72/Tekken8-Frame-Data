@@ -34,13 +34,17 @@ struct CharacterCell: View, ReuseIdentifiable {
             Image(systemName: "chevron.right")
                 .padding(.trailing, Constants.Literals.cellPadding)
         }
+        .padding(4)
+        .background(Color(.systemBackground))
+        .cornerRadius(10)
+        .shadow(radius: 1)
     }
 }
 
 private enum Constants {
     enum Literals {
-        static let characterImageHeight = 80.0
-        static let characterImageCornerRadius = 15.0
+        static let characterImageHeight = 95.0
+        static let characterImageCornerRadius = 10.0
         static let cellPadding = 5.0
     }
 }

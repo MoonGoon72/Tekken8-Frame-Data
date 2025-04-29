@@ -14,26 +14,24 @@ struct MoveCell: View, ReuseIdentifiable {
         VStack(alignment: .leading, spacing: 8) {
             // 기술명 + 커맨드
             HStack {
-                Text(move.skillNameEN ?? "")
+                Text(move.skillNameEN)
                     .font(.headline)
                 Spacer()
-                Text(move.command ?? "")
+                Text(move.skillNameKR ?? "")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
             }
 
-            // 판정 & 입력 이미지 (가능하면)
-            HStack(spacing: 8) {
-                Text(move.judgment ?? "")
-                    .font(.caption)
-                    .padding(4)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(4)
-                
-                // 👉 여기에 커맨드 입력 이미지 들어가면 최고
-                CommandView(command: move.command ?? "")
-//                Image("commandInputIcon") // Optional: 애셋 이름 또는 동적 뷰
-            }
+            CommandView(command: move.command ?? "")
+            
+            // 판정
+            JudgmentView(judgment: move.judgment ?? "-")
+//            HStack(spacing: 8) {
+//                Text(move.judgment ?? "")
+//                    .font(.caption)
+//                    .padding(4)
+//                    .background(Color.gray.opacity(0.2))
+//                    .cornerRadius(4)
+//            }
 
             // 데미지, 발동 등 주요 수치
             HStack(spacing: 12) {
@@ -61,8 +59,9 @@ struct MoveCell: View, ReuseIdentifiable {
             .font(.caption)
 
             // 추가 설명
-            if let info = move.description, !info.isEmpty {
-                Text("📌 \(info)")
+            if let description = move.description, !description.isEmpty {
+                let description = descriptionPrettyPrinter(description)
+                Text("\(description)")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
@@ -72,21 +71,69 @@ struct MoveCell: View, ReuseIdentifiable {
         .cornerRadius(10)
         .shadow(radius: 1)
     }
+    
+    private func descriptionPrettyPrinter(_ description: String) -> String {
+        let newDescription = description.replacingOccurrences(of: "| ", with: "\n")
+        return newDescription
+    }
+}
+
+struct JudgmentView: View {
+    let judgment: String
+    let backgroundColor: Color
+    
+    init(judgment: String) {
+        self.judgment = judgment
+        switch judgment {
+        case "상":
+            backgroundColor = Color.red.opacity(0.2)
+        case "중":
+            backgroundColor = Color.yellow.opacity(0.2)
+        case "하":
+            backgroundColor = Color.blue.opacity(0.2)
+        default:
+            backgroundColor = Color.purple.opacity(0.2)
+        }
+    }
+    
+    var body: some View {
+        Text(judgment)
+            .font(.caption)
+            .padding(4)
+            .background(backgroundColor)
+            .cornerRadius(4)
+    }
 }
 
 struct CommandView: View {
     let command: String
+    let tokens: [String]
+    
+    init(command: String) {
+        self.command = command
+        tokens = command.tokenizeCommands()
+    }
     
     var body: some View {
-        HStack {
-            
+        HStack(spacing: 0) {
+            ForEach(Array(tokens.enumerated()), id: \.0) { _, token in
+                if GlobalConstants.commands.contains(token) {
+                    Image(token.contains("_") ? token + "hold" : token)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                } else {
+                    Text(token)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                }
+            }
         }
     }
-    
-    func parseCommand(_ input: String) -> [String] {
-        
-        return []
-    }
+}
+
+private enum Constants {
+
 }
 
 #Preview {

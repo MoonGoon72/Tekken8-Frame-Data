@@ -5,7 +5,7 @@
         <attribute name="imageURL" attributeType="String"/>
         <attribute name="nameEN" attributeType="String"/>
         <attribute name="nameKR" optional="YES" attributeType="String"/>
-        <relationship name="moves" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MoveEntity"/>
+        <relationship name="moves" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="MoveEntity" inverseName="character" inverseEntity="MoveEntity"/>
     </entity>
     <entity name="MoveEntity" representedClassName="MoveEntity" syncable="YES" codeGenerationType="class">
         <attribute name="attribute" optional="YES" attributeType="String"/>
@@ -23,6 +23,6 @@
         <attribute name="skillNameKR" optional="YES" attributeType="String"/>
         <attribute name="skillNickname" optional="YES" attributeType="String"/>
         <attribute name="startupFrame" optional="YES" attributeType="String"/>
-        <relationship name="character" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CharacterEntity"/>
+        <relationship name="character" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CharacterEntity" inverseName="moves" inverseEntity="CharacterEntity"/>
     </entity>
 </model>

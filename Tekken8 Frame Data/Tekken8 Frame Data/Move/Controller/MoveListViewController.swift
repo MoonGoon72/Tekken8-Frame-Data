@@ -60,6 +60,7 @@ final class MoveListViewController: BaseViewController {
         super.setupNavigationBar()
         
         setupSearchController()
+        navigationItem.title = character.nameKR
     }
     
     override func bindViewModel() {
@@ -107,10 +108,11 @@ extension MoveListViewController: UISearchBarDelegate {
 // MARK: - UISearchController method
 
 private extension MoveListViewController {
-    private func setupSearchController() {
+    func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.searchBar.placeholder = Texts.placeholder
         navigationItem.searchController = searchController
+        definesPresentationContext = true
     }
 }
 
@@ -118,6 +120,7 @@ private extension MoveListViewController {
 
 private extension MoveListViewController {
     func setupDiffableDataSource() {
+        // Cell 등록
         dataSource = MoveDataSource(collectionView: moveListView.moveCollectionView) { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MoveCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
@@ -125,14 +128,63 @@ private extension MoveListViewController {
             }
             return cell
         }
+        // 헤더용 SupplementaryRegisteration 정의
+        let headerRegisteration = UICollectionView.SupplementaryRegistration<MoveSectionHeaderView>(
+            elementKind: UICollectionView.elementKindSectionHeader) { headerView, elementKind, indexPath in
+                let sectionTitle = self.dataSource?.snapshot().sectionIdentifiers[indexPath.section] ?? ""
+                headerView.titleLabel.text = sectionTitle
+            }
+        // CollectionView에 SupplimentaryRegistration 등록
+        moveListView.moveCollectionView.register(
+            MoveSectionHeaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: MoveSectionHeaderView.reuseIdentifier
+        )
+        // DiffableDataSource에 provider로 연결
+        dataSource?.supplementaryViewProvider = { collectionView, kind, indexPath in
+            collectionView.dequeueConfiguredReusableSupplementary(
+                using: headerRegisteration,
+                for: indexPath
+            )
+        }
     }
     
     func updateSnapshot(for moves: [Move]) {
+        guard !moves.isEmpty else {
+            dataSource?.apply(Snapshot(), animatingDifferences: false)
+            return
+        }
         var snapshot = Snapshot()
-        let section = moves.map { $0.section }
-        let sortedItem = moves.sorted { $0.id < $1.id }
-        snapshot.appendSections(section.count > 0 ? Array(Set(section))  : ["일반"])
-        snapshot.appendItems(sortedItem)
+        let sections = Set(moves.map { $0.section })
+        
+        // 앞에 보여줄 섹션
+        let commonOrder = ["히트", "레이지", "일반", "앉은 상태"]
+        let frontSections = commonOrder.filter { sections.contains($0) }
+        
+        // 뒤에 보여줄 섹션
+        let endOrder = ["잡기", "반격기"]
+        let tailSections = endOrder.filter { sections.contains($0) }
+        
+        // 중간에 보여줄, 캐릭터 별 고유 섹션
+        let middleSections = sections
+            .subtracting(frontSections)
+            .subtracting(tailSections)
+        let sortedMiddle = middleSections.sorted { a, b in
+            let minA = moves.filter { $0.section == a }.map(\.id).min() ?? 0
+            let minB = moves.filter { $0.section == b }.map(\.id).min() ?? 0
+            return minA < minB
+        }
+        
+        // 최종 순서대로 합치기
+        let orderSections = frontSections + sortedMiddle + tailSections
+        snapshot.appendSections(orderSections)
+        
+        for section in orderSections {
+            let items = moves
+                .filter { $0.section == section }
+                .sorted { $0.id < $1.id }
+            snapshot.appendItems(items, toSection: section)
+        }
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }

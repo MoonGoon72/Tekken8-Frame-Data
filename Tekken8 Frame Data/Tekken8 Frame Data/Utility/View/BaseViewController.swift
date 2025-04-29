@@ -28,6 +28,7 @@ class BaseViewController: UIViewController {
         setupDataSource()
         configureKeyboardDismissOnTap()
         bindViewModel()
+        navigationItem.hidesSearchBarWhenScrolling = false
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -35,6 +36,12 @@ class BaseViewController: UIViewController {
         
         setupNavigationBar()
         setupSubscription()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        navigationItem.hidesSearchBarWhenScrolling = true
     }
     
     // MARK: Tekken8 Frame Data lifecycle

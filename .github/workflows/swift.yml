@@ -33,4 +33,4 @@ jobs:
       run: xcodebuild -resolvePackageDependencies -project "Tekken8 Frame Data/TK8.xcodeproj"
 
     - name: 🛠️ Build Project 🛠️
-      run: xcodebuild clean build -project "Tekken8 Frame Data/TK8.xcodeproj" -scheme "TK8" -destination "platform=iOS Simulator,name=iPhone 16,OS=latest"
+      run: xcodebuild clean build -project "Tekken8 Frame Data/TK8.xcodeproj" -scheme "Tekken8 Frame Data" -destination "platform=iOS Simulator,name=iPhone 16,OS=latest"

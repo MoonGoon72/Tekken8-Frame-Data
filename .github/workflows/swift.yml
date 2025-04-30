@@ -27,7 +27,7 @@ jobs:
       run: echo "API_KEY=${{ secrets.API_KEY }}\nSUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "Secrets.xcconfig"
 
     - name: Install Dependencies (SPM 의존성)
-      run: xcodebuild -resolvePackageDependencies -project "Tekken8 Frame Data/TK8.xcodeproj"
+      run: xcodebuild -resolvePackageDependencies -project "TK8.xcodeproj"
 
     - name: 🛠️ Build Project 🛠️
-      run: xcodebuild clean build -project "Tekken8 Frame Data/TK8.xcodeproj" -scheme "Tekken8 Frame Data" -destination "platform=iOS Simulator,name=iPhone 16,OS=latest"
+      run: xcodebuild clean build -project "TK8.xcodeproj" -scheme "TK8" -destination "platform=iOS Simulator,name=iPhone 16,OS=latest"

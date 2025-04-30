@@ -24,7 +24,7 @@ jobs:
       run: pwd
       
     - name: Create Secrets.xcconfig
-      run: echo "API_KEY=${{ secrets.API_KEY }}\nSUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "Secrets.xcconfig"
+      run: echo "API_KEY=${{ secrets.API_KEY }}\nSUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "TK8/Secrets.xcconfig"
 
     - name: Install Dependencies (SPM 의존성)
       run: xcodebuild -resolvePackageDependencies -project "TK8.xcodeproj"

@@ -20,6 +20,9 @@ jobs:
     - name: Select Xcode Version 16.2
       run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
     
+    - name: Get Path
+      run: pwd
+      
     - name: Create Secrets.xcconfig
       run: echo "API_KEY=${{ secrets.API_KEY }}\nSUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "Tekken8 Frame Data/TK8/Secrets.xcconfig"
 

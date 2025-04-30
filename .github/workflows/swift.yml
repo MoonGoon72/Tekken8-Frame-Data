@@ -20,11 +20,14 @@ jobs:
     - name: Select Xcode Version 16.2
       run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
     
+    - name: Get Path
+      run: pwd
+      
     - name: Create Secrets.xcconfig
-      run: echo "API_KEY=${{ secrets.API_KEY }}\nSUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "Tekken8 Frame Data/TK8/Secrets.xcconfig"
+      run: echo "API_KEY=${{ secrets.API_KEY }}\nSUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "Secrets.xcconfig"
 
     - name: Install Dependencies (SPM 의존성)
-      run: xcodebuild -resolvePackageDependencies -project "Tekken8 Frame Data/Tekken8 Frame Data.xcodeproj"
+      run: xcodebuild -resolvePackageDependencies -project "TK8.xcodeproj"
 
     - name: 🛠️ Build Project 🛠️
-      run: xcodebuild clean build -project "Tekken8 Frame Data/TK8.xcodeproj" -scheme "Tekken8 Frame Data" -destination "platform=iOS Simulator,name=iPhone 16,OS=latest"
+      run: xcodebuild clean build -project "TK8.xcodeproj" -scheme "TK8" -destination "platform=iOS Simulator,name=iPhone 16,OS=latest"

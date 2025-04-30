@@ -1,0 +1,25 @@
+//
+//  SceneDelegate.swift
+//  Tekken8 Frame Data
+//
+//  Created by 문영균 on 1/21/25.
+//
+
+import UIKit
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        
+        let window = UIWindow(windowScene: windowScene)
+        let container = DIContainer()
+        let rootViewController = UINavigationController(rootViewController: container.makeCharacterListViewController())
+        let viewController = rootViewController
+        window.rootViewController = viewController
+        
+        self.window = window
+        window.makeKeyAndVisible()
+    }
+}

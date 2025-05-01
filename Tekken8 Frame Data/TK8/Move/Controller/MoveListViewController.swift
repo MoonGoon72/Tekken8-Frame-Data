@@ -61,6 +61,8 @@ final class MoveListViewController: BaseViewController {
         
         setupSearchController()
         navigationItem.title = character.nameKR
+        navigationController?.navigationBar.tintColor = .tkRed
+        navigationController?.navigationBar.topItem?.title = ""
     }
     
     override func bindViewModel() {

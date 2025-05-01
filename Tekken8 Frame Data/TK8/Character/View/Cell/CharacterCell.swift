@@ -27,9 +27,17 @@ struct CharacterCell: View, ReuseIdentifiable {
                     .frame(height: Constants.Literals.characterImageHeight)
                     .clipShape(.rect(cornerRadius: Constants.Literals.characterImageCornerRadius))
             }
-            Text(character.nameKR)
-                .font(.title2)
-                .padding(.leading, Constants.Literals.cellPadding)
+            VStack(alignment: .leading) {
+                Text(character.nameKR)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.leading, Constants.Literals.cellPadding)
+                Text(character.nameEN)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, Constants.Literals.cellPadding)
+            }
+            .padding(.leading, Constants.Literals.cellPadding)
             Spacer()
             Image(systemName: "chevron.right")
                 .padding(.trailing, Constants.Literals.cellPadding)
@@ -50,5 +58,5 @@ private enum Constants {
 }
 
 #Preview {
-    CharacterCell(character: Character(id: 1, nameEN: "Nina", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"), viewModel: CharacterListViewModel(characterRepository: DefaultCharacterRepository(manager: SupabaseManager(), coreData: CoreDataManager())))
+    CharacterCell(character: Character(id: 1, nameEN: "Nina Williams", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"), viewModel: CharacterListViewModel(characterRepository: DefaultCharacterRepository(manager: SupabaseManager(), coreData: CoreDataManager())))
 }

@@ -10,6 +10,10 @@ import Foundation
 extension String {
     func tokenizeCommands() -> [String] {
         // 1) commands 리스트 (길이 내림차순)
+        let pre = self
+                    .replacingOccurrences(of: "(", with: " ( ")
+                    .replacingOccurrences(of: ")", with: " ) ")
+        
         let commands = GlobalConstants.commands.sorted { $0.count > $1.count }
         
         // 2) “순수 커맨드 단어”만 그리디 분할해 주는 함수
@@ -37,7 +41,7 @@ extension String {
         }
         
         // 3) 공백·개행 단위로 먼저 단어 분리
-        let rawWords = self
+        let rawWords = pre
             .components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }
         

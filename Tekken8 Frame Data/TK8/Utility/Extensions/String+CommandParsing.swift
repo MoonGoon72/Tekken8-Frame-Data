@@ -13,6 +13,8 @@ extension String {
         let pre = self
                     .replacingOccurrences(of: "(", with: " ( ")
                     .replacingOccurrences(of: ")", with: " ) ")
+                    .replacingOccurrences(of: "[", with: " [ ")
+                    .replacingOccurrences(of: "]", with: " ] ")
         
         let commands = GlobalConstants.commands.sorted { $0.count > $1.count }
         

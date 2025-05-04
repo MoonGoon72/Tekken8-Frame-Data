@@ -9,16 +9,25 @@ import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
-
+    private let container = DIContainer()
+    private let versionManager: FrameDataVersionManageable
+    
+    init(window: UIWindow? = nil) {
+        self.window = window
+        versionManager = container.makeFrameDataVersionManager()
+    }
+     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         let window = UIWindow(windowScene: windowScene)
-        let container = DIContainer()
-        let versionManager = container.makeFrameDataVersionManager()
         
         Task {
-            try await versionManager.checkVersion()
+            do {
+                try await versionManager.checkVersion()
+            } catch {
+                NSLog(error.localizedDescription)
+            }
         }
         
         let rootViewController = UINavigationController(rootViewController: container.makeCharacterListViewController())
@@ -27,5 +36,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         self.window = window
         window.makeKeyAndVisible()
+    }
+    
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        Task {
+            do {
+                try await versionManager.checkVersion()
+            } catch {
+                NSLog(error.localizedDescription)
+            }
+        }
     }
 }

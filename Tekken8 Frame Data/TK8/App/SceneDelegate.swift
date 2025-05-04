@@ -12,9 +12,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private let container = DIContainer()
     private let versionManager: FrameDataVersionManageable
     
-    init(window: UIWindow? = nil) {
-        self.window = window
+    override init() {
         versionManager = container.makeFrameDataVersionManager()
+        
+        super.init()
     }
      
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -36,15 +37,5 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         self.window = window
         window.makeKeyAndVisible()
-    }
-    
-    func sceneDidBecomeActive(_ scene: UIScene) {
-        Task {
-            do {
-                try await versionManager.checkVersion()
-            } catch {
-                NSLog(error.localizedDescription)
-            }
-        }
     }
 }

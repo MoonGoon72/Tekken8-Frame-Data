@@ -33,18 +33,28 @@ final class CoreDataManager: CoreDataManageable {
     }
     
     func deleteAll() throws {
-        let characterRequest = NSFetchRequest<CharacterEntity>(entityName: Text.character)
-        let moveRequest = NSFetchRequest<MoveEntity>(entityName: Text.move)
-        let characters = try context.fetch(characterRequest)
-        let moves = try context.fetch(moveRequest)
+        // 삭제할 엔티티 이름들을 배열로 관리
+        let entityNames = [Text.character, Text.move]
         
-        for character in characters {
-            context.delete(character)
+        for name in entityNames {
+            // 1) NSFetchRequest<Result> 생성
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: name)
+            
+            // 2) Batch Delete Request 생성
+            let batchDelete = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+            // 삭제된 객체의 ObjectID를 반환받아 컨텍스트에 머지하기 위함
+            batchDelete.resultType = .resultTypeObjectIDs
+            
+            // 3) 실행
+            let result = try context.execute(batchDelete) as? NSBatchDeleteResult
+            
+            // 4) 컨텍스트에 변경사항 머지
+            if let objectIDs = result?.result as? [NSManagedObjectID] {
+                let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
+                NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
+            }
         }
-        
-        for move in moves {
-            context.delete(move)
-        }
+        // 5) 저장
         try saveContext()
     }
 }

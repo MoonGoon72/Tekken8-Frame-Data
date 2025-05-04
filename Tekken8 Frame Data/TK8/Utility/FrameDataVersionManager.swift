@@ -22,6 +22,11 @@ final class FrameDataVersionManager: FrameDataVersionManageable {
         let localVersion = fetchLocalVersion()
         let serverVesion = try await supabaseManager.fetchVersion()
         
+        if localVersion == 0 {
+            updateLocalVersion(version: serverVesion)
+            return
+        }
+        
         if localVersion < serverVesion {
             try coreDataManager.deleteAll()
             updateLocalVersion(version: serverVesion)

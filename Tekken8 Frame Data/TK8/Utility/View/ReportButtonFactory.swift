@@ -19,7 +19,7 @@ final class ReportButtonFactory {
     
     @objc static func sendBugReport() {
         let to = "moongoon.cnu@gmail.com"
-        let subject = "[버그 제보] iOS 앱 문제"
+        let subject = "[버그 제보] TK8 앱 문제"
         let body = """
             안녕하세요, 아래에 버그 내용을 적어주세요.
             

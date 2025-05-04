@@ -27,4 +27,8 @@ final class DIContainer {
         let viewModel = MoveListViewModel(moveRepository: repository)
         return MoveListViewController(character: character, moveListViewModel: viewModel, container: self)
     }
+    
+    @MainActor func makeFrameDataVersionManager() -> FrameDataVersionManager {
+        FrameDataVersionManager(manager: supabaseManager, coreData: coreDataManager)
+    }
 }

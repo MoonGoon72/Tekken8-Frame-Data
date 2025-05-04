@@ -15,6 +15,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let window = UIWindow(windowScene: windowScene)
         let container = DIContainer()
+        let versionManager = container.makeFrameDataVersionManager()
+        
+        Task {
+            try await versionManager.checkVersion()
+        }
+        
         let rootViewController = UINavigationController(rootViewController: container.makeCharacterListViewController())
         let viewController = rootViewController
         window.rootViewController = viewController

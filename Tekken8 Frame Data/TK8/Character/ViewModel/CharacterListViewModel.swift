@@ -5,6 +5,7 @@
 //  Created by 문영균 on 4/3/25.
 //
 
+import Combine
 import Foundation
 import UIKit
 
@@ -13,10 +14,18 @@ final class CharacterListViewModel: ObservableObject {
     @Published private(set) var characterImages: [Int64: UIImage] = [:]
     @Published private(set) var filteredCharacters: [Character] = []
     private(set) var characters: [Character] = []
+    private var cancellables = Set<AnyCancellable>()
     private let repository: CharacterRepository
     
     init(characterRepository repository: CharacterRepository) {
         self.repository = repository
+        
+        NotificationCenter.default.publisher(for: .allDatabaseDeleted)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.fetchCharacters()
+            }
+            .store(in: &cancellables)
     }
     
     func fetchCharacters() {

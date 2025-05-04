@@ -22,7 +22,7 @@ final class FrameDataVersionManager: FrameDataVersionManageable {
         let localVersion = fetchLocalVersion()
         let serverVesion = try await supabaseManager.fetchVersion()
         
-        if localVersion == 0 {
+        if localVersion == 1 {
             updateLocalVersion(version: serverVesion)
             return
         }
@@ -45,7 +45,7 @@ final class FrameDataVersionManager: FrameDataVersionManageable {
 
 private enum Constants {
     enum Texts {
-        static let version = "version"
-        static let updatedAt = "updatedAt"
+        static let version = "Version"
+        static let updatedAt = "UpdatedAt"
     }
 }

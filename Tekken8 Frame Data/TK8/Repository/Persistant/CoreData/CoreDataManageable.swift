@@ -13,4 +13,5 @@ protocol CoreDataManageable {
     func saveContext() throws
     func fetch<Entity: NSManagedObject>(_ request: NSFetchRequest<Entity>) throws -> [Entity]
     func delete(_ object: NSManagedObject)
+    func deleteAll() throws
 }

@@ -63,6 +63,10 @@ final class MoveListViewController: BaseViewController {
         navigationItem.title = character.nameKR
         navigationController?.navigationBar.tintColor = .tkRed
         navigationController?.navigationBar.topItem?.title = ""
+        navigationItem.rightBarButtonItem = ReportButtonFactory.make(
+            target: ReportButtonFactory.self,
+            action: #selector(ReportButtonFactory.sendBugReport)
+        )
     }
     
     override func bindViewModel() {

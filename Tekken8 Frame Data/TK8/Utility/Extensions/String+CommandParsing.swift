@@ -9,63 +9,71 @@ import Foundation
 
 extension String {
     func tokenizeCommands() -> [String] {
-        let sorted = GlobalConstants.commands.sorted { $0.count > $1.count }
+        // 1) commands 리스트 (길이 내림차순)
+        let pre = self
+                    .replacingOccurrences(of: "(", with: " ( ")
+                    .replacingOccurrences(of: ")", with: " ) ")
+                    .replacingOccurrences(of: "[", with: " [ ")
+                    .replacingOccurrences(of: "]", with: " ] ")
         
-        /// 2. 정규식 패턴 생성 (메타문자 이스케이프 주의)
-        let escaped = sorted
-            .map { NSRegularExpression.escapedPattern(for: $0) }
-            .joined(separator: "|")
-        let pattern = "(\(escaped))"
-        let regex = try! NSRegularExpression(pattern: pattern, options: [])
+        let commands = GlobalConstants.commands.sorted { $0.count > $1.count }
         
-        /// 3. 토큰화
-        let ns = self as NSString
-        let fullRange = NSRange(location:0, length: ns.length)
-        let matches = regex.matches(in: self, range: fullRange)
-        
-        var tokens: [String] = []
-        var lastEnd = 0
-        
-        for m in matches {
-            let commandRange = m.range(at: 1)
-            // 3-1. 매치 전의 "일반 텍스트" 추출
-            if commandRange.location > lastEnd {
-                let text = ns.substring(with: NSRange(location: lastEnd, length: commandRange.location - lastEnd))
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if !text.isEmpty { tokens.append(text) }
-            }
+        // 2) “순수 커맨드 단어”만 그리디 분할해 주는 함수
+        func segmentPureCommands(_ word: String) -> [String]? {
+            var tokens: [String] = []
+            var idx = word.startIndex
             
-            // 3-2. 매치된 커맨드
-            let command = ns.substring(with: commandRange)
-            tokens.append(command)
-            
-            lastEnd = commandRange.location + commandRange.length
-        }
-        // 3-3. 마지막 일반 텍스트
-        if lastEnd < ns.length {
-            let tail = ns.substring(from: lastEnd).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !tail.isEmpty { tokens.append(tail) }
-        }
-        
-        // --- 여기서부터 후처리: 'n' 토큰 처리 ---
-        var finalTokens: [String] = []
-        for token in tokens {
-            if token == "n" {
-                // 직전 토큰이 commands 에 있는 경우에만 'n' 분리
-                if let prev = finalTokens.last, GlobalConstants.commands.contains(prev) {
-                    finalTokens.append("n")
-                } else {
-                    // 그렇지 않으면, 직전 텍스트에 붙여버리기
-                    if let last = finalTokens.popLast() {
-                        finalTokens.append(last + "n")
-                    } else {
-                        finalTokens.append("n")
+            while idx < word.endIndex {
+                // 길이가 긴 것부터 시도
+                var matched: String? = nil
+                for cmd in commands {
+                    if word[idx...].hasPrefix(cmd) {
+                        matched = cmd
+                        break
                     }
                 }
+                guard let cmd = matched else {
+                    // 어느 명령도 매칭되지 않으면 실패
+                    return nil
+                }
+                tokens.append(cmd)
+                idx = word.index(idx, offsetBy: cmd.count)
+            }
+            return tokens
+        }
+        
+        // 3) 공백·개행 단위로 먼저 단어 분리
+        let rawWords = pre
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        
+        var result: [String] = []
+        var textBuffer = ""
+        
+        // 4) 단어 단위로 순회
+        for w in rawWords {
+            if let cmdTokens = segmentPureCommands(w) {
+                // (A) 지금까지 모은 일반 텍스트가 있으면 flush
+                if !textBuffer.isEmpty {
+                    result.append(textBuffer)
+                    textBuffer = ""
+                }
+                // (B) 커맨드 토큰들을 결과에 추가
+                result.append(contentsOf: cmdTokens)
             } else {
-                finalTokens.append(token)
+                // 일반 단어는 버퍼에 붙이기 (띄어쓰기 포함)
+                if textBuffer.isEmpty {
+                    textBuffer = w
+                } else {
+                    textBuffer += " " + w
+                }
             }
         }
-        return finalTokens
+        // 마지막 텍스트 남아있으면 추가
+        if !textBuffer.isEmpty {
+            result.append(textBuffer)
+        }
+        
+        return result
     }
 }

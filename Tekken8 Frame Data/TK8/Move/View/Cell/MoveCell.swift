@@ -27,67 +27,22 @@ struct MoveCell: View, ReuseIdentifiable {
 
             CommandView(command: move.command ?? "")
             
-            // 판정
             JudgmentView(judgment: move.judgment ?? "-")
 
-            // 데미지, 발동 등 주요 수치
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("데미지")
-                        .font(.system(size: 15))
-                    Text(move.damage ?? "-")
-                        .font(.system(size: 13))
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("발동")
-                        .font(.system(size: 15))
-                    Text(move.startupFrame ?? "-")
-                        .font(.system(size: 13))
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("가드")
-                        .font(.system(size: 15))
-                    Text(move.guardFrame ?? "-")
-                        .font(.system(size: 13))
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("히트")
-                        .font(.system(size: 15))
-                    Text(move.hitFrame ?? "-")
-                        .font(.system(size: 13))
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("카운터")
-                        .font(.system(size: 15))
-                    Text(move.counterFrame ?? "-")
-                        .font(.system(size: 13))
-                }
-            }
-            .font(.caption)
+            SpecView(move: move)
 
-            // 추가 설명
-            if let description = move.description, !description.isEmpty {
-                let description = descriptionPrettyPrinter(description)
-                Text("\(description)")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
+            if let description = move.description, !description.isEmpty { DescriptionView(description: description) }
         }
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(radius: 1)
     }
-    
-    private func descriptionPrettyPrinter(_ description: String) -> String {
-        let newDescription = description.replacingOccurrences(of: "| ", with: "\n")
-        return newDescription
-    }
 }
 
 struct AttributeView: View {
-    let attributes: String
-    let token: [String]
+    private let attributes: String
+    private let token: [String]
     
     init(attributes: String) {
         self.attributes = attributes
@@ -105,20 +60,20 @@ struct AttributeView: View {
 }
 
 struct JudgmentView: View {
-    let judgment: String
-    let backgroundColor: Color
+    private let judgment: String
+    private let backgroundColor: Color
     
     init(judgment: String) {
         self.judgment = judgment
         switch judgment {
         case "상":
-            backgroundColor = Color.red.opacity(0.2)
+            backgroundColor = Color.red.opacity(0.75)
         case "중":
-            backgroundColor = Color.yellow.opacity(0.2)
+            backgroundColor = Color.yellow.opacity(0.75)
         case "하":
-            backgroundColor = Color.blue.opacity(0.2)
+            backgroundColor = Color.blue.opacity(0.75)
         default:
-            backgroundColor = Color.purple.opacity(0.2)
+            backgroundColor = Color.purple.opacity(0.75)
         }
     }
     
@@ -131,12 +86,63 @@ struct JudgmentView: View {
     }
 }
 
-struct CommandView: View {
-    let command: String
-    let tokens: [String]
+struct SpecView: View {
+    private let move: Move
     
-    init(command: String) {
+    init(move: Move) {
+        self.move = move
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("데미지")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                Text(move.damage ?? "-")
+                    .font(.system(size: 13))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("발동")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                Text(move.startupFrame ?? "-")
+                    .font(.system(size: 13))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("가드")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                Text(move.guardFrame ?? "-")
+                    .font(.system(size: 13))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("히트")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                Text(move.hitFrame ?? "-")
+                    .font(.system(size: 13))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("카운터")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                Text(move.counterFrame ?? "-")
+                    .font(.system(size: 13))
+            }
+        }
+        .font(.caption)
+    }
+}
+
+struct CommandView: View {
+    private let command: String
+    private let tokens: [String]
+    private let isDescription: Bool
+    
+    init(command: String, isDescription: Bool = false) {
         self.command = command
+        self.isDescription = isDescription
         tokens = command.tokenizeCommands()
     }
     
@@ -147,14 +153,38 @@ struct CommandView: View {
                     Image(token.contains("_") ? token + "hold" : token)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 24, height: 24)
+                        .frame(width: isDescription ? 24 : 30, height: isDescription ? 24 : 30)
                 } else {
                     Text(token)
-                        .font(.subheadline)
+                        .font(isDescription ? .subheadline : .system(size: 16))
                         .foregroundStyle(.primary)
                 }
             }
         }
+    }
+}
+
+struct DescriptionView: View {
+    private let description: String
+    
+    init(description: String) {
+        self.description = description
+    }
+    
+    var body: some View {
+        Divider()
+        ForEach(descriptionSplitter(description), id: \.self) { command in
+            CommandView(command: command, isDescription: true)
+        }
+    }
+    
+    private func descriptionPrettyPrinter(_ description: String) -> String {
+        let newDescription = description.replacingOccurrences(of: "| ", with: "\n")
+        return newDescription
+    }
+    
+    private func descriptionSplitter(_ description: String) -> [String] {
+        return description.components(separatedBy: "| ")
     }
 }
 

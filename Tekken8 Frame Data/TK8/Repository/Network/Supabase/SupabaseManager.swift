@@ -41,4 +41,13 @@ final class SupabaseManager: SupabaseManageable {
             .value
         return moves
     }
+    
+    func fetchVersion() async throws -> Int {
+        let version: [FrameDataVersion] = try await client
+            .from("frame_data_version")
+            .select()
+            .execute()
+            .value
+        return version[0].version
+    }
 }

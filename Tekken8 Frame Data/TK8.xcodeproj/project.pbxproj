@@ -25,6 +25,7 @@
 /* Begin PBXFileReference section */
 		E4024B2B2D3F399E007C855C /* TK8.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TK8.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E41737862D8BD7FC00FE79E1 /* SupabaseAPITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SupabaseAPITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E46814372DD48870004CA6E9 /* TK8Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TK8Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -39,12 +40,20 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Character/Model/Character.swift,
+				FrameDataVersion/Model/FrameDataVersion.swift,
 				Move/Model/Move.swift,
 				Repository/Network/Supabase/SupabaseManageable.swift,
-				Repository/Network/Supabase/SupabaseManager.swift,
 				Secrets.xcconfig,
 			);
 			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;
+		};
+		E4D98A822DD488AC00DD0944 /* Exceptions for "TK8" folder in "TK8Tests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Utility/Extensions/String+CommandParsing.swift",
+				Utility/GlobalConstants.swift,
+			);
+			target = E46814362DD48870004CA6E9 /* TK8Tests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -54,6 +63,7 @@
 			exceptions = (
 				E41736F22D8A6F8500FE79E1 /* Exceptions for "TK8" folder in "TK8" target */,
 				E41737912D8BD84200FE79E1 /* Exceptions for "TK8" folder in "SupabaseAPITests" target */,
+				E4D98A822DD488AC00DD0944 /* Exceptions for "TK8" folder in "TK8Tests" target */,
 			);
 			path = TK8;
 			sourceTree = "<group>";
@@ -61,6 +71,11 @@
 		E41737872D8BD7FC00FE79E1 /* SupabaseAPITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SupabaseAPITests;
+			sourceTree = "<group>";
+		};
+		E46814382DD48870004CA6E9 /* TK8Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TK8Tests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -83,6 +98,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E46814342DD48870004CA6E9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +113,7 @@
 			children = (
 				E4024B2D2D3F399E007C855C /* TK8 */,
 				E41737872D8BD7FC00FE79E1 /* SupabaseAPITests */,
+				E46814382DD48870004CA6E9 /* TK8Tests */,
 				E4024B2C2D3F399E007C855C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -100,6 +123,7 @@
 			children = (
 				E4024B2B2D3F399E007C855C /* TK8.app */,
 				E41737862D8BD7FC00FE79E1 /* SupabaseAPITests.xctest */,
+				E46814372DD48870004CA6E9 /* TK8Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -155,6 +179,28 @@
 			productReference = E41737862D8BD7FC00FE79E1 /* SupabaseAPITests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		E46814362DD48870004CA6E9 /* TK8Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E468143B2DD48870004CA6E9 /* Build configuration list for PBXNativeTarget "TK8Tests" */;
+			buildPhases = (
+				E46814332DD48870004CA6E9 /* Sources */,
+				E46814342DD48870004CA6E9 /* Frameworks */,
+				E46814352DD48870004CA6E9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E46814382DD48870004CA6E9 /* TK8Tests */,
+			);
+			name = TK8Tests;
+			packageProductDependencies = (
+			);
+			productName = TK8Tests;
+			productReference = E46814372DD48870004CA6E9 /* TK8Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -170,7 +216,9 @@
 					};
 					E41737852D8BD7FC00FE79E1 = {
 						CreatedOnToolsVersion = 16.2;
-						TestTargetID = E4024B2A2D3F399E007C855C;
+					};
+					E46814362DD48870004CA6E9 = {
+						CreatedOnToolsVersion = 16.2;
 					};
 				};
 			};
@@ -193,6 +241,7 @@
 			targets = (
 				E4024B2A2D3F399E007C855C /* TK8 */,
 				E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */,
+				E46814362DD48870004CA6E9 /* TK8Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -212,6 +261,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E46814352DD48870004CA6E9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -223,6 +279,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E41737822D8BD7FC00FE79E1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E46814332DD48870004CA6E9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -450,7 +513,6 @@
 			baseConfigurationReferenceAnchor = E4024B2D2D3F399E007C855C /* TK8 */;
 			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = K4356CVQKW;
@@ -462,7 +524,6 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TK8.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TK8";
 			};
 			name = Debug;
 		};
@@ -471,7 +532,6 @@
 			baseConfigurationReferenceAnchor = E4024B2D2D3F399E007C855C /* TK8 */;
 			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = K4356CVQKW;
@@ -483,7 +543,38 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TK8.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TK8";
+			};
+			name = Release;
+		};
+		E468143C2DD48870004CA6E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E468143D2DD48870004CA6E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -513,6 +604,15 @@
 			buildConfigurations = (
 				E417378D2D8BD7FC00FE79E1 /* Debug */,
 				E417378E2D8BD7FC00FE79E1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E468143B2DD48870004CA6E9 /* Build configuration list for PBXNativeTarget "TK8Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E468143C2DD48870004CA6E9 /* Debug */,
+				E468143D2DD48870004CA6E9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

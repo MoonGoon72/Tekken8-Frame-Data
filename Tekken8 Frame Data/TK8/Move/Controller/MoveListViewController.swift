@@ -60,7 +60,7 @@ final class MoveListViewController: BaseViewController {
         super.setupNavigationBar()
         
         setupSearchController()
-        navigationItem.title = character.nameKR
+        navigationItem.title = Bundle.main.preferredLocalizations.first == "kr" ? character.nameKR : character.nameEN
         navigationController?.navigationBar.tintColor = .tkRed
         navigationController?.navigationBar.topItem?.title = ""
         navigationItem.rightBarButtonItem = ReportButtonFactory.make(

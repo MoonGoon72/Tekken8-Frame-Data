@@ -147,7 +147,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let character = characterListViewModel.characters[indexPath.row]
+        let character = characterListViewModel.filteredCharacters[indexPath.row]
         let moveListViewController = container.makeMoveListViewController(character: character)
         navigationController?.pushViewController(moveListViewController, animated: true)
     }

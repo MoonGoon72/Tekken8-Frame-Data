@@ -116,7 +116,7 @@ extension MoveListViewController: UISearchBarDelegate {
 private extension MoveListViewController {
     func setupSearchController() {
         searchController.searchResultsUpdater = self
-        searchController.searchBar.placeholder = Texts.placeholder
+        searchController.searchBar.placeholder = Texts.placeholder.localized()
         navigationItem.searchController = searchController
         definesPresentationContext = true
     }

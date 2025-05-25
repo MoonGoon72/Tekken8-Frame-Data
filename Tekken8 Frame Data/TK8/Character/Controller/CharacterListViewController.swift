@@ -89,7 +89,7 @@ private extension CharacterListViewController {
     func setupSearchController() {
         searchController.delegate = self
         searchController.searchResultsUpdater = self
-        searchController.searchBar.placeholder = Texts.placeholder
+        searchController.searchBar.placeholder = Texts.placeholder.localized()
         navigationItem.searchController = searchController
     }
 }

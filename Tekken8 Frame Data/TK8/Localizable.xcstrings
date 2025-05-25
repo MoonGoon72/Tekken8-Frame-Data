@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "ko",
   "strings" : {
+    "[버그 제보] TK8 앱 문제" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[Bug Report] TK8 App problem"
+          }
+        }
+      }
+    },
     "가드" : {
       "extractionState" : "manual",
       "localizations" : {

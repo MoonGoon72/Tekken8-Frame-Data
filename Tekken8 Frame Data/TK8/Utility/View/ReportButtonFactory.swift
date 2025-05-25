@@ -19,14 +19,15 @@ final class ReportButtonFactory {
     
     @objc static func sendBugReport() {
         let to = "moongoon.cnu@gmail.com"
-        let subject = "[버그 제보] TK8 앱 문제"
+        let subject = "[버그 제보] TK8 앱 문제".localized()
         let body = """
             안녕하세요, 아래에 버그 내용을 적어주세요.
+            Hello, please write down the bug below.
             
             --------------------
-            앱 버전: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "알 수 없음")
-            iOS 버전: \(UIDevice.current.systemVersion)
-            디바이스: \(UIDevice.current.model)
+            App version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "알 수 없음")
+            iOS version: \(UIDevice.current.systemVersion)
+            Device: \(UIDevice.current.model)
             --------------------
             """
         

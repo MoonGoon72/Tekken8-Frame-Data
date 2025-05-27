@@ -60,7 +60,7 @@ final class MoveListViewController: BaseViewController {
         super.setupNavigationBar()
         
         setupSearchController()
-        navigationItem.title = character.nameKR
+        navigationItem.title = Bundle.main.preferredLocalizations.first == "kr" ? character.nameKR : character.nameEN
         navigationController?.navigationBar.tintColor = .tkRed
         navigationController?.navigationBar.topItem?.title = ""
         navigationItem.rightBarButtonItem = ReportButtonFactory.make(
@@ -116,7 +116,8 @@ extension MoveListViewController: UISearchBarDelegate {
 private extension MoveListViewController {
     func setupSearchController() {
         searchController.searchResultsUpdater = self
-        searchController.searchBar.placeholder = Texts.placeholder
+        searchController.searchBar.placeholder = Texts.placeholder.localized()
+        searchController.automaticallyShowsCancelButton = true
         navigationItem.searchController = searchController
         definesPresentationContext = true
     }

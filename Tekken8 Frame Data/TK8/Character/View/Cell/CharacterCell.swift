@@ -10,6 +10,14 @@ import SwiftUI
 
 struct CharacterCell: View, ReuseIdentifiable {
     var character: Character
+    var localizedName: (primary: String, secondary: String?) {
+        let preferredLanguage = Bundle.main.preferredLocalizations.first
+        if preferredLanguage == "ko" {
+            return (character.nameKR, character.nameEN)
+        } else {
+            return (character.nameEN, nil)
+        }
+    }
     @ObservedObject var viewModel: CharacterListViewModel
     
     var body: some View {
@@ -28,16 +36,17 @@ struct CharacterCell: View, ReuseIdentifiable {
                     .clipShape(.rect(cornerRadius: Constants.Literals.characterImageCornerRadius))
             }
             VStack(alignment: .leading) {
-                Text(character.nameKR)
+                Text(localizedName.primary)
                     .font(.title2)
                     .fontWeight(.semibold)
                     .padding(.leading, Constants.Literals.cellPadding)
-                Text(character.nameEN)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, Constants.Literals.cellPadding)
+                if let secondary = localizedName.secondary {
+                    Text(secondary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, Constants.Literals.cellPadding)
+                }
             }
-            .padding(.leading, Constants.Literals.cellPadding)
             Spacer()
             Image(systemName: "chevron.right")
                 .padding(.trailing, Constants.Literals.cellPadding)

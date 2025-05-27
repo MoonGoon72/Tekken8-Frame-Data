@@ -4,15 +4,25 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>TK8Tests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>7</integer>
+		</dict>
 		<key>Tekken8 Frame Data.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>0</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>E4024B2A2D3F399E007C855C</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>E46814222DD45DE2004CA6E9</key>
 		<dict>
 			<key>primary</key>
 			<true/>

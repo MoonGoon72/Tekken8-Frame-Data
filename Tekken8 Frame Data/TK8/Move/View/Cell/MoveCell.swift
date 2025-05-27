@@ -78,7 +78,7 @@ struct JudgmentView: View {
     }
     
     var body: some View {
-        Text(judgment)
+        Text(LocalizedStringKey(stringLiteral: judgment))
             .font(.caption)
             .padding(4)
             .background(backgroundColor)
@@ -96,35 +96,35 @@ struct SpecView: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("데미지")
+                Text(Constants.Texts.damage)
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
                 Text(move.damage ?? "-")
                     .font(.system(size: 13))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("발동")
+                Text(Constants.Texts.startup)
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
                 Text(move.startupFrame ?? "-")
                     .font(.system(size: 13))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("가드")
+                Text(Constants.Texts.guard)
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
                 Text(move.guardFrame ?? "-")
                     .font(.system(size: 13))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("히트")
+                Text(Constants.Texts.hit)
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
                 Text(move.hitFrame ?? "-")
                     .font(.system(size: 13))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("카운터")
+                Text(Constants.Texts.counter)
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
                 Text(move.counterFrame ?? "-")
@@ -189,7 +189,16 @@ struct DescriptionView: View {
 }
 
 private enum Constants {
-    
+    enum Texts {
+        static let damage: LocalizedStringKey = "데미지"
+        static let startup: LocalizedStringKey = "발동"
+        static let `guard`: LocalizedStringKey = "가드"
+        static let hit: LocalizedStringKey = "히트"
+        static let counter: LocalizedStringKey = "카운터"
+        static let high: LocalizedStringKey = "상"
+        static let middle: LocalizedStringKey = "중"
+        static let low: LocalizedStringKey = "하"
+    }
 }
 
 #Preview {

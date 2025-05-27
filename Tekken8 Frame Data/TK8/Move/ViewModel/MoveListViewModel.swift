@@ -39,8 +39,11 @@ final class MoveListViewModel {
                 let krMatch = move.skillNameKR?.lowercased().contains(keyword) ?? false
                 let nickMatch = move.skillNickname?.lowercased().contains(keyword) ?? false
                 let commandMatch = move.command?.lowercased().contains(keyword) ?? false
-                
-                return enMatch || krMatch || nickMatch || commandMatch
+                var attributeMatch = false
+                if keyword.contains("파크") || keyword.contains("파워크러쉬") || keyword.contains("powercrush"){
+                    attributeMatch = move.attribute?.contains("powercrush") ?? false
+                }
+                return enMatch || krMatch || nickMatch || commandMatch || attributeMatch
             }
         }
     }

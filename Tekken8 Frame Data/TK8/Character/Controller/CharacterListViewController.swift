@@ -89,7 +89,8 @@ private extension CharacterListViewController {
     func setupSearchController() {
         searchController.delegate = self
         searchController.searchResultsUpdater = self
-        searchController.searchBar.placeholder = Texts.placeholder
+        searchController.automaticallyShowsCancelButton = true
+        searchController.searchBar.placeholder = Texts.placeholder.localized()
         navigationItem.searchController = searchController
     }
 }
@@ -147,7 +148,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let character = characterListViewModel.characters[indexPath.row]
+        let character = characterListViewModel.filteredCharacters[indexPath.row]
         let moveListViewController = container.makeMoveListViewController(character: character)
         navigationController?.pushViewController(moveListViewController, animated: true)
     }

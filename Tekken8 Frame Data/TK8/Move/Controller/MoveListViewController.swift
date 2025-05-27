@@ -117,6 +117,7 @@ private extension MoveListViewController {
     func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.searchBar.placeholder = Texts.placeholder.localized()
+        searchController.automaticallyShowsCancelButton = true
         navigationItem.searchController = searchController
         definesPresentationContext = true
     }

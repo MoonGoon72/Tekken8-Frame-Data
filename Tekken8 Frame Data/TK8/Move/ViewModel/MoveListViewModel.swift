@@ -35,7 +35,7 @@ final class MoveListViewModel {
             filteredMoves = moves
         } else {
             filteredMoves = moves.filter { move in
-                let enMatch = move.skillNameEN.lowercased().contains(keyword)
+                let enMatch = move.skillNameEN?.lowercased().contains(keyword) ?? false
                 let krMatch = move.skillNameKR?.lowercased().contains(keyword) ?? false
                 let nickMatch = move.skillNickname?.lowercased().contains(keyword) ?? false
                 let commandMatch = move.command?.lowercased().contains(keyword) ?? false

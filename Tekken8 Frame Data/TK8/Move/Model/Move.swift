@@ -11,7 +11,7 @@ struct Move: Decodable, Hashable {
     let id: Int64
     let characterName: String
     let section: String
-    let skillNameEN: String
+    let skillNameEN: String?
     let skillNameKR: String?
     let skillNickname: String?
     let command: String?

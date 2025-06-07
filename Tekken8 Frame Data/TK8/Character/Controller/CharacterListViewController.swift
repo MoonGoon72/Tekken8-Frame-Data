@@ -139,7 +139,8 @@ private extension CharacterListViewController {
     func updateSnapshot(for characters: [Character]) {
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
-        snapshot.appendItems(characters)
+        snapshot.appendItems(characters, toSection: .main)
+        
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }

@@ -11,6 +11,7 @@ import Foundation
 final class MoveListViewModel {
     @Published private(set) var filteredMoves: [Move] = []
     private(set) var moves: [Move] = []
+    private var overallSections = Array<String>()
     private let repository: MoveRepository
     
     init(moveRepository repository: MoveRepository) {
@@ -21,7 +22,8 @@ final class MoveListViewModel {
         Task {
             do {
                 let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
-                filteredMoves = fetchedMoves
+                overallSections = Array<Move>.overallSectionOrder(from: fetchedMoves)
+                filteredMoves = fetchedMoves.sortedByCommandRule(overallSectionOrder: overallSections)
                 moves = fetchedMoves
             } catch {
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
@@ -44,7 +46,7 @@ final class MoveListViewModel {
                     attributeMatch = move.attribute?.contains("powercrush") ?? false
                 }
                 return enMatch || krMatch || nickMatch || commandMatch || attributeMatch
-            }
+            }.sortedByCommandRule(overallSectionOrder: overallSections)
         }
     }
     

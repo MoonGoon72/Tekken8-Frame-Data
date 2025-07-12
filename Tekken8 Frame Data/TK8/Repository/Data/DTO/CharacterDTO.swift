@@ -31,6 +31,12 @@ struct CharacterDTO {
         Character(id: id, nameEN: nameEN, nameKR: nameKR, imageURL: imageURL)
     }
     
+    func update(_ entity: CharacterEntity) {
+        entity.nameEN = nameEN
+        entity.nameKR = nameKR
+        entity.imageURL = imageURL
+    }
+    
     @discardableResult
     func toEntity(in context: NSManagedObjectContext) -> CharacterEntity {
         let entity = CharacterEntity(context: context)

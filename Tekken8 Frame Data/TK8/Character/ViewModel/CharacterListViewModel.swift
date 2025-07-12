@@ -16,6 +16,7 @@ final class CharacterListViewModel: ObservableObject {
     private(set) var characters: [Character] = []
     private var cancellables = Set<AnyCancellable>()
     private let repository: CharacterRepository
+    private let preferredLanguage = Bundle.main.preferredLocalizations.first ?? "en"
     
     init(characterRepository repository: CharacterRepository) {
         self.repository = repository
@@ -32,7 +33,12 @@ final class CharacterListViewModel: ObservableObject {
         Task {
             do {
                 let fetchedCharacters: [Character] = try await repository.fetchCharacters()
-                characters = fetchedCharacters
+                characters = fetchedCharacters.sorted {
+                    $0.localizedName(preferredLanguage: preferredLanguage)
+                        .localizedStandardCompare(
+                            $1.localizedName(preferredLanguage: preferredLanguage)
+                        ) == .orderedAscending
+                }
                 filteredCharacters = characters
                 for character in characters {
                     loadImage(for: character)
@@ -49,6 +55,11 @@ final class CharacterListViewModel: ObservableObject {
         } else {
             filteredCharacters = characters.filter {
                 $0.nameKR.contains(keyword) || $0.nameEN.lowercased().contains(keyword.lowercased())
+            }.sorted {
+                $0.localizedName(preferredLanguage: preferredLanguage)
+                    .localizedStandardCompare(
+                        $1.localizedName(preferredLanguage: preferredLanguage)
+                    ) == .orderedAscending
             }
         }
     }

@@ -20,3 +20,13 @@ struct Character: Decodable, Hashable {
         case imageURL = "image_url"
     }
 }
+
+extension Character {
+    func localizedName(preferredLanguage: String) -> String {
+        if preferredLanguage == "ko" {
+            nameKR
+        } else {
+            nameEN
+        }
+    }
+}

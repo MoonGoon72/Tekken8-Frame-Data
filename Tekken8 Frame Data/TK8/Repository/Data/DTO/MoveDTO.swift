@@ -47,7 +47,7 @@ struct MoveDTO {
         id = Int64(domain.id)
         characterName = domain.characterName
         section = domain.section
-        skillNameEN = domain.skillNameEN
+        skillNameEN = domain.skillNameEN ?? ""
         skillNameKR = domain.skillNameKR
         skillNickname = domain.skillNickname
         command = domain.command

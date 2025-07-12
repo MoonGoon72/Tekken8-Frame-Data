@@ -14,7 +14,7 @@ struct MoveCell: View, ReuseIdentifiable {
         VStack(alignment: .leading, spacing: 8) {
             // 기술명 + 커맨드
             HStack {
-                Text(move.skillNameEN)
+                Text(move.skillNameEN ?? "")
                     .font(.headline)
                     .padding(.horizontal, 3)
                 if let attribute = move.attribute, attribute != "" {

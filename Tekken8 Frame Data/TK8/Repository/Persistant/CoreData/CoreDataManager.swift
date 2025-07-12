@@ -18,6 +18,7 @@ final class CoreDataManager: CoreDataManageable {
             }
         }
         context = container.viewContext
+        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
     
     func saveContext() throws {

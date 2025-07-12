@@ -18,13 +18,12 @@ final class DefaultCharacterRepository: CharacterRepository {
     
     func fetchCharacters() async throws -> [Character] {
         let request = CharacterEntity.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "nameEN", ascending: true)]
         
         if let result = try? coreData.fetch(request), !result.isEmpty {
-            return result.map({ CharacterDTO(entity: $0).toDomain() }).sorted { $0.nameKR < $1.nameKR }
+            return result.map({ CharacterDTO(entity: $0).toDomain() })
         }
         
-        let fetchedCharacters = try await manager.fetchCharacter().sorted { $0.nameKR < $1.nameKR }
+        let fetchedCharacters = try await manager.fetchCharacter()
         try addToCoreData(fetchedCharacters)
         
         return fetchedCharacters

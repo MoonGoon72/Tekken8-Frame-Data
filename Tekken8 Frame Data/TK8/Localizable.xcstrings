@@ -12,6 +12,17 @@
         }
       }
     },
+    "<p>버그 리포트, 건의사항, 프레임 데이터 오입력 등등을 제보해주세요.</p>" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "<p>Bug report, suggestions, frame data five inputs, etc.</p>"
+          }
+        }
+      }
+    },
     "가드" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -56,6 +67,39 @@
         }
       }
     },
+    "메일 설정을 확인해주세요." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please check the mail settings."
+          }
+        }
+      }
+    },
+    "메일 전송 실패" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mail transfer failure"
+          }
+        }
+      }
+    },
+    "문제 신고" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report"
+          }
+        }
+      }
+    },
     "발동" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -78,6 +122,28 @@
         }
       }
     },
+    "앱 버전" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version Info"
+          }
+        }
+      }
+    },
+    "인앱 후원" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In app donation"
+          }
+        }
+      }
+    },
     "일반" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -96,6 +162,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "middle"
+          }
+        }
+      }
+    },
+    "철권 버전" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekken version"
           }
         }
       }
@@ -129,6 +206,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "low"
+          }
+        }
+      }
+    },
+    "확인" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept"
           }
         }
       }

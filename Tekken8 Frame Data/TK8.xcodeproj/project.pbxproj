@@ -41,9 +41,10 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Character/Model/Character.swift,
-				FrameDataVersion/Model/FrameDataVersion.swift,
 				Move/Model/Move.swift,
 				Repository/Network/Supabase/SupabaseManageable.swift,
+				Version/Model/FrameDataVersion.swift,
+				Version/Model/TekkenVersion.swift,
 			);
 			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;
 		};

@@ -26,7 +26,7 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
         
         view = tableView
         // TODO: localizing
-        title = "설정".localized()
+        title = Constants.Literals.title
     }
     
     override func setupDelegation() {
@@ -127,7 +127,7 @@ private extension SettingViewController {
             case .appVersion:
                 Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
             case .tekkenVersion:
-                UserDefaults.standard.string(forKey: "TekkenVersion")
+                UserDefaults.standard.string(forKey: Constants.Literals.tekkenVersion)
             default:
                 nil
             }
@@ -146,6 +146,8 @@ private extension SettingViewController {
     enum Constants {
         enum Literals {
             static let cellIdentifier = "SettingCell"
+            static let title = "설정".localized()
+            static let tekkenVersion = "TekkenVersion"
             enum Report {
                 static let email = "moongoon.cnu@gmail.com"
                 static let title = "Tekken8 Frame Data Bug Report"

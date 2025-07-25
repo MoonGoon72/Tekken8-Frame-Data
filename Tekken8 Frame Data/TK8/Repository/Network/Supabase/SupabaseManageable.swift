@@ -10,5 +10,6 @@ import Foundation
 protocol SupabaseManageable {
     func fetchCharacter() async throws -> [Character]
     func fetchMoves(characterName name: String) async throws -> [Move]
-    func fetchVersion() async throws -> Int
+    func fetchFrameDataVersion() async throws -> Int
+    func fetchTekkenVersion() async throws -> String
 }

@@ -133,17 +133,6 @@
         }
       }
     },
-    "인앱 후원" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In app donation"
-          }
-        }
-      }
-    },
     "일반" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -217,6 +206,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accept"
+          }
+        }
+      }
+    },
+    "후원" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donation"
           }
         }
       }

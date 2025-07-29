@@ -93,9 +93,9 @@ extension SettingViewController: UITableViewDelegate {
         case .reportIssue:
             sendReportMail()
         case .donate:
-            let alert = UIAlertController(title: "준비 중", message: "곧 찾아뵙겠습니다!", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "확인", style: .default))
-            present(alert, animated: true)
+            if let url = URL(string: "https://buymeacoffee.com/moongoon") {
+                UIApplication.shared.open(url)
+            }
         default:
             break
         }
@@ -118,7 +118,7 @@ private extension SettingViewController {
             case .reportIssue:
                 "문제 신고".localized()
             case .donate:
-                "인앱 후원".localized()
+                "후원".localized()
             }
         }
         

@@ -42,9 +42,18 @@ final class SupabaseManager: SupabaseManageable {
         return moves
     }
     
-    func fetchVersion() async throws -> Int {
+    func fetchFrameDataVersion() async throws -> Int {
         let version: [FrameDataVersion] = try await client
             .from("frame_data_version")
+            .select()
+            .execute()
+            .value
+        return version[0].version
+    }
+    
+    func fetchTekkenVersion() async throws -> String {
+        let version: [TekkenVersion] = try await client
+            .from("tekken_version")
             .select()
             .execute()
             .value

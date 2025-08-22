@@ -17,8 +17,8 @@ jobs:
     - name: 🔎 Check Available Xcode Version 🔎
       run: ls /Applications | grep Xcode
 
-    - name: Select Xcode Version 16.2
-      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+    - name: Select Xcode Version 16.4
+      run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
     
     - name: Get Path
       run: pwd

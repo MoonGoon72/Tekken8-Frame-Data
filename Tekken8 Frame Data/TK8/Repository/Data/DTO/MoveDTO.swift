@@ -81,6 +81,23 @@ struct MoveDTO {
         )
     }
     
+    func update(_ entity: MoveEntity) {
+        entity.characterName = characterName
+        entity.section = section
+        entity.skillNameEN = skillNameEN
+        entity.skillNameKR = skillNameKR
+        entity.skillNickname = skillNickname
+        entity.command = command
+        entity.judgment = judgment
+        entity.damage = damage
+        entity.startupFrame = startupFrame
+        entity.guardFrame = guardFrame
+        entity.hitFrame = hitFrame
+        entity.counterFrame = counterFrame
+        entity.attribute = attribute
+        entity.descriptions = description
+    }
+    
     @discardableResult
     func toEntity(context: NSManagedObjectContext) -> MoveEntity {
         let entity = MoveEntity(context: context)

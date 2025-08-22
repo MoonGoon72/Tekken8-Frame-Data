@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class FrameDataVersionManager: FrameDataVersionManageable {
+final class VersionManager: VersionManageable {
     private let store: UserDefaults
     private let supabaseManager: SupabaseManageable
     private let coreDataManager: CoreDataManageable
@@ -18,9 +18,9 @@ final class FrameDataVersionManager: FrameDataVersionManageable {
         coreDataManager = coreData
     }
     
-    func checkVersion() async throws {
+    func checkFrameDataVersion() async throws {
         let localVersion = fetchLocalVersion()
-        let serverVesion = try await supabaseManager.fetchVersion()
+        let serverVesion = try await supabaseManager.fetchFrameDataVersion()
         
         if localVersion == 1 {
             updateLocalVersion(version: serverVesion)
@@ -34,6 +34,12 @@ final class FrameDataVersionManager: FrameDataVersionManageable {
         }
     }
     
+    func checkTekkenVersion() async throws {
+        let tekkenVersion = try await supabaseManager.fetchTekkenVersion()
+        
+        updateTekkenVersion(version: tekkenVersion)
+    }
+    
     private func fetchLocalVersion() -> Int {
         store.integer(forKey: Constants.Texts.version)
     }
@@ -41,11 +47,15 @@ final class FrameDataVersionManager: FrameDataVersionManageable {
     private func updateLocalVersion(version: Int) {
         store.set(version, forKey: Constants.Texts.version)
     }
+    
+    private func updateTekkenVersion(version: String) {
+        store.set(version, forKey: Constants.Texts.tekkenVersion)
+    }
 }
 
 private enum Constants {
     enum Texts {
         static let version = "Version"
-        static let updatedAt = "UpdatedAt"
+        static let tekkenVersion = "TekkenVersion"
     }
 }

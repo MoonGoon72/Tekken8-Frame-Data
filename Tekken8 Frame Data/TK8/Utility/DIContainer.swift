@@ -28,7 +28,7 @@ final class DIContainer {
         return MoveListViewController(character: character, moveListViewModel: viewModel, container: self)
     }
     
-    @MainActor func makeFrameDataVersionManager() -> FrameDataVersionManager {
-        FrameDataVersionManager(manager: supabaseManager, coreData: coreDataManager)
+    @MainActor func makeVersionManager() -> VersionManager {
+        VersionManager(manager: supabaseManager, coreData: coreDataManager)
     }
 }

@@ -10,10 +10,10 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     private let container = DIContainer()
-    private let versionManager: FrameDataVersionManageable
+    private let versionManager: VersionManageable
     
     override init() {
-        versionManager = container.makeFrameDataVersionManager()
+        versionManager = container.makeVersionManager()
         
         super.init()
     }
@@ -25,8 +25,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         Task {
             do {
-                try await versionManager.checkVersion()
+                try await versionManager.checkFrameDataVersion()
+                try await versionManager.checkTekkenVersion()
             } catch {
+                // TODO: 패치 실패하면 그냥 로컬에 있는거 보여주게 하면 될 것 같음. 지금은 패치 못하면 앱이 죽음
                 NSLog(error.localizedDescription)
             }
         }

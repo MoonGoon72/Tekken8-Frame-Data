@@ -30,10 +30,24 @@ final class DefaultCharacterRepository: CharacterRepository {
     }
     
     private func addToCoreData(_ data: [Character]) throws {
-        data.forEach { item in
-            let dto = CharacterDTO(domain: item)
-            dto.toEntity(in: coreData.context)
+        let context = coreData.context
+        let characterIDs = data.map { $0.id }
+        
+        let request = CharacterEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id IN %@", characterIDs)
+        
+        let existingCharacters = try context.fetch(request)
+        let existingCharacterDict = Dictionary(uniqueKeysWithValues: existingCharacters.map { ($0.id, $0) })
+        
+        for characterData in data {
+            let dto = CharacterDTO(domain: characterData)
+            if let existingEntity = existingCharacterDict[characterData.id] {
+                dto.update(existingEntity)
+            } else {
+                dto.toEntity(in: context)
+            }
         }
+        
         try coreData.saveContext()
     }
 }

@@ -63,10 +63,13 @@ final class MoveListViewController: BaseViewController {
         navigationItem.title = Bundle.main.preferredLocalizations.first == "ko" ? character.nameKR : character.nameEN
         navigationController?.navigationBar.tintColor = .tkRed
         navigationController?.navigationBar.topItem?.title = ""
-        navigationItem.rightBarButtonItem = ReportButtonFactory.make(
-            target: ReportButtonFactory.self,
-            action: #selector(ReportButtonFactory.sendBugReport)
-        )
+        let settingsButton = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(settingsButtonTapped))
+        navigationItem.rightBarButtonItem = settingsButton
+    }
+
+    @objc private func settingsButtonTapped() {
+        let settingsViewController = SettingViewController()
+        navigationController?.pushViewController(settingsViewController, animated: true)
     }
     
     override func bindViewModel() {

@@ -41,7 +41,7 @@ final class CharacterListViewModel: ObservableObject {
                 }
                 filteredCharacters = characters
                 for character in characters {
-                    loadImage(for: character)
+                    try loadImage(for: character)
                 }
             } catch {
                 NSLog("❌ Error fetching characters: \(error)")
@@ -68,9 +68,10 @@ final class CharacterListViewModel: ObservableObject {
         filteredCharacters = characters
     }
     
-    func loadImage(for character: Character) {
+    func loadImage(for character: Character) throws {
         Task {
-            if let image = await ImageCacheManager.shared.fetch(for: character.imageURL) {
+            let url = try repository.characterImageURL(character: character).absoluteString
+            if let image = await ImageCacheManager.shared.fetch(for: url) {
                 characterImages[character.id] = image
             }
         }

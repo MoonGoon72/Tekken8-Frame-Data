@@ -59,4 +59,11 @@ final class SupabaseManager: SupabaseManageable {
             .value
         return version[0].version
     }
+    
+    func imageURL(character: String) throws -> URL {
+        let url = try client.storage
+            .from("Images")
+            .getPublicURL(path: "characterImage/\(character).png")
+        return url
+    }
 }

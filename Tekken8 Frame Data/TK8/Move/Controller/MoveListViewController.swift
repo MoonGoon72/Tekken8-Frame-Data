@@ -10,8 +10,8 @@ import SwiftUI
 import UIKit
 
 final class MoveListViewController: BaseViewController {
-    private typealias Snapshot = NSDiffableDataSourceSnapshot<String, Move>
-    private typealias MoveDataSource = UICollectionViewDiffableDataSource<String, Move>
+    private typealias Snapshot = NSDiffableDataSourceSnapshot<String, LocalizedMove>
+    private typealias MoveDataSource = UICollectionViewDiffableDataSource<String, LocalizedMove>
     
     private let moveListView: MoveListView
     private let moveListViewModel: MoveListViewModel
@@ -76,15 +76,16 @@ final class MoveListViewController: BaseViewController {
         super.bindViewModel()
         
         filteredCancellable = moveListViewModel
-            .$filteredMoves
+            .$filtered
             .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredMoves in
-                self?.updateSnapshot(for: filteredMoves)
+                self?.applySnapshot(for: filteredMoves)
             }
     }
     
     private func fetchMoves() {
         Task {
+            moveListViewModel.setLanguage(code: Bundle.main.preferredLocalizations.first)
             moveListViewModel.fetchMoves(characterName: character.nameEN)
         }
     }
@@ -98,9 +99,7 @@ extension MoveListViewController: UISearchControllerDelegate, UISearchResultsUpd
     }
     
     func updateSearchResults(for searchController: UISearchController) {
-        guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
-        else { return }
-        
+        let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         // 필터링 로직
         moveListViewModel.filter(by: text)
     }
@@ -159,34 +158,14 @@ private extension MoveListViewController {
         }
     }
     
-    func updateSnapshot(for moves: [Move]) {
+    func applySnapshot(for moves: [LocalizedMove]) {
+        var snapshot = Snapshot()
         guard !moves.isEmpty else {
-            dataSource?.apply(Snapshot(), animatingDifferences: false)
+            dataSource?.apply(snapshot, animatingDifferences: false)
             return
         }
-        var snapshot = Snapshot()
-        let sections = Set(moves.map { $0.section })
         
-        // 앞에 보여줄 섹션
-        let commonOrder = ["히트", "레이지", "일반", "앉은 상태"]
-        let frontSections = commonOrder.filter { sections.contains($0) }
-        
-        // 뒤에 보여줄 섹션
-        let endOrder = ["잡기", "반격기"]
-        let tailSections = endOrder.filter { sections.contains($0) }
-        
-        // 중간에 보여줄, 캐릭터 별 고유 섹션
-        let middleSections = sections
-            .subtracting(frontSections)
-            .subtracting(tailSections)
-        let sortedMiddle = middleSections.sorted { a, b in
-            let minA = moves.filter { $0.section == a }.map(\.id).min() ?? 0
-            let minB = moves.filter { $0.section == b }.map(\.id).min() ?? 0
-            return minA < minB
-        }
-        
-        // 최종 순서대로 합치기
-        let orderSections = frontSections + sortedMiddle + tailSections
+        let orderSections = orderedSections(from: moves)
         snapshot.appendSections(orderSections)
         
         for section in orderSections {
@@ -196,6 +175,43 @@ private extension MoveListViewController {
             snapshot.appendItems(items, toSection: section)
         }
         dataSource?.apply(snapshot, animatingDifferences: false)
+    }
+    
+    // 첫 등장 순서를 유지하면서 정렬
+    func orderedSections(from items: [LocalizedMove]) -> [String] {
+        // 현재 스냅샷에 실제로 등장한 섹션들
+        let allSections = items.compactMap { $0.section }
+        let present = Set(allSections)
+
+        // 앞에 고정으로 뿌릴 섹션(양언어 지원)
+        let commonOrder = [
+            "히트","레이지","일반","앉은 상태","앉은자세",
+            "Heat","Rage","General","While crouching"
+        ]
+        let frontSections = commonOrder.filter { present.contains($0) }
+
+        // 뒤에 보낼 섹션(양언어 지원)
+        let endOrder = [
+            "잡기","반격기",
+            "Throw","Reversal"
+        ]
+        let tailSections = endOrder.filter { present.contains($0) }
+
+        // 중간: 캐릭 고유 섹션 = 전체 - (앞+뒤)
+        let middleSet = present
+            .subtracting(frontSections)
+            .subtracting(tailSections)
+
+        // 중간 섹션 정렬: "해당 섹션이 처음 나타난 아이템의 id" 오름차순
+        // (네가 기존에 쓰던 기준과 동일)
+        let sortedMiddle = middleSet.sorted { a, b in
+            let minA = items.filter { $0.section == a }.map(\.id).min() ?? .max
+            let minB = items.filter { $0.section == b }.map(\.id).min() ?? .max
+            return minA < minB
+        }
+
+        // 최종 순서
+        return frontSections + sortedMiddle + tailSections
     }
 }
 

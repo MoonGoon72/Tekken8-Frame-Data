@@ -8,24 +8,25 @@
 import SwiftUI
 
 struct MoveCell: View, ReuseIdentifiable {
-    let move: Move
+    let move: LocalizedMove
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 기술명 + 커맨드
             HStack {
-                Text(move.skillNameEN ?? "")
+                Text(move.skillNamePrimary)
                     .font(.headline)
                     .padding(.horizontal, 3)
                 if let attribute = move.attribute, attribute != "" {
                     AttributeView(attributes: attribute)
                 }
                 Spacer()
-                Text(move.skillNameKR ?? "")
-                    .font(.subheadline)
+                if let sub = move.skillNameSecondary, !sub.isEmpty {
+                    Text(sub).font(.subheadline)
+                }
             }
 
-            CommandView(command: move.command ?? "")
+            CommandView(command: move.command)
             
             JudgmentView(judgment: move.judgment ?? "-")
 
@@ -37,6 +38,10 @@ struct MoveCell: View, ReuseIdentifiable {
         .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(radius: 1)
+        .onTapGesture {
+            print(move.command)
+            print(move.description ?? "")
+        }
     }
 }
 
@@ -87,9 +92,9 @@ struct JudgmentView: View {
 }
 
 struct SpecView: View {
-    private let move: Move
+    private let move: LocalizedMove
     
-    init(move: Move) {
+    init(move: LocalizedMove) {
         self.move = move
     }
     
@@ -201,7 +206,7 @@ private enum Constants {
     }
 }
 
-#Preview {
-    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillNameEN: "shake cancel", skillNameKR: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startupFrame: "15f", guardFrame: "+7", hitFrame: "+14", counterFrame: "+26", attribute: "", description: "개사기")
-    MoveCell(move: move)
-}
+//#Preview {
+//    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillNameEN: "shake cancel", skillNameKR: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startupFrame: "15f", guardFrame: "+7", hitFrame: "+14", counterFrame: "+26", attribute: "", description: "개사기")
+//    MoveCell(move: move)
+//}

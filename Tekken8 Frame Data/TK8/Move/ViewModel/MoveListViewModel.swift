@@ -22,7 +22,7 @@ final class MoveListViewModel {
     private var preferredSections: [String] {
         switch lang {
         case .ko:
-            return ["히트", "레이지", "일반", "앉은자세", "앉은 상태"]
+            return ["히트", "레이지", "일반", "앉은 상태"]
         case .en:
             return ["Heat", "Rage", "General", "While crouching"]
         }

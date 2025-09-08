@@ -185,7 +185,7 @@ private extension MoveListViewController {
 
         // 앞에 고정으로 뿌릴 섹션(양언어 지원)
         let commonOrder = [
-            "히트","레이지","일반","앉은 상태","앉은자세",
+            "히트","레이지","일반","앉은 상태",
             "Heat","Rage","General","While crouching"
         ]
         let frontSections = commonOrder.filter { present.contains($0) }

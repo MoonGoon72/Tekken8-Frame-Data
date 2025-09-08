@@ -8,6 +8,15 @@ import Foundation
 struct KRToENTranslator {
     // 1) 고정 치환 (오탈자 포함 교정 가능)
     static let fixedDict: [(pattern: String, replace: String)] = [
+        // Section
+        ("^히트$", "Heat"),
+        ("^레이지$", "Rage"),
+        ("^일반$", "General"),
+        ("^앉은\\s*상태$", "While crouching"),
+        ("^잡기$", "Throw"),
+        ("^반격기$", "Reversal"),
+        ("스네이크 아이", "Snake eyes"),
+        // Description
         ("레이지 아츠", "Rage Art"),
         ("히트 상태의 남은 시간을 소비", "Partially uses remaining Heat time"),
         ("히트 상태 지속 중에는 파워 상승", "Power up during Heat"),
@@ -22,13 +31,32 @@ struct KRToENTranslator {
         ("방어 행동 관통 효과 있음", "Has reversal break effect"),
         ("빠르게 입력하면 파워 상승", "Power up with quick input"),
         ("홀드하면 파워 상승", "Hold at last step to power up"),
+        ("홀드하면 파워가 상승하고 가드 대미지 추가", "Hold to power up and deal more chip damage on block"),
         ("홀드 가능", "can hold"),
         ("저스트", "Perfect Input"),
+        ("누워 쓰러져 있을 때", "While Down"),
+        ("상대가 쓰러져 있을 때", "While Opponent is Down"),
+        ("잡기 풀기 불가(?:능)?", "Throw break unavailable"),
+        ("잡기 풀기", "Throw break"),
+        ("카운터 히트", "Counter hit"),
         // 단건 문장들
         ("정면 히트 시 잡기로", "Throw when hit from the front"),
         ("히트 시 잡기로", "on hit shift to throw"),
+        ("히트 시 잡기 이행", "throw on hit"),
+        ("입력 시 3타 캔슬", "to cancel the third hit"),
+        ("하고 횡이동(?:으로)?", "and sidestep"),
         ("히트 시 상대의 회복 가능 게이지를 없앰", "Erases opponent’s recoverable health on hit"),
         ("상대의 공격을 받아내면 파워가 상승하고 가드 대미지 추가", "Absorb an attack to power up (chip damage on block)"),
+        ("상대의 펀치 공격에 맞춰서", "Time with opponent punch"),
+        ("Parry 성공 후", "After successful parry"),
+        ("상대의 상단 공격에 맞춰서", "Time with opponent high attack"),
+        ("상대의 하단 공격에 맞춰서", "Time with opponent low attack"),
+        ("상대의 잡기 기술에 맞춰서", "Time with opponent throw"),
+        ("상대의 상단 공격을 받았을 때", "take high attack from opponent"),
+        ("상대의 중단 공격을 받았을 때", "take mid attack from opponent"),
+        ("상대의 하단 공격을 받았을 때", "take low attack from opponent"),
+        ("상대의 상중단 공격을 받았을 때", "take high or mid attack from opponent"),
+        ("직접 앉은 상태", "Full Crouch"),
     ]
 
     // 2) 접두 컨텍스트(복수 가능) 추출 규칙
@@ -88,17 +116,6 @@ struct KRToENTranslator {
             s.removeSubrange(Range(m.range, in: s)!)
             return "During \(name)"
         }))
-//        // 동적: "<임의문자> 도중" → "during <…>"  (불릿 허용)
-//        arr.append((
-//            try! NSRegularExpression(pattern: #"^\s*[-–•·]?\s*([^\s].*?)\s*도중\s*"#),
-//            { m, s in
-//                let rawName = (s as NSString).substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespaces)
-//                let name = stanceNameKRtoEN(rawName)
-//                s.removeSubrange(Range(m.range, in: s)!)
-//                // 문장 맨 앞은 대문자 "During", 컨텍스트가 이어붙여질 땐 앞에서 join으로 콤마 구분됨
-//                return "During \(name)"
-//            }
-//        ))
         return arr
     }()
 

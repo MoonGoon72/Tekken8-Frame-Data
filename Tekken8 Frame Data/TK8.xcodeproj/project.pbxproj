@@ -45,6 +45,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Character/Model/Character.swift,
+				Move/Model/LocalizedMove.swift,
 				Move/Model/Move.swift,
 				Repository/Network/Supabase/SupabaseManageable.swift,
 				Version/Model/FrameDataVersion.swift,
@@ -55,6 +56,7 @@
 		E4D98A822DD488AC00DD0944 /* Exceptions for "TK8" folder in "TK8Tests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Move/Model/LocalizedMove.swift,
 				Move/Model/Move.swift,
 				"Utility/Extensions/String+CommandParsing.swift",
 				Utility/GlobalConstants.swift,
@@ -349,7 +351,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -393,7 +395,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

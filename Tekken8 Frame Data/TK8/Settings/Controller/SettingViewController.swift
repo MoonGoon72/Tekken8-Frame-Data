@@ -1,8 +1,8 @@
+import Firebase
 import MessageUI
 import UIKit
 
 class SettingViewController: BaseViewController, MFMailComposeViewControllerDelegate {
-
     private let tableView: SettingTableView
     private let settingsItems: [SettingItem] = [
         .appVersion,
@@ -93,6 +93,11 @@ extension SettingViewController: UITableViewDelegate {
         case .reportIssue:
             sendReportMail()
         case .donate:
+            Analytics.logEvent(AnalyticsEventSelectItem, parameters: [
+                AnalyticsParameterItemID: "donate",
+                AnalyticsParameterItemName: "donate",
+                AnalyticsParameterContentType: "donate"
+            ])
             if let url = URL(string: "https://buymeacoffee.com/moongoon") {
                 UIApplication.shared.open(url)
             }

@@ -161,7 +161,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "middle"
+            "value" : "mid"
           }
         }
       }
@@ -195,6 +195,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please enter the character name."
+          }
+        }
+      }
+    },
+    "특중" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "s.mid"
+          }
+        }
+      }
+    },
+    "특하" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "s.low"
           }
         }
       }

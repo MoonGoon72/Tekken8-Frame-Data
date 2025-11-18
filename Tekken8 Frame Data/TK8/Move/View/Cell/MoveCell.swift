@@ -299,7 +299,7 @@ struct FlowLayout: Layout {
 private extension String {
     /// "중중중", "중,중,상", "상/중|하", "상 중 하" 모두 ["중","중","중"] 등으로 분리
     func tokenizeJudgments() -> [String] {
-            let allowed = Set(["상","중","하","특중"]) // ← 특중 추가
+            let allowed = Set(["상", "중", "하", "특중", "특하", "상단가불", "중단가불", "가불"]) // ← 특중 추가
             let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return [] }
 
@@ -326,7 +326,22 @@ private extension String {
     }
 }
 
-//#Preview {
-//    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillNameEN: "shake cancel", skillNameKR: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startupFrame: "15f", guardFrame: "+7", hitFrame: "+14", counterFrame: "+26", attribute: "", description: "개사기")
-//    MoveCell(move: move)
-//}
+#Preview {
+    let localizedMove = LocalizedMove(
+        id: 1,
+        section: "일반",
+        skillNamePrimary: "초풍",
+        skillNameSecondary: "초풍",
+        command: "1n6ar",
+        commandEN: "f,n,d,df+rp",
+        judgment: "중단가불",
+        damage: "100",
+        startupFrame: "12",
+        guardFrame: "5",
+        hitFrame: "5",
+        counterFrame: "3",
+        attribute: "powercrush",
+        description: "- "
+    )
+    MoveCell(move: localizedMove)
+}

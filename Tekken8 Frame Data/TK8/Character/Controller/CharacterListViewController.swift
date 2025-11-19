@@ -60,15 +60,31 @@ final class CharacterListViewController: BaseViewController {
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.tintColor = .tkRed
-        let settingsButton = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(settingsButtonTapped))
-        navigationItem.rightBarButtonItem = settingsButton
+        let memoButton = UIBarButtonItem(
+            image: UIImage(systemName: "note.text"),
+            style: .plain,
+            target: self,
+            action: #selector(memoButtonTapped)
+        )
+        let settingsButton = UIBarButtonItem(
+            image: UIImage(systemName: "gearshape"),
+            style: .plain,
+            target: self,
+            action: #selector(settingsButtonTapped)
+        )
+        navigationItem.rightBarButtonItems = [settingsButton, memoButton]
     }
     
     @objc private func settingsButtonTapped() {
         let settingsViewController = SettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
-    
+
+    @objc private func memoButtonTapped() {
+        let memoViewController = MemoViewController()
+        navigationController?.pushViewController(memoViewController, animated: true)
+    }
+
     override func bindViewModel() {
         super.bindViewModel()
         

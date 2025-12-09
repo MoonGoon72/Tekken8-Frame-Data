@@ -19,6 +19,8 @@ struct KRToENTranslator {
         // Description
         ("레이지 아츠", "Rage Art"),
         ("히트 상태의 남은 시간을 소비", "Partially uses remaining Heat time"),
+        ("히트 대시 불가능", "unable to Heat Dash"),
+        ("히트 상태의 남은 시간을 회복", "partially restores remaining Heat time"),
         ("히트 상태 지속 중에는 파워 상승", "Power up during Heat"),
         ("히트 대시 발동 시에는 이행하지 않음", "Does not shift when using Heat Dash"),
         ("효과 지속 중에는 가드할 수 없음", "Cannot block (attacks taken will count as counter hit)"),
@@ -33,9 +35,12 @@ struct KRToENTranslator {
         ("홀드하면 파워 상승", "Hold at last step to power up"),
         ("홀드하면 파워가 상승하고 가드 대미지 추가", "Hold to power up and deal more chip damage on block"),
         ("홀드 가능", "can hold"),
+        ("홀드", "hold"),
         ("저스트", "Perfect Input"),
         ("누워 쓰러져 있을 때", "While Down"),
+        ("상대가 몸을 숙이고 있을 때", "Crouching opponent"),
         ("상대가 쓰러져 있을 때", "While Opponent is Down"),
+        ("지상 히트 시 잡기 풀기 불가능한 특수 상태를 유발", "triggers special stun state on ground hit that cannot be throw escaped"),
         ("잡기 풀기 불가(?:능)?", "Throw break unavailable"),
         ("잡기 풀기", "Throw break"),
         ("카운터 히트", "Counter hit"),
@@ -56,7 +61,11 @@ struct KRToENTranslator {
         ("상대의 중단 공격을 받았을 때", "take mid attack from opponent"),
         ("상대의 하단 공격을 받았을 때", "take low attack from opponent"),
         ("상대의 상중단 공격을 받았을 때", "take high or mid attack from opponent"),
-        ("직접 앉은 상태", "Full Crouch"),
+//        ("직접 앉은 상태", "Full Crouch"),
+        ("상대의 오른쪽 횡이동에 민감하게 반응하는 성능을 지님", "Has good right sidestep tracking"),
+        ("상대의 왼쪽 횡이동에 민감하게 반응하는 성능을 지님", "Has good left sidestep tracking"),
+        ("히트 스매시", "Heat Smash"),
+        ("이 공격의 대미지로는 K.O. 불가", "Can not K.O"),
     ]
 
     // 2) 접두 컨텍스트(복수 가능) 추출 규칙
@@ -175,6 +184,11 @@ struct KRToENTranslator {
             try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*공격(?:을)?\s*캔슬"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to cancel attack" }
         ))
+        // G.2) "X 를 입력하면 공격을 캔슬" -> "X to cancel attack"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*를\s*입력하면\s*공격(?:을)?\s*캔슬"#),
+            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to cancel attack" }
+        ))
         // X 입력 시 파워 상승 → X to power up
         arr.append((
             try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*파워\s*상승"#),
@@ -183,35 +197,100 @@ struct KRToENTranslator {
                 return "\(x) to power up"
             }
         ))
+        // H0) "X 입력 시/입력하면 캔슬하고 (직접) 앉은 상태로"
+        //  → "X to cancel and directly shift to crouching state"
+        arr.append((
+            try! NSRegularExpression(
+                pattern: #"(.+?)\s*입력(?:\s*시|하면)\s*캔슬하고\s*(?:직접\s*)?앉은\s*상태로"#
+            ),
+            { m, s in
+                let x = (s as NSString).substring(with: m.range(at: 1))
+                return "\(x) to cancel and directly shift to crouching state"
+            }
+        ))
         // H) "X 입력 시 캔슬" → "X to cancel"
         arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*캔슬"#),
+            try! NSRegularExpression(pattern: #"(.+?)\s*입력(?:\s*시|하면)\s*캔슬"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to cancel" }
+        ))
+        // I.3a) "X 입력 시/입력하면 상대에게 등을 보이는 상태로"
+        //   → "X to face backward"
+        arr.append((
+            try! NSRegularExpression(
+                pattern: #"(.+?)\s*입력(?:\s*시|하면)\s*상대에게\s*등을\s*보이는\s*상태로"#
+            ),
+            { m, s in
+                let x = (s as NSString).substring(with: m.range(at: 1))
+                return "\(x) to face backward"
+            }
+        ))
+
+        // I.3b) "X 입력 시/입력하면 캔슬하고 상대에게 등을 보이는 상태로"
+        //   → "X to cancel and face backward"
+        arr.append((
+            try! NSRegularExpression(
+                pattern: #"(.+?)\s*입력(?:\s*시|하면)\s*캔슬하고\s*상대에게\s*등을\s*보이는\s*상태로"#
+            ),
+            { m, s in
+                let x = (s as NSString).substring(with: m.range(at: 1))
+                return "\(x) to cancel and face backward"
+            }
+        ))
+        // J) "X 입력 시 직접 앉은 상태로" → "X to directly shift to crouching state"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*입력(?:\s*시|하면)(\s*직접)?\s*앉은\s*상태로"#),
+            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to directly shift to crouching state" }
+        ))
+        // K) "X 입력 시 쓰러진 상태로" → "X to downed"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*입력(?:\s*시|하면)\s*쓰러진\s*상태로"#),
+            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to downed" }
         ))
         // I) "X 입력 시 Y으로" → "X to shift to Y"
         arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*(.+?)으?로"#),
+            try! NSRegularExpression(pattern: #"(.+?)\s*입력(?:\s*시|하면)\s*(.+?)으?로"#),
             { m, s in
                 let x = (s as NSString).substring(with: m.range(at: 1))
                 let y = (s as NSString).substring(with: m.range(at: 2))
                 return "\(x) to shift to \(y)"
             }
         ))
-        // I.5) 단독 전환: "X(으)로" → "Shift to X"
-        //  - "입력 시 … 으로"(H)는 이미 위에서 처리
-        //  - "…로 시작하는 공격으로 이어짐"(I)은 아래에서 처리되므로 충돌 회피를 위해 (?!\s*시작하는)
+        // I.2) "X를 입력하면 캔슬하고 Y(으)로" → "X to shift to Y"
         arr.append((
-            try! NSRegularExpression(pattern: #"([A-Za-z가-힣0-9][A-Za-z가-힣0-9 '’\-\./&]*?)\s*으?로(?!\s*시작하는)\b"#),
+            try! NSRegularExpression(pattern: #"(.+?)\s*를\s*입력(?:\s*시|하면)\s*캔슬하고\s*(.+?)으?로"#),
             { m, s in
-                var name = (s as NSString).substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespaces)
-                name = name.replacingOccurrences(of: #"^\s*입력\s*시\s*"#, with: "", options: .regularExpression)
-                return "Shift to \(name)"
+                let x = (s as NSString).substring(with: m.range(at: 1))
+                let y = (s as NSString).substring(with: m.range(at: 2))
+                return "\(x) to cancel and shift to \(y)"
+            }
+        ))
+        // I.3) "X를 입력하면 상대에게 등을 보이는 상태로" → "X to downed"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*를\s*입력(?:\s*시|하면)\s*상대에게\s*등을\s*보이는\s*상태로"#),
+            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to face backward" }
+        ))
+        // I.4) "X를 입력하면 Y(으)로" → "X to shift to Y"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*를\s*입력(?:\s*시|하면)\s*(.+?)으?로"#),
+            { m, s in
+                let x = (s as NSString).substring(with: m.range(at: 1))
+                let y = (s as NSString).substring(with: m.range(at: 2))
+                return "\(x) to shift to \(y)"
             }
         ))
         // I) "X 로 시작하는 공격으로 이어짐" → "Link to attack from X"
         arr.append((
             try! NSRegularExpression(pattern: #"(.+?)\s*로\s*시작하는\s*공격으로\s*이어짐"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "Link to attack from \(x)" }
+        ))
+        // I.3c) 단독 "상대에게 등을 보이는 상태로" → "to face backward"
+        arr.append((
+            try! NSRegularExpression(
+                pattern: #"상대에게\s*등을\s*보이는\s*상태로"#
+            ),
+            { _, _ in
+                return "to face backward"
+            }
         ))
         // I.5) 단독 전환: "X(으)로" → "Shift to X"
         // ⚠️ H("입력 시 … 으로") / I("…로 시작하는 …") 뒤에 둬야 함.
@@ -231,17 +310,7 @@ struct KRToENTranslator {
                 return "Shift to \(name)"
             }
         ))
-        // J) "X 입력 시 직접 앉은 상태로" → "X to directly shift to crouching state"
-        arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*직접\s*앉은\s*상태로"#),
-            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to directly shift to crouching state" }
-        ))
-        // K) "X 입력 시 쓰러진 상태로" → "X to downed"
-        arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*쓰러진\s*상태로"#),
-            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to downed" }
-        ))
-        // L) "상대의 공격에 맞춰서 X" → "Time with opponent attack X"
+        // M) "상대의 공격에 맞춰서 X" → "Time with opponent attack X"
         arr.append((
             try! NSRegularExpression(pattern: #"상대의\s*공격에\s*맞춰서\s*(.+)"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "Time with opponent attack \(x)" }

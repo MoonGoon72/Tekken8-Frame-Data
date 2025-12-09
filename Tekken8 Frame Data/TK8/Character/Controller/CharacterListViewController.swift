@@ -107,7 +107,6 @@ final class CharacterListViewController: BaseViewController {
 
 private extension CharacterListViewController {
     func setupSearchController() {
-        searchController.delegate = self
         searchController.searchResultsUpdater = self
         searchController.automaticallyShowsCancelButton = true
         searchController.searchBar.placeholder = Texts.placeholder.localized()

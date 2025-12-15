@@ -61,15 +61,32 @@ final class CharacterListViewController: BaseViewController {
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.tintColor = .tkRed
-        let settingsButton = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(settingsButtonTapped))
-        navigationItem.rightBarButtonItem = settingsButton
+        let donationButton = UIBarButtonItem(
+            image: UIImage(systemName: "dollarsign.circle"),
+            style: .plain,
+            target: self,
+            action: #selector(donationButtonTapped)
+        )
+        let settingsButton = UIBarButtonItem(
+            image: UIImage(systemName: "gearshape"),
+            style: .plain,
+            target: self,
+            action: #selector(settingsButtonTapped)
+        )
+        navigationItem.rightBarButtonItems = [settingsButton, donationButton]
     }
     
     @objc private func settingsButtonTapped() {
         let settingsViewController = SettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
-    
+
+    @objc private func donationButtonTapped() {
+        if let url = URL(string: "https://buymeacoffee.com/moongoon") {
+            UIApplication.shared.open(url)
+        }
+    }
+
     override func bindViewModel() {
         super.bindViewModel()
         

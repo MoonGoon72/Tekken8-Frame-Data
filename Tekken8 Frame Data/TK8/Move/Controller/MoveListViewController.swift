@@ -6,6 +6,7 @@
 //
 
 import Combine
+import FirebaseAnalytics
 import SwiftUI
 import UIKit
 
@@ -102,6 +103,10 @@ extension MoveListViewController: UISearchControllerDelegate, UISearchResultsUpd
         let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         // 필터링 로직
         moveListViewModel.filter(by: text)
+        Analytics.logEvent("search_move", parameters: [
+            "character_name": character.nameEN,
+            "keyword": text
+        ])
     }
 }
 
@@ -225,6 +230,6 @@ extension MoveListViewController: UICollectionViewDelegate {
 
 private extension MoveListViewController {
     enum Texts {
-        static let placeholder = "기술명을 입력해주세요."
+        static let placeholder = "검색"
     }
 }

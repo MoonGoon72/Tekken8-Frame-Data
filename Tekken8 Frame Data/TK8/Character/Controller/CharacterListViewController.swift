@@ -6,6 +6,7 @@
 //
 
 import Combine
+import FirebaseAnalytics
 import SwiftUI
 import UIKit
 
@@ -60,15 +61,32 @@ final class CharacterListViewController: BaseViewController {
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.tintColor = .tkRed
-        let settingsButton = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(settingsButtonTapped))
-        navigationItem.rightBarButtonItem = settingsButton
+        let donationButton = UIBarButtonItem(
+            image: UIImage(systemName: "dollarsign.circle"),
+            style: .plain,
+            target: self,
+            action: #selector(donationButtonTapped)
+        )
+        let settingsButton = UIBarButtonItem(
+            image: UIImage(systemName: "gearshape"),
+            style: .plain,
+            target: self,
+            action: #selector(settingsButtonTapped)
+        )
+        navigationItem.rightBarButtonItems = [settingsButton, donationButton]
     }
     
     @objc private func settingsButtonTapped() {
         let settingsViewController = SettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
-    
+
+    @objc private func donationButtonTapped() {
+        if let url = URL(string: "https://buymeacoffee.com/moongoon") {
+            UIApplication.shared.open(url)
+        }
+    }
+
     override func bindViewModel() {
         super.bindViewModel()
         
@@ -123,6 +141,7 @@ extension CharacterListViewController: UISearchResultsUpdating {
         else { return }
         
         characterListViewModel.filter(by: text)
+        Analytics.logEvent("search_character", parameters: ["keyword": text])
     }
 }
 
@@ -155,6 +174,7 @@ extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let character = characterListViewModel.filteredCharacters[indexPath.row]
         let moveListViewController = container.makeMoveListViewController(character: character)
+        Analytics.logEvent("Character_selected", parameters: ["name": character.nameEN])
         navigationController?.pushViewController(moveListViewController, animated: true)
     }
 }

@@ -86,6 +86,7 @@ struct MoveDTO {
     
     func update(_ entity: MoveEntity) {
         entity.characterName = characterName
+        entity.sortOrder = sortOrder
         entity.section = section
         entity.skillNameEN = skillNameEN
         entity.skillNameKR = skillNameKR
@@ -105,6 +106,7 @@ struct MoveDTO {
     func toEntity(context: NSManagedObjectContext) -> MoveEntity {
         let entity = MoveEntity(context: context)
         entity.id = id
+        entity.sortOrder = sortOrder
         entity.characterName = characterName
         entity.section = section
         entity.skillNameEN = skillNameEN

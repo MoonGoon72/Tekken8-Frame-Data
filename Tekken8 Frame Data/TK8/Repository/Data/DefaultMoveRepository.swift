@@ -18,7 +18,7 @@ final class DefaultMoveRepository: MoveRepository {
     
     func fetchMoves(characterName name: String) async throws -> [Move] {
         let request = MoveEntity.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "command", ascending: true)]
+        request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
         request.predicate = NSPredicate(format: "characterName == %@", name)
         
         if let result = try? coreData.fetch(request), !result.isEmpty {

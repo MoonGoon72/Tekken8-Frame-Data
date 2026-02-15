@@ -28,7 +28,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 try await versionManager.checkFrameDataVersion()
                 try await versionManager.checkTekkenVersion()
             } catch {
-                // TODO: 패치 실패하면 그냥 로컬에 있는거 보여주게 하면 될 것 같음. 지금은 패치 못하면 앱이 죽음
                 NSLog(error.localizedDescription)
             }
         }

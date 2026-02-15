@@ -5,13 +5,13 @@ actor TranslatorEngine {
     enum Lang: String, Sendable { case ko, en }
 
     private var cache: [String: LocalizedMove] = [:]
-    private let rulesVersion = 1 // 변경했으니 버전 올려 캐시 무효화
 
     func localize(move: Move, to lang: Lang) -> LocalizedMove {
         // ko: 원형
         if lang == .ko {
             return LocalizedMove(
                 id: move.id,
+                sortOrder: move.sortOrder,
                 section: move.section,
                 skillNamePrimary: move.skillNameKR ?? move.skillNameEN ?? "",
                 skillNameSecondary: move.skillNameEN,
@@ -28,7 +28,7 @@ actor TranslatorEngine {
             )
         }
 
-        let key = "\(rulesVersion)|\(move.id)|\(move.command ?? "")|\(move.description ?? "")|\(move.section)|\(move.skillNameEN ?? "")|\(move.skillNameKR ?? "")"
+        let key = "\(move.id)|\(move.command ?? "")|\(move.description ?? "")|\(move.section)|\(move.skillNameEN ?? "")|\(move.skillNameKR ?? "")"
         if let hit = cache[key] { return hit }
 
         // TranslatorEngine.localize(_:to:)
@@ -44,6 +44,7 @@ actor TranslatorEngine {
 
         let localized = LocalizedMove(
             id: move.id,
+            sortOrder: move.sortOrder,
             section: sectionEN,
             skillNamePrimary: move.skillNameEN ?? move.skillNameKR ?? "",
             skillNameSecondary: move.skillNameKR,

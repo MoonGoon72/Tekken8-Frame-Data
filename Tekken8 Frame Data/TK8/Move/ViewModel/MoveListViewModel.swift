@@ -122,9 +122,6 @@ final class MoveListViewModel {
             return (0, i)
         }
 
-        // 버튼 우선 정렬 키 (기존 로직 준수)
-        let buttonOrder = ["lp","rp","lk","rk","ap","ak","1","2","3","4","6","7","8","9"]
-
         return items.sorted { a, b in
             // 1) 섹션
             let ls = sectionPriority(a.section)
@@ -133,26 +130,8 @@ final class MoveListViewModel {
                 if ls.0 != rs.0 { return ls.0 < rs.0 }
                 return ls.1 < rs.1
             }
-            // 2) 커맨드 토큰 비교
-            let lTokens = a.command.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-            let rTokens = b.command.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-            let maxCount = Swift.max(lTokens.count, rTokens.count)
-            for i in 0..<maxCount {
-                if i >= lTokens.count { return true }
-                if i >= rTokens.count { return false }
-                let l = String(lTokens[i]), r = String(rTokens[i])
-                if l != r {
-                    if let li = buttonOrder.firstIndex(of: l), let ri = buttonOrder.firstIndex(of: r) {
-                        return li < ri
-                    }
-                    if buttonOrder.contains(l) { return true }
-                    if buttonOrder.contains(r) { return false }
-                    if let ln = Int(l), let rn = Int(r) { return ln < rn }
-                    return l < r
-                }
-            }
-            // 3) 동일 시 id
-            return a.id < b.id
+            // 2) sortOrder 순서 정렬
+            return a.sortOrder < b.sortOrder
         }
     }
 }

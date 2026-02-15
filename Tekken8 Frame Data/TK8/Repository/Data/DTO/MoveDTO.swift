@@ -9,6 +9,7 @@ import CoreData
 
 struct MoveDTO {
     let id: Int64
+    let sortOrder: Double
     let characterName: String
     let section: String
     let skillNameEN: String
@@ -24,9 +25,9 @@ struct MoveDTO {
     let attribute: String?
     let description: String?
     
-    
     init(entity: MoveEntity) {
         id = entity.id
+        sortOrder = Double(entity.sortOrder)
         characterName = entity.characterName ?? "알 수 없음"
         section = entity.section ?? "알 수 없는 섹션"
         skillNameEN = entity.skillNameEN ?? "알 수 없는 기술 명"
@@ -45,6 +46,7 @@ struct MoveDTO {
     
     init(domain: Move) {
         id = Int64(domain.id)
+        sortOrder = domain.sortOrder
         characterName = domain.characterName
         section = domain.section
         skillNameEN = domain.skillNameEN ?? ""
@@ -64,6 +66,7 @@ struct MoveDTO {
     func toDomain() -> Move {
         Move(
             id: id,
+            sortOrder: sortOrder,
             characterName: characterName,
             section: section,
             skillNameEN: skillNameEN,

@@ -8,6 +8,7 @@
 import Foundation
 
 final class VersionManager: VersionManageable {
+    private static let currentDataSchemaVersion = 1
     private let store: UserDefaults
     private let supabaseManager: SupabaseManageable
     private let coreDataManager: CoreDataManageable
@@ -18,28 +19,42 @@ final class VersionManager: VersionManageable {
         coreDataManager = coreData
     }
     
+    func invalidateCacheIfAppUpdated() throws {
+        let saved = store.integer(forKey: Constants.Texts.localDataSchemaVersion)
+        if saved < Self.currentDataSchemaVersion {
+            try coreDataManager.deleteAll()
+            store.set(Self.currentDataSchemaVersion, forKey: Constants.Texts.localDataSchemaVersion)
+            NotificationCenter.default.post(name: .allDatabaseDeleted, object: nil)
+        }
+    }
+
     func checkFrameDataVersion() async throws {
         let localVersion = fetchLocalVersion()
         let serverVesion = try await supabaseManager.fetchFrameDataVersion()
         
         if localVersion == 1 {
             updateLocalVersion(version: serverVesion)
+            try await checkTekkenVersion()
             return
         }
         
         if localVersion < serverVesion {
             try coreDataManager.deleteAll()
             updateLocalVersion(version: serverVesion)
+            try await checkTekkenVersion()
             NotificationCenter.default.post(name: .allDatabaseDeleted, object: nil)
         }
     }
-    
-    func checkTekkenVersion() async throws {
+    // FIXME: server 버전이 높을 때만 동작하도록 하는게 최소한으로 동작하는 것. 지금은 중복된 로직이 많으니 이를 수정하는 것이 좋아보인다.
+    private func checkTekkenVersion() async throws {
         let tekkenVersion = try await supabaseManager.fetchTekkenVersion()
-        
         updateTekkenVersion(version: tekkenVersion)
     }
-    
+
+    private func updateTekkenVersion(version: String) {
+        store.set(version, forKey: Constants.Texts.tekkenVersion)
+    }
+
     private func fetchLocalVersion() -> Int {
         store.integer(forKey: Constants.Texts.version)
     }
@@ -47,15 +62,12 @@ final class VersionManager: VersionManageable {
     private func updateLocalVersion(version: Int) {
         store.set(version, forKey: Constants.Texts.version)
     }
-    
-    private func updateTekkenVersion(version: String) {
-        store.set(version, forKey: Constants.Texts.tekkenVersion)
-    }
 }
 
 private enum Constants {
     enum Texts {
         static let version = "Version"
         static let tekkenVersion = "TekkenVersion"
+        static let localDataSchemaVersion = "LocalDataSchemaVersion"
     }
 }

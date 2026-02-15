@@ -23,10 +23,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let window = UIWindow(windowScene: windowScene)
         
+        do {
+            try versionManager.invalidateCacheIfAppUpdated()
+        } catch {
+            NSLog("캐시 무효화 실패: \(error.localizedDescription)")
+        }
+
         Task {
             do {
                 try await versionManager.checkFrameDataVersion()
-                try await versionManager.checkTekkenVersion()
             } catch {
                 NSLog(error.localizedDescription)
             }

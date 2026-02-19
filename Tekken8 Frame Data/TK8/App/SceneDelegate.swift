@@ -36,11 +36,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 NSLog(error.localizedDescription)
             }
         }
-        
-        let rootViewController = UINavigationController(rootViewController: container.makeCharacterListViewController())
-        let viewController = rootViewController
-        window.rootViewController = viewController
-        
+
+        window.rootViewController = UINavigationController(rootViewController: container.makeCharacterListViewController())
+
         self.window = window
         window.makeKeyAndVisible()
     }

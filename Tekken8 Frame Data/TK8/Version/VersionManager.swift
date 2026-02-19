@@ -32,12 +32,6 @@ final class VersionManager: VersionManageable {
         let localVersion = fetchLocalVersion()
         let serverVesion = try await supabaseManager.fetchFrameDataVersion()
         
-        if localVersion == 1 {
-            updateLocalVersion(version: serverVesion)
-            try await checkTekkenVersion()
-            return
-        }
-        
         if localVersion < serverVesion {
             try coreDataManager.deleteAll()
             updateLocalVersion(version: serverVesion)
@@ -45,7 +39,7 @@ final class VersionManager: VersionManageable {
             NotificationCenter.default.post(name: .allDatabaseDeleted, object: nil)
         }
     }
-    // FIXME: server 버전이 높을 때만 동작하도록 하는게 최소한으로 동작하는 것. 지금은 중복된 로직이 많으니 이를 수정하는 것이 좋아보인다.
+    
     private func checkTekkenVersion() async throws {
         let tekkenVersion = try await supabaseManager.fetchTekkenVersion()
         updateTekkenVersion(version: tekkenVersion)

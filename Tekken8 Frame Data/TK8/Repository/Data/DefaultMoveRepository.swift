@@ -26,11 +26,12 @@ final class DefaultMoveRepository: MoveRepository {
         }
         
         let fetchedMoves = try await manager.fetchMoves(characterName: name)
-        try addToCoreData(fetchedMoves)
+        try await addToCoreData(fetchedMoves)
         
         return fetchedMoves
     }
-    
+
+    @MainActor
     private func addToCoreData(_ data: [Move]) throws {
         let context = coreData.context
         let moveIDs = data.map { $0.id }

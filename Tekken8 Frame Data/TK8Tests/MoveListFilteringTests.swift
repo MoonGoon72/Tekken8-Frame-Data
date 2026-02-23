@@ -191,6 +191,4 @@ final class MoveListFilteringTests: XCTestCase {
             XCTAssertFalse(filtered.isEmpty, "\(section) 섹션에 해당하는 기술이 있어야 함")
         }
     }
-
-    // MARK: - TODO(human): Combined Filtering Test
 }

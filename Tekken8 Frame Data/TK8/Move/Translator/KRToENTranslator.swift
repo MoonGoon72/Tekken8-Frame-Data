@@ -16,15 +16,21 @@ struct KRToENTranslator {
         ("^잡기$", "Throw"),
         ("^반격기$", "Reversal"),
         ("스네이크 아이", "Snake eyes"),
+        // 전체 문장 매칭 (부분 매칭보다 먼저 배치)
+        ("지상 히트 시 잡기 풀기 불가능한 특수 상태를 유발", "Triggers special stun state on ground hit that cannot be throw escaped"),
         // Description
         ("레이지 아츠", "Rage Art"),
         ("히트 상태의 남은 시간을 소비", "Partially uses remaining Heat time"),
         ("히트 상태 지속 중에는 파워 상승", "Power up during Heat"),
         ("히트 대시 발동 시에는 이행하지 않음", "Does not shift when using Heat Dash"),
+        ("히트 대시 불가능", "Unable to Heat Dash"),
+        ("히트 상태의 남은 시간을 회복", "Partially restores remaining Heat Time"),
         ("효과 지속 중에는 가드할 수 없음", "Cannot block (attacks taken will count as counter hit)"),
         ("가드 데미지 있음", "Chip damage on block"),
         ("가드 대미지 있음", "Chip damage on block"),
         ("상대의 공격을 받아내면 파워 상승\\(가드 데미지 증가\\)", "Absorb an attack to power up (chip damage on block)"),
+        ("상대의 오른쪽 횡이동에 민감하게 반응하는 성능을 지님", "Has good right sidestep tracking"),
+        ("상대의 왼쪽 횡이동에 민감하게 반응하는 성능을 지님", "Has good left sidestep tracking"),
         ("펀치 흘리기 효과 있음", "Punch parry effect"),
         ("하단 흘리기 효과 있음", "Has low parry effect"),
         ("킥 흘리기 효과 있음", "Has kick parry effect"),
@@ -33,13 +39,21 @@ struct KRToENTranslator {
         ("홀드하면 파워 상승", "Hold at last step to power up"),
         ("홀드하면 파워가 상승하고 가드 대미지 추가", "Hold to power up and deal more chip damage on block"),
         ("홀드 가능", "can hold"),
+        ("홀드", "hold"),
         ("저스트", "Perfect Input"),
         ("누워 쓰러져 있을 때", "While Down"),
         ("상대가 쓰러져 있을 때", "While Opponent is Down"),
+        ("상대가 몸을 숙이고 있을 때", "While Opponent is Crouching"),
         ("잡기 풀기 불가(?:능)?", "Throw break unavailable"),
         ("잡기 풀기", "Throw break"),
+        ("이 공격의 대미지로는 K.O. 불가", "Cannot K.O."),
+        ("히트 스매시", "Heat Smash"),
         ("카운터 히트", "Counter hit"),
         // 단건 문장들
+        ("상대에게 등을 보이는 상태로", "To face backward"),
+        ("근거리 정면을 보고 선 상태에서 히트 시 혹은 근거리 서서 가드 시에 잡기로", "Throw on close range standing front hit or on close range standing block"),
+        ("근거리 정면 히트 시 잡기로", "Throw on close range front hit"),
+        ("옆구르기 낙법 가능", "Side ukemi can be used"),
         ("정면 히트 시 잡기로", "Throw when hit from the front"),
         ("히트 시 잡기로", "on hit shift to throw"),
         ("히트 시 잡기 이행", "throw on hit"),
@@ -170,9 +184,18 @@ struct KRToENTranslator {
             try! NSRegularExpression(pattern: #"(.+?)를\s*획득"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "gain \(x)" }
         ))
+        // G-pre) "X 를 입력하면 캔슬하고 Y로" → "X to cancel and shift to Y"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*를\s*입력하면\s*캔슬하고\s*(.+?)으?로"#),
+            { m, s in
+                let x = (s as NSString).substring(with: m.range(at: 1))
+                let y = (s as NSString).substring(with: m.range(at: 2))
+                return "\(x) to cancel and shift to \(y)"
+            }
+        ))
         // G) "X 입력 시 공격을 캔슬" → "X to cancel attack"
         arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*공격(?:을)?\s*캔슬"#),
+            try! NSRegularExpression(pattern: #"(.+?)\s*(?:입력\s*시|를\s*입력하면)\s*공격(?:을)?\s*캔슬"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to cancel attack" }
         ))
         // X 입력 시 파워 상승 → X to power up
@@ -183,20 +206,26 @@ struct KRToENTranslator {
                 return "\(x) to power up"
             }
         ))
-        // H) "X 입력 시 캔슬" → "X to cancel"
+        // H) "X 입력 시/를 입력하면 캔슬" → "X to cancel"
         arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*캔슬"#),
+            try! NSRegularExpression(pattern: #"(.+?)\s*(?:입력\s*시|를\s*입력하면)\s*캔슬"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to cancel" }
         ))
-        // I) "X 입력 시 Y으로" → "X to shift to Y"
+        // X 입력 시 (를 입력하면) 등을 보이는 상태로 -> X to face backward
         arr.append((
-            try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*(.+?)으?로"#),
+            try! NSRegularExpression(pattern: #"(.+?)\s*(?:입력\s*시|를\s*입력하면)\s*상대에게\s*등을\s*보이는\s*상태로"#),
+            { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to face backward" }
+        ))
+        // I) "X 입력 시/를 입력하면 Y으로" → "X to shift to Y"
+        arr.append((
+            try! NSRegularExpression(pattern: #"(.+?)\s*(?:입력\s*시|를\s*입력하면)\s*(.+?)으?로"#),
             { m, s in
                 let x = (s as NSString).substring(with: m.range(at: 1))
                 let y = (s as NSString).substring(with: m.range(at: 2))
                 return "\(x) to shift to \(y)"
             }
         ))
+        
         // I.5) 단독 전환: "X(으)로" → "Shift to X"
         //  - "입력 시 … 으로"(H)는 이미 위에서 처리
         //  - "…로 시작하는 공격으로 이어짐"(I)은 아래에서 처리되므로 충돌 회피를 위해 (?!\s*시작하는)
@@ -241,6 +270,7 @@ struct KRToENTranslator {
             try! NSRegularExpression(pattern: #"(.+?)\s*입력\s*시\s*쓰러진\s*상태로"#),
             { m, s in let x = (s as NSString).substring(with: m.range(at: 1)); return "\(x) to downed" }
         ))
+
         // L) "상대의 공격에 맞춰서 X" → "Time with opponent attack X"
         arr.append((
             try! NSRegularExpression(pattern: #"상대의\s*공격에\s*맞춰서\s*(.+)"#),

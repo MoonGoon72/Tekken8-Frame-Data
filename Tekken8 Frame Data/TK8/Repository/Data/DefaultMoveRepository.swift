@@ -18,7 +18,7 @@ final class DefaultMoveRepository: MoveRepository {
     
     func fetchMoves(characterName name: String) async throws -> [Move] {
         let request = MoveEntity.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "command", ascending: true)]
+        request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
         request.predicate = NSPredicate(format: "characterName == %@", name)
         
         if let result = try? coreData.fetch(request), !result.isEmpty {
@@ -26,11 +26,12 @@ final class DefaultMoveRepository: MoveRepository {
         }
         
         let fetchedMoves = try await manager.fetchMoves(characterName: name)
-        try addToCoreData(fetchedMoves)
+        try await addToCoreData(fetchedMoves)
         
         return fetchedMoves
     }
-    
+
+    @MainActor
     private func addToCoreData(_ data: [Move]) throws {
         let context = coreData.context
         let moveIDs = data.map { $0.id }

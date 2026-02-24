@@ -24,7 +24,7 @@ final class DefaultCharacterRepository: CharacterRepository {
         }
         
         let fetchedCharacters = try await manager.fetchCharacter()
-        try addToCoreData(fetchedCharacters)
+        try await addToCoreData(fetchedCharacters)
         
         return fetchedCharacters
     }
@@ -33,7 +33,8 @@ final class DefaultCharacterRepository: CharacterRepository {
         let url = try manager.imageURL(character: character.nameEN)
         return url
     }
-    
+
+    @MainActor
     private func addToCoreData(_ data: [Character]) throws {
         let context = coreData.context
         let characterIDs = data.map { $0.id }

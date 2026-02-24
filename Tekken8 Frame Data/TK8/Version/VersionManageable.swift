@@ -6,6 +6,6 @@
 //
 
 protocol VersionManageable {
+    func invalidateCacheIfAppUpdated() throws
     func checkFrameDataVersion() async throws
-    func checkTekkenVersion() async throws
 }

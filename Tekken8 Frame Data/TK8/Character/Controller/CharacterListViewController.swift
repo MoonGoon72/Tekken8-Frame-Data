@@ -6,6 +6,7 @@
 //
 
 import Combine
+import FirebaseAnalytics
 import SwiftUI
 import UIKit
 
@@ -84,7 +85,12 @@ final class CharacterListViewController: BaseViewController {
         let memoViewController = MemoViewController()
         navigationController?.pushViewController(memoViewController, animated: true)
     }
-
+    
+    @objc private func donationButtonTapped() {
+        if let url = URL(string: "https://buymeacoffee.com/moongoon") {
+            UIApplication.shared.open(url)
+        }
+    }
     override func bindViewModel() {
         super.bindViewModel()
         
@@ -138,6 +144,7 @@ extension CharacterListViewController: UISearchResultsUpdating {
         else { return }
         
         characterListViewModel.filter(by: text)
+        Analytics.logEvent("search_character", parameters: ["keyword": text])
     }
 }
 
@@ -170,6 +177,7 @@ extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let character = characterListViewModel.filteredCharacters[indexPath.row]
         let moveListViewController = container.makeMoveListViewController(character: character)
+        Analytics.logEvent("Character_selected", parameters: ["name": character.nameEN])
         navigationController?.pushViewController(moveListViewController, animated: true)
     }
 }

@@ -1,4 +1,4 @@
-import Firebase
+import FirebaseAnalytics
 import MessageUI
 import UIKit
 

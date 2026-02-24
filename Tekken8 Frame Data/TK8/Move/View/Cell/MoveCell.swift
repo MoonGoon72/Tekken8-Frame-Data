@@ -329,6 +329,7 @@ private extension String {
 #Preview {
     let localizedMove = LocalizedMove(
         id: 1,
+        sortOrder: 1,
         section: "일반",
         skillNamePrimary: "초풍",
         skillNameSecondary: "초풍",

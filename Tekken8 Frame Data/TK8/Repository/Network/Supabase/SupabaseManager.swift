@@ -37,6 +37,7 @@ final class SupabaseManager: SupabaseManageable {
             .from("move")
             .select()
             .eq("character_name", value: name)
+            .order("sort_order")
             .execute()
             .value
         return moves

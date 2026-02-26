@@ -18,7 +18,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "<p>Bug report, suggestions, frame data five inputs, etc.</p>"
+            "value" : "<p>Please report bugs, suggestions, incorrect frame data entries, and other issues.</p>"
           }
         }
       }

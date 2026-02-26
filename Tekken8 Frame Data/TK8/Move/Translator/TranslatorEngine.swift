@@ -1,10 +1,16 @@
 // TranslatorEngine.swift
 import Foundation
 
-actor TranslatorEngine {
+private final class Box<T> {
+    let value: T
+
+    init(value: T) { self.value = value }
+}
+
+final class TranslatorEngine {
     enum Lang: String, Sendable { case ko, en }
 
-    private var cache: [String: LocalizedMove] = [:]
+    private var cache = NSCache<NSString, Box<LocalizedMove>>()
 
     func localize(move: Move, to lang: Lang) -> LocalizedMove {
         // ko: 원형
@@ -28,8 +34,8 @@ actor TranslatorEngine {
             )
         }
 
-        let key = "\(move.id)|\(move.command ?? "")|\(move.description ?? "")|\(move.section)|\(move.skillNameEN ?? "")|\(move.skillNameKR ?? "")"
-        if let hit = cache[key] { return hit }
+        let key = NSString(string: "\(move.id)|\(move.command ?? "")|\(move.description ?? "")|\(move.section)|\(move.skillNameEN ?? "")|\(move.skillNameKR ?? "")")
+        if let hit = cache.object(forKey: key) { return hit.value }
 
         // TranslatorEngine.localize(_:to:)
         let commandRaw = move.command ?? ""
@@ -59,7 +65,7 @@ actor TranslatorEngine {
             attribute: move.attribute,
             description: descEN
         )
-        cache[key] = localized
+        cache.setObject(Box<LocalizedMove>(value: localized), forKey: key)
         return localized
     }
 }

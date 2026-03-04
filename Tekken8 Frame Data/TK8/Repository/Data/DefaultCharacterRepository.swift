@@ -7,6 +7,11 @@
 
 import CoreData
 
+protocol CharacterRepository {
+    func fetchCharacters() async throws -> [Character]
+    func characterImageURL(character: Character) throws -> URL
+}
+
 final class DefaultCharacterRepository: CharacterRepository {
     private let manager: SupabaseManageable
     private let coreData: CoreDataManageable

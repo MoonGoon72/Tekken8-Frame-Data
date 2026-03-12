@@ -27,7 +27,13 @@ final class DIContainer {
         let viewModel = MoveListViewModel(moveRepository: repository)
         return MoveListViewController(character: character, moveListViewModel: viewModel, container: self)
     }
-    
+
+    @MainActor func makeMemoListViewController() -> MemoListViewController {
+        let repository = DefaultMemoRepository(coreDataManager: coreDataManager)
+        let viewModel = MemoViewModel(memoRepository: repository)
+        return MemoListViewController(viewModel: viewModel)
+    }
+
     @MainActor func makeVersionManager() -> VersionManager {
         VersionManager(manager: supabaseManager, coreData: coreDataManager)
     }

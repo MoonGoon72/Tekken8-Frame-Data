@@ -82,7 +82,7 @@ final class CharacterListViewController: BaseViewController {
     }
 
     @objc private func memoButtonTapped() {
-        let memoViewController = MemoViewController()
+        let memoViewController = container.makeMemoListViewController()
         navigationController?.pushViewController(memoViewController, animated: true)
     }
     

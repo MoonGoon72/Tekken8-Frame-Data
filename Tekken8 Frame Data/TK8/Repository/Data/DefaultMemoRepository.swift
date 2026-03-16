@@ -27,6 +27,7 @@ final class DefaultMemoRepository: MemoRepository {
         entity.characterNameEN = character
         entity.title = title
         entity.body = body
+        entity.updatedAt = Date()
         try coreDataManager.saveContext()
     }
     

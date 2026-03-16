@@ -28,7 +28,6 @@ final class MemoViewModel: ObservableObject {
         try performAndFetch {
             try memoRepository.update(memo: memo)
         }
-
     }
 
     func delete(memos: [Memo]) throws {

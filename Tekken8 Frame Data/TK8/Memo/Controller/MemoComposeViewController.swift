@@ -69,6 +69,7 @@ final class MemoComposeViewController: BaseViewController {
     }
 
     private func save() {
+        guard !memoComposeView.content.isEmpty else { return }
         let title = titleParser()
         do {
             guard var memo else {

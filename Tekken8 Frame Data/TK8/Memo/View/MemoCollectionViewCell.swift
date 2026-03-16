@@ -58,7 +58,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         // TODO: 이미지 넣기
         iconView.image = UIImage(named: "mokujin")
         title.text = memo.title
-        body.text = memo.body
+        body.text = memo.body.components(separatedBy: .newlines).dropFirst().joined(separator: "\n")
         updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .omitted)
     }
 

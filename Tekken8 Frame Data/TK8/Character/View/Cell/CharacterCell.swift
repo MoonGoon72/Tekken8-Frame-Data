@@ -21,48 +21,63 @@ struct CharacterCell: View, ReuseIdentifiable {
     @ObservedObject var viewModel: CharacterListViewModel
     
     var body: some View {
-        HStack(alignment: .center) {
-            if let image = viewModel.image(for: character) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: Constants.Literals.characterImageHeight)
-                    .clipShape(.rect(cornerRadius: Constants.Literals.characterImageCornerRadius))
-            } else {
-                Image("mokujin")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: Constants.Literals.characterImageHeight)
-                    .clipShape(.rect(cornerRadius: Constants.Literals.characterImageCornerRadius))
-            }
-            VStack(alignment: .leading) {
+        HStack(alignment: .center, spacing: 12) {
+            characterImage
+
+            VStack(alignment: .leading, spacing: 2) {
                 Text(localizedName.primary)
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.semibold)
-                    .padding(.leading, Constants.Literals.cellPadding)
+                    .foregroundStyle(.white)
                 if let secondary = localizedName.secondary {
                     Text(secondary)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, Constants.Literals.cellPadding)
+                        .foregroundStyle(.white.opacity(0.5))
                 }
             }
+            .padding(.leading, 4)
+
             Spacer()
+
             Image(systemName: "chevron.right")
-                .padding(.trailing, Constants.Literals.cellPadding)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white.opacity(0.3))
+                .padding(.trailing, 4)
         }
-        .padding(4)
-        .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .shadow(radius: 1)
+        .padding(6)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.white.opacity(0.07))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(.white.opacity(0.12), lineWidth: 0.5)
+        )
+    }
+
+    @ViewBuilder
+    private var characterImage: some View {
+        let img = viewModel.image(for: character)
+
+        Image(uiImage: img ?? UIImage(named: "mokujin")!)
+            .resizable()
+            .scaledToFill()
+            .frame(
+                width: Constants.Literals.characterImageWidth,
+                height: Constants.Literals.characterImageHeight
+            )
+            .clipShape(.rect(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.white.opacity(0.05))
+            )
     }
 }
 
 private enum Constants {
     enum Literals {
-        static let characterImageHeight = 95.0
-        static let characterImageCornerRadius = 10.0
-        static let cellPadding = 5.0
+        static let characterImageWidth = 120.0
+        static let characterImageHeight = 90.0
     }
 }
 

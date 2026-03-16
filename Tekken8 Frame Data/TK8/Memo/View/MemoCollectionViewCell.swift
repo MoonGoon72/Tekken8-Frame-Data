@@ -9,27 +9,36 @@ import UIKit
 final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     private let iconView: UIImageView = {
         let view = UIImageView()
-        view.sizeToFit()
+        view.contentMode = .scaleAspectFill
+        view.clipsToBounds = true
+        view.layer.cornerRadius = 12
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.1)
         return view
     }()
     private let contentStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
+        stackView.spacing = 3
         return stackView
     }()
     
     private let title: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .semibold)
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.textColor = .white
         return label
     }()
     private let body: UILabel = {
         let label = UILabel()
         label.numberOfLines = 1
+        label.font = .systemFont(ofSize: 13)
+        label.textColor = UIColor.white.withAlphaComponent(0.5)
         return label
     }()
     private let updatedAt: UILabel = {
         let label = UILabel()
+        label.font = .systemFont(ofSize: 11)
+        label.textColor = UIColor.white.withAlphaComponent(0.35)
         return label
     }()
 
@@ -50,41 +59,43 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         iconView.image = UIImage(named: "mokujin")
         title.text = memo.title
         body.text = memo.body
-        updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .shortened)
+        updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .omitted)
     }
 
     private func setupStyles() {
-        contentView.backgroundColor = .tkRed
-        contentView.layer.cornerRadius = 5
+        contentView.backgroundColor = UIColor.white.withAlphaComponent(0.07)
+        contentView.layer.cornerRadius = 14
+        contentView.layer.borderWidth = 0.5
+        contentView.layer.borderColor = UIColor.white.withAlphaComponent(0.12).cgColor
+        contentView.clipsToBounds = true
     }
 
     private func setupSubViews() {
         contentView.addSubview(iconView)
         contentView.addSubview(contentStackView)
+        contentView.addSubview(updatedAt)
 
         contentStackView.addArrangedSubview(title)
         contentStackView.addArrangedSubview(body)
-        contentStackView.addArrangedSubview(updatedAt)
     }
 
     private func setupSubViewLayouts() {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
-        title.translatesAutoresizingMaskIntoConstraints = false
-        body.translatesAutoresizingMaskIntoConstraints = false
         updatedAt.translatesAutoresizingMaskIntoConstraints = false
 
-        updatedAt.font = .systemFont(ofSize: 14)
-        updatedAt.textAlignment = .right
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 44),
             iconView.heightAnchor.constraint(equalTo: iconView.widthAnchor),
-            iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            contentStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            contentStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
+
+            updatedAt.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+            updatedAt.trailingAnchor.constraint(equalTo: contentStackView.trailingAnchor, constant: -16),
+
+            contentStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            contentStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
             contentStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            updatedAt.trailingAnchor.constraint(equalTo: contentStackView.trailingAnchor)
         ])
     }
 }

@@ -9,6 +9,7 @@ import UIKit
 final class MemoComposeView: BaseView {
     private let bodyTextView: UITextView = {
         let textView = UITextView()
+        textView.font = .systemFont(ofSize: 20)
         return textView
     }()
 
@@ -39,7 +40,7 @@ final class MemoComposeView: BaseView {
     }
 
     func activateTextView() {
-        becomeFirstResponder()
+        bodyTextView.becomeFirstResponder()
     }
 }
 
@@ -49,8 +50,8 @@ private extension MemoComposeView {
 
         NSLayoutConstraint.activate([
             bodyTextView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor),
-            bodyTextView.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            bodyTextView.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            bodyTextView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 10),
+            bodyTextView.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: 10),
             bodyTextView.bottomAnchor.constraint(equalTo: self.bottomAnchor)
         ])
     }

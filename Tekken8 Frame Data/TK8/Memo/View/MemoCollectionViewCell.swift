@@ -23,6 +23,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     }()
     private let title: UILabel = {
         let label = UILabel()
+        label.font = .systemFont(ofSize: 20, weight: .semibold)
         return label
     }()
     private let body: UILabel = {
@@ -38,8 +39,9 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        setupSubViewLayouts()
         setupSubViews()
+        setupSubViewLayouts()
+        setupStyles()
     }
     
     required init?(coder: NSCoder) {
@@ -50,10 +52,19 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         // TODO: 이미지 넣기
         title.text = memo.title
         body.text = memo.body
-        updatedAt.text = memo.updatedAt.description
+        updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private func setupStyles() {
+        contentView.backgroundColor = .tkRed
+        contentView.layer.cornerRadius = 5
     }
 
     private func setupSubViews() {
+        contentView.addSubview(iconView)
+        contentView.addSubview(contentStackView)
+        contentView.addSubview(detailStackView)
+
         contentStackView.addArrangedSubview(title)
         contentStackView.addArrangedSubview(detailStackView)
 
@@ -70,7 +81,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         updatedAt.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 8),
+            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             iconView.widthAnchor.constraint(equalToConstant: 44),
             iconView.heightAnchor.constraint(equalTo: iconView.widthAnchor),
             contentStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),

@@ -55,6 +55,7 @@ final class MemoListViewController: BaseViewController {
     override func setupDelegation() {
         super.setupDelegation()
         searchController.delegate = self
+        memoListView.collecionViewDelegate(self)
     }
 
     override func setupNavigationBar() {
@@ -130,6 +131,16 @@ private extension MemoListViewController {
         snapshot.appendSections([.main])
         snapshot.appendItems(memos, toSection: .main)
         dataSource?.apply(snapshot, animatingDifferences: false)
+    }
+}
+
+// MARK: - UICollectionViewDelegate Conformance
+
+extension MemoListViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let memo = memoViewModel.memos[indexPath.row]
+        let memoComposeViewCOntroller = MemoComposeViewController(memoViewModel: memoViewModel, memo: memo)
+        navigationController?.pushViewController(memoComposeViewCOntroller, animated: true)
     }
 }
 

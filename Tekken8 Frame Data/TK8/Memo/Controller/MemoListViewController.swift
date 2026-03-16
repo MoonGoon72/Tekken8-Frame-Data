@@ -47,14 +47,36 @@ final class MemoListViewController: BaseViewController {
             }
     }
 
+    override func setupDataSource() {
+        super.setupDataSource()
+        setupDiffableDataSourece()
+    }
+
     override func setupDelegation() {
         super.setupDelegation()
-
         searchController.delegate = self
     }
 
     override func setupNavigationBar() {
+        super.setupNavigationBar()
         setupSearchController()
+        let createMemoButton = UIBarButtonItem(
+            image: UIImage(systemName: "square.and.pencil"),
+            style: .plain,
+            target: self,
+            action: #selector(createMemoButtonTapped)
+        )
+        navigationItem.rightBarButtonItems = [
+            createMemoButton
+        ]
+    }
+
+    @objc private func createMemoButtonTapped() {
+        let memoComposeViewController = MemoComposeViewController(
+            memoViewModel: memoViewModel,
+            memo: nil
+        )
+        navigationController?.pushViewController(memoComposeViewController, animated: true)
     }
 }
 
@@ -96,7 +118,7 @@ private extension MemoListViewController {
     func setupDiffableDataSourece() {
         dataSource = memoDataSource(collectionView: memoListView.collectionView, cellProvider: { collectionView, indexPath, memo in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MemoCollectionViewCell.reuseIdentifier, for: indexPath) as? MemoCollectionViewCell else {
-                return UICollectionViewCell()
+                return MemoCollectionViewCell()
             }
             cell.configure(memo: memo)
             return cell
@@ -106,8 +128,8 @@ private extension MemoListViewController {
     func updateSnapshot(for memos: [Memo]) {
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
-        snapshot.appendItems(memos)
-        dataSource?.apply(snapshot)
+        snapshot.appendItems(memos, toSection: .main)
+        dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }
 

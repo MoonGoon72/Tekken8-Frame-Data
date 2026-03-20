@@ -9,14 +9,18 @@ import UIKit
 final class MemoComposeViewController: BaseViewController {
     private let memoComposeView: MemoComposeView
     private let memoViewModel: MemoViewModel
+    private let characterListViewModel: any CharacterSelectable
+    private let characterSelectViewController: CharacterSelectViewController
     private var memo: Memo?
     private var selectedCharacterName: String?
 
-    init(memoViewModel: MemoViewModel, memo: Memo?) {
+    init(memoViewModel: MemoViewModel, characterListViewModel: any CharacterSelectable, memo: Memo?) {
         self.memoViewModel = memoViewModel
+        self.characterListViewModel = characterListViewModel
         self.memo = memo
+        selectedCharacterName = memo?.characterName ?? "common"
         memoComposeView = MemoComposeView()
-
+        characterSelectViewController = CharacterSelectViewController(viewModel: characterListViewModel)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -32,7 +36,7 @@ final class MemoComposeViewController: BaseViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        save()
+        if isMovingFromParent { save() }
     }
 
     override func loadView() {
@@ -42,8 +46,7 @@ final class MemoComposeViewController: BaseViewController {
 
     override func setupNavigationBar() {
         super.setupNavigationBar()
-        navigationController?.navigationBar.tintColor = .tkBackground
-        navigationController?.title = memo?.characterName ?? "Common"
+        updateTitle(for: selectedCharacterName)
 
         let characterSelectButton = UIBarButtonItem(
             title: "Select Character",
@@ -60,8 +63,13 @@ final class MemoComposeViewController: BaseViewController {
         navigationItem.rightBarButtonItems = [ellipsisButton, characterSelectButton]
     }
 
+    override func setupDelegation() {
+        super.setupDelegation()
+        characterSelectViewController.delegate = self
+    }
+
     @objc private func characterSelectButtonTapped() {
-        
+        navigationController?.pushViewController(characterSelectViewController, animated: true)
     }
 
     @objc private func ellipsisButtonTapped() {
@@ -78,6 +86,7 @@ final class MemoComposeViewController: BaseViewController {
                 return
             }
             // Update
+            memo.characterName = selectedCharacterName ?? "common"
             memo.title = title
             memo.body = memoComposeView.content
             try memoViewModel.update(memo: memo)
@@ -92,5 +101,16 @@ final class MemoComposeViewController: BaseViewController {
 
     @MainActor required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    private func updateTitle(for title: String?) {
+        navigationItem.title = title ?? "Common"
+    }
+}
+
+extension MemoComposeViewController: Selectable {
+    func didSelectCharacter(_ character: Character) {
+        selectedCharacterName = character.nameEN
+        updateTitle(for: selectedCharacterName)
     }
 }

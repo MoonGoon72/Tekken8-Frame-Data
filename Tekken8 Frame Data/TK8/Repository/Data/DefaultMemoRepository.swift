@@ -33,6 +33,7 @@ final class DefaultMemoRepository: MemoRepository {
     
     func fetchMemos() throws -> [Memo] {
         let request = MemoEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
         let result = try coreDataManager.fetch(request)
         return result.map {
             Memo(
@@ -51,6 +52,7 @@ final class DefaultMemoRepository: MemoRepository {
         let prevMemo = try coreDataManager.fetch(request)
         guard let entity = prevMemo.first else { return }
 
+        entity.characterNameEN = memo.characterName
         entity.title = memo.title
         entity.body = memo.body
         entity.updatedAt = Date()

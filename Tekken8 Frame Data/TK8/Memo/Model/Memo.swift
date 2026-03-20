@@ -7,7 +7,7 @@ import Foundation
 
 struct Memo: Hashable {
     let id: UUID
-    let characterName: String
+    var characterName: String
     var title: String
     var body: String
     var updatedAt: Date

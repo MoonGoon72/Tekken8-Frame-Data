@@ -8,6 +8,7 @@ import Foundation
 
 final class MemoViewModel: ObservableObject {
     @Published private(set) var memos: [Memo] = []
+    @Published private(set) var filteredMemos: [Memo] = []
     private let memoRepository: MemoRepository
 
     init(memoRepository: MemoRepository) {

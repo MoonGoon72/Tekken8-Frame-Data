@@ -5,6 +5,7 @@
 //  Created by 문영균 on 3/28/25.
 //
 
+import Combine
 import Foundation
 import SwiftUI
 
@@ -18,8 +19,9 @@ struct CharacterCell: View, ReuseIdentifiable {
             return (character.nameEN, nil)
         }
     }
-    @ObservedObject var viewModel: CharacterListViewModel
-    
+    let characterImagePublisher: AnyPublisher<[String : UIImage], Never>
+    @State var characterImages: [String: UIImage] = [:]
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             characterImage
@@ -44,6 +46,9 @@ struct CharacterCell: View, ReuseIdentifiable {
                 .foregroundStyle(.white.opacity(0.3))
                 .padding(.trailing, 4)
         }
+        .onReceive(characterImagePublisher) { images in
+            characterImages = images
+        }
         .padding(6)
         .background(
             RoundedRectangle(cornerRadius: 14)
@@ -57,7 +62,7 @@ struct CharacterCell: View, ReuseIdentifiable {
 
     @ViewBuilder
     private var characterImage: some View {
-        let img = viewModel.image(for: character)
+        let img = characterImages[character.nameEN]
 
         Image(uiImage: img ?? UIImage(named: "mokujin")!)
             .resizable()
@@ -81,6 +86,6 @@ private enum Constants {
     }
 }
 
-#Preview {
-    CharacterCell(character: Character(id: 1, nameEN: "Nina Williams", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"), viewModel: CharacterListViewModel(characterRepository: DefaultCharacterRepository(manager: SupabaseManager(), coreData: CoreDataManager())))
-}
+//#Preview {
+//    CharacterCell(character: Character(id: 1, nameEN: "Nina Williams", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"), characterImagePublisher: <#T##AnyPublisher<[Int64 : UIImage], Never>#>)
+//}

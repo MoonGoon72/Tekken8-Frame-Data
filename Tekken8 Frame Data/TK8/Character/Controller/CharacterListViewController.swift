@@ -15,13 +15,12 @@ final class CharacterListViewController: BaseViewController {
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
 
     private let characterCollectionView: CharacterCollectionView
-    private let characterListViewModel: CharacterListViewModel
+    private let characterListViewModel: any CharacterFetchable & CharacterSelectable
     private let container: DIContainer
     private let searchController: UISearchController
-    private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
-    init(characterListViewModel viewModel: CharacterListViewModel, container: DIContainer) {
+    init(characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable, container: DIContainer) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
         self.container = container
@@ -82,7 +81,7 @@ final class CharacterListViewController: BaseViewController {
     }
 
     @objc private func memoButtonTapped() {
-        let memoViewController = container.makeMemoListViewController()
+        let memoViewController = container.makeMemoListViewController(characterListViewModel: characterListViewModel)
         navigationController?.pushViewController(memoViewController, animated: true)
     }
     
@@ -94,12 +93,13 @@ final class CharacterListViewController: BaseViewController {
     override func bindViewModel() {
         super.bindViewModel()
         
-        filteredCancellable = characterListViewModel
-            .$filteredCharacters
+        characterListViewModel
+            .filteredCharactersPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredCharacters in
                 self?.updateSnapshot(for: filteredCharacters)
             }
+            .store(in: &subscriptionSet)
     }
     
     private func fetchCharacters() {
@@ -156,7 +156,7 @@ private extension CharacterListViewController {
         { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
-                CharacterCell(character: itemIdentifier, viewModel: self.characterListViewModel)
+                CharacterCell(character: itemIdentifier, characterImagePublisher: self.characterListViewModel.characterImagesPublisher)
             }
             return cell
         }

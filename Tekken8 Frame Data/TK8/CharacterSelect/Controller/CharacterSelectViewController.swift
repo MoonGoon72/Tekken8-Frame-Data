@@ -8,8 +8,8 @@ import Foundation
 import SwiftUI
 import UIKit
 
-protocol CharacterSelectable: AnyObject {
-    func didSelectCharacter(_ character: Character)
+protocol Selectable: AnyObject {
+    func didSelectCharacter(_ name: Character)
 }
 
 private enum Section {
@@ -20,17 +20,14 @@ final class CharacterSelectViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Character>
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
     
-    private let characters: [Character]
-    private var filteredCharacters: [Character] = []
+    private let viewModel: any CharacterSelectable
     private let characterSelectView: CharacterCollectionView
     private let searchController: UISearchController
-    private var cancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
-    weak var delegate: CharacterSelectable?
+    weak var delegate: Selectable?
 
-    init(characters: [Character]) {
-        self.characters = characters
-        filteredCharacters = characters
+    init(viewModel: any CharacterSelectable) {
+        self.viewModel = viewModel
         characterSelectView = CharacterCollectionView()
         searchController = UISearchController(searchResultsController: nil)
         super.init(nibName: nil, bundle: nil)
@@ -45,11 +42,24 @@ final class CharacterSelectViewController: BaseViewController {
         view = characterSelectView
     }
 
+    override func bindViewModel() {
+        super.bindViewModel()
+
+        viewModel.filteredCharactersPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] characters in
+                self?.updateSnapshot(for: characters)
+            }
+            .store(in: &subscriptionSet)
+    }
+
     override func setupDataSource() {
+        super.setupDataSource()
         setupDiffableDataSource()
     }
 
     override func setupDelegation() {
+        super.setupDelegation()
         characterSelectView.setCollectionViewDelegate(self)
         searchController.delegate = self
     }
@@ -71,14 +81,14 @@ extension CharacterSelectViewController: UISearchControllerDelegate, UISearchRes
     }
 
     func willDismissSearchController(_ searchController: UISearchController) {
-        filteredCharacters = characters
+        viewModel.resetFilter()
     }
 
     func updateSearchResults(for searchController: UISearchController) {
         guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         else { return }
 
-        filteredCharacters = characters.filter { $0.nameEN.contains(text) || $0.nameKR.contains(text) }
+        viewModel.filter(by: text)
     }
 }
 
@@ -86,7 +96,7 @@ extension CharacterSelectViewController: UISearchControllerDelegate, UISearchRes
 
 extension CharacterSelectViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        delegate?.didSelectCharacter(filteredCharacters[indexPath.row])
+        delegate?.didSelectCharacter(viewModel.filteredCharacters[indexPath.row])
         navigationController?.popViewController(animated: true)
     }
 }
@@ -95,7 +105,17 @@ private extension CharacterSelectViewController {
     func setupDiffableDataSource() {
         dataSource = CharacterDataSource(collectionView: characterSelectView.characterCollectionView) { collectionView, indexPath, itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
-            cell.contentConfiguration = UIHostingConfiguration{ CharacterCell(character: itemIdentifier, viewModel: <#T##CharacterListViewModel#>) }
+            cell.contentConfiguration = UIHostingConfiguration{
+                CharacterCell(character: itemIdentifier, characterImagePublisher: self.viewModel.characterImagesPublisher)
+            }
+            return cell
         }
+    }
+
+    func updateSnapshot(for characters: [Character]) {
+        var snapshot = Snapshot()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(characters, toSection: .main)
+        dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }

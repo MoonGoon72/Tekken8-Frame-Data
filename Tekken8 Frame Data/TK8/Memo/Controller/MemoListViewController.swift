@@ -13,14 +13,15 @@ final class MemoListViewController: BaseViewController {
     private let memoListView: MemoListView
     private let searchController: UISearchController
     private let memoViewModel: MemoViewModel
-    private var filteredCancellable: AnyCancellable?
     private var dataSource: memoDataSource?
+    private let characterListViewModel: any CharacterSelectable
 
-    init(viewModel: MemoViewModel) {
+    init(viewModel: MemoViewModel, characterListViewModel: any CharacterSelectable) {
         self.memoListView = MemoListView()
         searchController = UISearchController(searchResultsController: nil)
         memoViewModel = viewModel
-        
+        self.characterListViewModel = characterListViewModel
+
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -39,12 +40,18 @@ final class MemoListViewController: BaseViewController {
         }
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateSnapshot(for: memoViewModel.memos)
+    }
+
     override func bindViewModel() {
-        filteredCancellable = memoViewModel.$memos
+        memoViewModel.$memos
             .receive(on: DispatchQueue.main)
             .sink { [weak self] memos in
                 self?.updateSnapshot(for: memos)
             }
+            .store(in: &subscriptionSet)
     }
 
     override func setupDataSource() {
@@ -75,6 +82,7 @@ final class MemoListViewController: BaseViewController {
     @objc private func createMemoButtonTapped() {
         let memoComposeViewController = MemoComposeViewController(
             memoViewModel: memoViewModel,
+            characterListViewModel: characterListViewModel,
             memo: nil
         )
         navigationController?.pushViewController(memoComposeViewController, animated: true)
@@ -121,7 +129,7 @@ private extension MemoListViewController {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MemoCollectionViewCell.reuseIdentifier, for: indexPath) as? MemoCollectionViewCell else {
                 return MemoCollectionViewCell()
             }
-            cell.configure(memo: memo)
+            cell.configure(memo: memo, image: self.characterListViewModel.image(for: memo.characterName))
             return cell
         })
     }
@@ -139,7 +147,11 @@ private extension MemoListViewController {
 extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let memo = memoViewModel.memos[indexPath.row]
-        let memoComposeViewCOntroller = MemoComposeViewController(memoViewModel: memoViewModel, memo: memo)
+        let memoComposeViewCOntroller = MemoComposeViewController(
+            memoViewModel: memoViewModel,
+            characterListViewModel: characterListViewModel,
+            memo: memo
+        )
         navigationController?.pushViewController(memoComposeViewCOntroller, animated: true)
     }
 }

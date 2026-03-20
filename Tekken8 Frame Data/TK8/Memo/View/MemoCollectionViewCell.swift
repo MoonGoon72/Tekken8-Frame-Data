@@ -3,6 +3,7 @@
 //  TK8
 //
 
+import Combine
 import Foundation
 import UIKit
 
@@ -21,7 +22,6 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         stackView.spacing = 3
         return stackView
     }()
-    
     private let title: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .semibold)
@@ -54,9 +54,8 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(memo: Memo) {
-        // TODO: 이미지 넣기
-        iconView.image = UIImage(named: "mokujin")
+    func configure(memo: Memo, image: UIImage?) {
+        iconView.image = image ?? UIImage(named: "mokujin")
         title.text = memo.title
         body.text = memo.body.components(separatedBy: .newlines).dropFirst().joined(separator: "\n")
         updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .omitted)

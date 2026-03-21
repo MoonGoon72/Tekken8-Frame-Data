@@ -54,11 +54,22 @@ final class MemoComposeViewController: BaseViewController {
             target: self,
             action: #selector(characterSelectButtonTapped)
         )
+        let menu = MemoMenuFactory.menu {
+            // Delete
+            do {
+                if let memo = self.memo {
+                    try self.memoViewModel.delete(memos: [memo])
+                }
+                self.navigationController?.popViewController(animated: true)
+            } catch {
+
+            }
+        } share: {
+            // Share
+        }
         let ellipsisButton = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
-            style: .plain,
-            target: self,
-            action: #selector(ellipsisButtonTapped)
+            menu: menu
         )
         navigationItem.rightBarButtonItems = [ellipsisButton, characterSelectButton]
     }
@@ -70,10 +81,6 @@ final class MemoComposeViewController: BaseViewController {
 
     @objc private func characterSelectButtonTapped() {
         navigationController?.pushViewController(characterSelectViewController, animated: true)
-    }
-
-    @objc private func ellipsisButtonTapped() {
-
     }
 
     private func save() {

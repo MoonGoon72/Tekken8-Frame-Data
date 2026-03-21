@@ -41,7 +41,7 @@ final class MemoListViewController: BaseViewController {
     }
 
     override func bindViewModel() {
-        memoViewModel.$memos
+        memoViewModel.$filteredMemos
             .receive(on: DispatchQueue.main)
             .sink { [weak self] memos in
                 self?.updateSnapshot(for: memos)
@@ -99,7 +99,7 @@ private extension MemoListViewController {
 
 extension MemoListViewController: UISearchControllerDelegate {
     func willDismissSearchController(_ searchController: UISearchController) {
-        // 지워진 경우 뭘 할 것인지
+        memoViewModel.resetFilter()
     }
 }
 
@@ -112,8 +112,7 @@ extension MemoListViewController: UISearchBarDelegate {
 extension MemoListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         guard let text = searchController.searchBar.text else { return }
-
-        // 필터링 로직
+        memoViewModel.filter(by: text)
     }
 }
 
@@ -141,7 +140,7 @@ private extension MemoListViewController {
 
 extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let memo = memoViewModel.memos[indexPath.row]
+        let memo = memoViewModel.filteredMemos[indexPath.row]
         let memoComposeViewCOntroller = MemoComposeViewController(
             memoViewModel: memoViewModel,
             characterListViewModel: characterListViewModel,

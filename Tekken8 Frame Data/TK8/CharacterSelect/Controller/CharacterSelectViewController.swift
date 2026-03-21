@@ -98,6 +98,7 @@ extension CharacterSelectViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         delegate?.didSelectCharacter(viewModel.filteredCharacters[indexPath.row])
         navigationController?.popViewController(animated: true)
+        viewModel.resetFilter()
     }
 }
 

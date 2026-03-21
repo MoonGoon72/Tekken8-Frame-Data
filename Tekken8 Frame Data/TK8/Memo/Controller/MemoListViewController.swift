@@ -40,11 +40,6 @@ final class MemoListViewController: BaseViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        updateSnapshot(for: memoViewModel.memos)
-    }
-
     override func bindViewModel() {
         memoViewModel.$memos
             .receive(on: DispatchQueue.main)

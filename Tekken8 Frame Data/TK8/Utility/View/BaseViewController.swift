@@ -49,8 +49,7 @@ class BaseViewController: UIViewController {
         navigationItem.hidesSearchBarWhenScrolling = true
     }
 
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
+    deinit {
         subscriptionSet.removeAll()
     }
     // MARK: Tekken8 Frame Data lifecycle

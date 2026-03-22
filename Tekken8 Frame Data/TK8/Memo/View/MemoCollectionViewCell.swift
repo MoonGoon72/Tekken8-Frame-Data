@@ -8,6 +8,27 @@ import Foundation
 import UIKit
 
 final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
+
+    // MARK: Regarding editing
+
+    private(set) var isEditingMode = false
+    private let checkmarkContainer: UIView = {
+        let view = UIView()
+        view.clipsToBounds = true
+        return view
+    }()
+    private let checkmarkImage: UIImageView = {
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+        let image = UIImage(systemName: "circle", withConfiguration: config)
+        let view = UIImageView(image: image)
+        view.tintColor = .white.withAlphaComponent(0.3)
+        view.contentMode = .center
+        return view
+    }()
+
+    // MARK: SubViews
+    private let wrapperView = UIView()
+
     private let iconView: UIImageView = {
         let view = UIImageView()
         view.contentMode = .scaleAspectFill
@@ -42,6 +63,15 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         return label
     }()
 
+    private var checkmarkWidthConstraint: NSLayoutConstraint!
+
+    override var isSelected: Bool {
+        didSet {
+            guard isEditingMode else { return }
+            updateCheckmarkAppearance(animated: true)
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -61,6 +91,63 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .omitted)
     }
 
+    func setEditing(_ editing: Bool, animated: Bool) {
+        guard isEditingMode != editing else { return }
+        isEditingMode = editing
+
+        if editing {
+            let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+            self.checkmarkImage.image = UIImage(systemName: "circle", withConfiguration: config)
+            self.checkmarkImage.tintColor = .white.withAlphaComponent(0.3)
+        }
+
+        let actions = {
+            self.checkmarkWidthConstraint.constant = editing ? 34 : 0
+            self.contentView.layoutIfNeeded()
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: actions)
+        } else {
+            actions()
+        }
+
+        if !editing {
+            updateCheckmarkAppearance(animated: false)
+        }
+    }
+
+    private func updateCheckmarkAppearance(animated: Bool) {
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+
+        let actions = {
+            if self.isSelected {
+                self.checkmarkImage.image = UIImage(systemName: "checkmark.circle.fill", withConfiguration: config)
+                self.checkmarkImage.tintColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1)
+                // 셀 tint
+                self.contentView.backgroundColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 0.12)
+                self.contentView.layer.borderColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 0.25).cgColor
+                // Teal 채우기 + 체크 아이콘 표시
+//                self.checkmarkView.backgroundColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1)
+//                self.checkmarkView.layer.borderColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1).cgColor
+//                self.checkmarkImage.alpha = 1
+            } else {
+                // 빈 원
+                self.checkmarkImage.image = UIImage(systemName: "circle", withConfiguration: config)
+                self.checkmarkImage.tintColor = UIColor.white.withAlphaComponent(0.3)
+                // 기본 glass
+                self.contentView.backgroundColor = UIColor.white.withAlphaComponent(0.07)
+                self.contentView.layer.borderColor = UIColor.white.withAlphaComponent(0.12).cgColor
+            }
+        }
+
+        if animated {
+            UIView.transition(with: checkmarkImage, duration: 0.2, options: .transitionCrossDissolve, animations: actions)
+        } else {
+            actions()
+        }
+    }
+
     private func setupStyles() {
         contentView.backgroundColor = UIColor.white.withAlphaComponent(0.07)
         contentView.layer.cornerRadius = 14
@@ -70,31 +157,59 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     }
 
     private func setupSubViews() {
-        contentView.addSubview(iconView)
-        contentView.addSubview(contentStackView)
-        contentView.addSubview(updatedAt)
+        contentView.addSubview(checkmarkContainer)
+        checkmarkContainer.addSubview(checkmarkImage)
+
+        contentView.addSubview(wrapperView)
+        wrapperView.addSubview(iconView)
+        wrapperView.addSubview(contentStackView)
+        wrapperView.addSubview(updatedAt)
 
         contentStackView.addArrangedSubview(title)
         contentStackView.addArrangedSubview(body)
     }
 
     private func setupSubViewLayouts() {
+        checkmarkContainer.translatesAutoresizingMaskIntoConstraints = false
+        checkmarkImage.translatesAutoresizingMaskIntoConstraints = false
+        wrapperView.translatesAutoresizingMaskIntoConstraints = false
         iconView.translatesAutoresizingMaskIntoConstraints = false
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
         updatedAt.translatesAutoresizingMaskIntoConstraints = false
 
+        checkmarkWidthConstraint = checkmarkContainer.widthAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            // CheckmarkContainer: 좌측, 세로 꽉 참
+            checkmarkContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            checkmarkContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
+            checkmarkContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            checkmarkWidthConstraint,
+
+            // CheckmarkImage: 컨테이너 중앙
+            checkmarkImage.centerXAnchor.constraint(equalTo: checkmarkContainer.centerXAnchor),
+            checkmarkImage.centerYAnchor.constraint(equalTo: checkmarkContainer.centerYAnchor),
+
+            // WrapperView: checkmarkContainer 우측부터 끝
+            wrapperView.leadingAnchor.constraint(equalTo: checkmarkContainer.trailingAnchor),
+            wrapperView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            wrapperView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            wrapperView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
+            // Icon
+            iconView.leadingAnchor.constraint(equalTo: wrapperView.leadingAnchor, constant: 16),
+            iconView.centerYAnchor.constraint(equalTo: wrapperView.centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 44),
             iconView.heightAnchor.constraint(equalTo: iconView.widthAnchor),
 
-            updatedAt.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+            // UpdateAt
+            updatedAt.topAnchor.constraint(equalTo: wrapperView.topAnchor, constant: 14),
             updatedAt.trailingAnchor.constraint(equalTo: contentStackView.trailingAnchor, constant: -16),
 
-            contentStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            // Content Stack
+            contentStackView.centerYAnchor.constraint(equalTo: wrapperView.centerYAnchor),
             contentStackView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
-            contentStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            contentStackView.trailingAnchor.constraint(equalTo: wrapperView.trailingAnchor, constant: -8),
         ])
     }
 }

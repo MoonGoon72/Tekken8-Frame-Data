@@ -63,24 +63,54 @@ final class MemoListViewController: BaseViewController {
     override func setupNavigationBar() {
         super.setupNavigationBar()
         setupSearchController()
-        let createMemoButton = UIBarButtonItem(
+        let menuItems: [UIAction] = {
+            let multiSelect = UIAction(title: "메모 선택".localized(), image: UIImage(systemName: "checkmark.circle")) { [weak self] _ in
+                self?.navigationController?.isToolbarHidden = false
+                self?.toggleEditiongMode()
+                self?.toolbarItems = [UIBarButtonItem(
+                    title: "삭제".localized(),
+                    style: .plain,
+                    target: self,
+                    action: #selector(self?.deleteButtonTapped)
+                )]
+            }
+            let items = [multiSelect]
+            return items
+        }()
+        let composeButton = UIBarButtonItem(
             image: UIImage(systemName: "square.and.pencil"),
             style: .plain,
             target: self,
-            action: #selector(createMemoButtonTapped)
+            action: #selector(composeButtonTapped)
         )
-        navigationItem.rightBarButtonItems = [
-            createMemoButton
-        ]
+        let ellipsisButton = UIBarButtonItem(
+            image: UIImage(systemName: "ellipsis"),
+            menu: UIMenu(options: .displayInline, children: menuItems)
+        )
+        navigationItem.rightBarButtonItems = [ellipsisButton, composeButton]
     }
 
-    @objc private func createMemoButtonTapped() {
+    @objc private func composeButtonTapped() {
         let memoComposeViewController = MemoComposeViewController(
             memoViewModel: memoViewModel,
             characterListViewModel: characterListViewModel,
             memo: nil
         )
         navigationController?.pushViewController(memoComposeViewController, animated: true)
+    }
+
+    @objc private func deleteButtonTapped() {
+        toggleEditiongMode()
+        navigationController?.isToolbarHidden = true
+    }
+
+    func toggleEditiongMode() {
+        isEditing.toggle()
+        memoListView.collectionView.allowsMultipleSelection = isEditing
+
+        memoListView.collectionView.visibleCells.compactMap { $0 as? MemoCollectionViewCell }.forEach {
+            $0.setEditing(isEditing, animated: true)
+        }
     }
 }
 
@@ -124,6 +154,7 @@ private extension MemoListViewController {
                 return MemoCollectionViewCell()
             }
             cell.configure(memo: memo, image: self.characterListViewModel.image(for: memo.characterName))
+            cell.setEditing(self.isEditing, animated: true)
             return cell
         })
     }
@@ -140,13 +171,14 @@ private extension MemoListViewController {
 
 extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if isEditing { return }
         let memo = memoViewModel.filteredMemos[indexPath.row]
-        let memoComposeViewCOntroller = MemoComposeViewController(
+        let memoComposeViewController = MemoComposeViewController(
             memoViewModel: memoViewModel,
             characterListViewModel: characterListViewModel,
             memo: memo
         )
-        navigationController?.pushViewController(memoComposeViewCOntroller, animated: true)
+        navigationController?.pushViewController(memoComposeViewController, animated: true)
     }
 }
 

@@ -27,6 +27,13 @@ final class MemoComposeViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         memoComposeView.configure(memo: memo)
+        memoComposeView.updateCharacter(
+            name: selectedCharacterName ?? "common",
+            image: characterListViewModel.image(for: selectedCharacterName ?? "")
+        )
+        memoComposeView.onCharacterChipTapped = { [weak self] in
+            self?.characterSelectButtonTapped()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -46,14 +53,7 @@ final class MemoComposeViewController: BaseViewController {
 
     override func setupNavigationBar() {
         super.setupNavigationBar()
-        updateTitle(for: selectedCharacterName)
 
-        let characterSelectButton = UIBarButtonItem(
-            title: "Select Character",
-            style: .plain,
-            target: self,
-            action: #selector(characterSelectButtonTapped)
-        )
         let menu = MemoMenuFactory.menu {
             // Delete
             do {
@@ -71,12 +71,13 @@ final class MemoComposeViewController: BaseViewController {
             image: UIImage(systemName: "ellipsis"),
             menu: menu
         )
-        navigationItem.rightBarButtonItems = [ellipsisButton, characterSelectButton]
+        navigationItem.rightBarButtonItem = ellipsisButton
     }
 
     override func setupDelegation() {
         super.setupDelegation()
         characterSelectViewController.delegate = self
+        memoComposeView.setTextViewDelegate(self)
     }
 
     @objc private func characterSelectButtonTapped() {
@@ -84,40 +85,57 @@ final class MemoComposeViewController: BaseViewController {
     }
 
     private func save() {
-        guard !memoComposeView.content.isEmpty else { return }
-        let title = titleParser()
+        guard !memoComposeView.titleContent.isEmpty ||
+                !memoComposeView.bodyContent.isEmpty else { return }
+        let title = memoComposeView.titleContent
+        let body = title + "\n" + memoComposeView.bodyContent
         do {
             guard var memo else {
                 // Create
-                try memoViewModel.create(character: selectedCharacterName ?? "common", title: title, body: memoComposeView.content)
+                try memoViewModel.create(character: selectedCharacterName ?? "common", title: title, body: body)
                 return
             }
+            guard isUpdated(title: title, body: body) else { return }
             // Update
             memo.characterName = selectedCharacterName ?? "common"
             memo.title = title
-            memo.body = memoComposeView.content
+            memo.body = body
             try memoViewModel.update(memo: memo)
         } catch {
             // 문제 발생 Alert
         }
     }
 
-    private func titleParser() -> String {
-        memoComposeView.content.components(separatedBy: .newlines).first ?? ""
+    private func isUpdated(title: String, body: String) -> Bool {
+        return memo?.characterName != selectedCharacterName || memo?.title != title || memo?.body != body
     }
 
     @MainActor required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    private func updateTitle(for title: String?) {
-        navigationItem.title = title ?? "Common"
     }
 }
 
 extension MemoComposeViewController: Selectable {
     func didSelectCharacter(_ character: Character) {
         selectedCharacterName = character.nameEN
-        updateTitle(for: selectedCharacterName)
+        memoComposeView.updateCharacter(
+            name: character.nameEN,
+            image: characterListViewModel.image(for: character.nameEN)
+        )
+    }
+}
+
+extension MemoComposeViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        memoComposeView.updatePlaceholders()
+    }
+
+    func textView(_ textView: UITextView, shouldChangeTextInRanges ranges: [NSValue], replacementText text: String) -> Bool {
+        // Title에서 Enter 입력 시 body로 이동
+        if textView === memoComposeView.titleField, text == "\n" {
+            memoComposeView.focusBody()
+            return false
+        }
+        return true
     }
 }

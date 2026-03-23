@@ -100,6 +100,17 @@
         }
       }
     },
+    "메모 선택" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select memo"
+          }
+        }
+      }
+    },
     "메일 설정을 확인해주세요." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -184,6 +195,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "normal"
+          }
+        }
+      }
+    },
+    "작성할 메모를 입력하세요." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write your memo here..."
+          }
+        }
+      }
+    },
+    "전체 선택" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All"
           }
         }
       }

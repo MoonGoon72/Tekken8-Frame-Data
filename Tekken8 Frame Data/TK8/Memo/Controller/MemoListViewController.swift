@@ -97,6 +97,17 @@ final class MemoListViewController: BaseViewController {
         composeRightBarButtons()
     }
 
+    @objc private func selectAllButtonTapped() {
+        (0..<memoViewModel.filteredMemos.count).forEach {
+            let indexPath = IndexPath(row: $0, section: 0)
+            memoListView.collectionView.selectItem(
+                at: indexPath,
+                animated: true,
+                scrollPosition: []
+            )
+        }
+    }
+
     func toggleEditingMode() {
         isEditing.toggle()
         memoListView.collectionView.allowsMultipleSelection = isEditing
@@ -111,12 +122,21 @@ final class MemoListViewController: BaseViewController {
             let multiSelect = UIAction(title: "메모 선택".localized(), image: UIImage(systemName: "checkmark.circle")) { [weak self] _ in
                 self?.navigationController?.isToolbarHidden = false
                 self?.toggleEditingMode()
-                self?.toolbarItems = [UIBarButtonItem(
-                    title: "삭제".localized(),
-                    style: .plain,
-                    target: self,
-                    action: #selector(self?.deleteButtonTapped)
-                )]
+                self?.toolbarItems = [
+                    UIBarButtonItem(
+                        title: "전체 선택".localized(),
+                        style: .plain,
+                        target: self,
+                        action: #selector(self?.selectAllButtonTapped)
+                    ),
+                    UIBarButtonItem(systemItem: .flexibleSpace),
+                    UIBarButtonItem(
+                        title: "삭제".localized(),
+                        style: .plain,
+                        target: self,
+                        action: #selector(self?.deleteButtonTapped)
+                    )
+                ]
             }
             let items = [multiSelect]
             return items
@@ -215,6 +235,33 @@ extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         let cell = cell as? MemoCollectionViewCell
         cell?.setEditing(isEditing, animated: true)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let indexPath = indexPaths.first else { return nil }
+        let memo = memoViewModel.filteredMemos[indexPath.row]
+
+        let config = UIContextMenuConfiguration(previewProvider: {
+            let previewProvider = MemoComposeViewController(
+                memoViewModel: self.memoViewModel,
+                characterListViewModel: self.characterListViewModel,
+                memo: memo
+            )
+            return previewProvider
+        }) { _ in
+            MemoMenuFactory.menu {
+                // Delete
+                do {
+                    try self.memoViewModel.delete(memos: [memo])
+                } catch {
+
+                }
+            } share: {
+                // Share
+            }
+
+        }
+        return config
     }
 }
 

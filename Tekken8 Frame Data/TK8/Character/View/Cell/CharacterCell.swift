@@ -20,7 +20,7 @@ struct CharacterCell: View, ReuseIdentifiable {
         }
     }
     let characterImagePublisher: AnyPublisher<[String : UIImage], Never>
-    @State var characterImages: [String: UIImage] = [:]
+    @State var characterImages: [String: UIImage]
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -86,6 +86,10 @@ private enum Constants {
     }
 }
 
-//#Preview {
-//    CharacterCell(character: Character(id: 1, nameEN: "Nina Williams", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"), characterImagePublisher: <#T##AnyPublisher<[Int64 : UIImage], Never>#>)
-//}
+#Preview {
+    CharacterCell(
+        character: Character(id: 1, nameEN: "Nina Williams", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"),
+        characterImagePublisher: Empty().eraseToAnyPublisher(),
+        characterImages: [:],
+    )
+}

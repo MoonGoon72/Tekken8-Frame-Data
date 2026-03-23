@@ -153,10 +153,17 @@ extension CharacterListViewController: UISearchResultsUpdating {
 private extension CharacterListViewController {
     func setupDiffableDataSource() {
         dataSource = CharacterDataSource(collectionView: characterCollectionView.characterCollectionView)
-        { collectionView, indexPath, itemIdentifier in
+        {
+            collectionView,
+            indexPath,
+            itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
-                CharacterCell(character: itemIdentifier, characterImagePublisher: self.characterListViewModel.characterImagesPublisher)
+                CharacterCell(
+                    character: itemIdentifier,
+                    characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
+                    characterImages: self.characterListViewModel.characterImages
+                )
             }
             return cell
         }

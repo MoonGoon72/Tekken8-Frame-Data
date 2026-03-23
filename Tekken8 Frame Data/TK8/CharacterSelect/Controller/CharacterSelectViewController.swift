@@ -104,10 +104,17 @@ extension CharacterSelectViewController: UICollectionViewDelegate {
 
 private extension CharacterSelectViewController {
     func setupDiffableDataSource() {
-        dataSource = CharacterDataSource(collectionView: characterSelectView.characterCollectionView) { collectionView, indexPath, itemIdentifier in
+        dataSource = CharacterDataSource(collectionView: characterSelectView.characterCollectionView) {
+            collectionView,
+            indexPath,
+            itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration{
-                CharacterCell(character: itemIdentifier, characterImagePublisher: self.viewModel.characterImagesPublisher)
+                CharacterCell(
+                    character: itemIdentifier,
+                    characterImagePublisher: self.viewModel.characterImagesPublisher,
+                    characterImages: self.viewModel.characterImages
+                )
             }
             return cell
         }

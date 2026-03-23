@@ -23,6 +23,7 @@ protocol CharacterSelectable: ObservableObject {
     var characterImagesPublisher: AnyPublisher<[String: UIImage], Never> { get }
     var filteredCharactersPublisher: AnyPublisher<[Character], Never> { get }
     var filteredCharacters: [Character] { get }
+    var characterImages: [String: UIImage] { get }
 }
 
 @MainActor

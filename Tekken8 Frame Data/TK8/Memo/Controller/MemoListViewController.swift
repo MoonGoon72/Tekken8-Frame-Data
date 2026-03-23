@@ -63,10 +63,54 @@ final class MemoListViewController: BaseViewController {
     override func setupNavigationBar() {
         super.setupNavigationBar()
         setupSearchController()
+        composeRightBarButtons()
+    }
+
+    @objc private func composeButtonTapped() {
+        let memoComposeViewController = MemoComposeViewController(
+            memoViewModel: memoViewModel,
+            characterListViewModel: characterListViewModel,
+            memo: nil
+        )
+        navigationController?.pushViewController(memoComposeViewController, animated: true)
+    }
+
+    @objc private func deleteButtonTapped() {
+        let willDeleteMemos = memoListView.collectionView.indexPathsForSelectedItems?.map {
+            memoViewModel.filteredMemos[$0.row]
+        }
+        do {
+            try memoViewModel.delete(memos: willDeleteMemos ?? [])
+        } catch {
+
+        }
+        toggleEditingMode()
+        navigationController?.isToolbarHidden = true
+    }
+
+    @objc private func doneButtonTapped() {
+        memoListView.collectionView.indexPathsForSelectedItems?.forEach {
+            memoListView.collectionView.deselectItem(at: $0, animated: true)
+        }
+        toggleEditingMode()
+        navigationController?.isToolbarHidden = true
+        composeRightBarButtons()
+    }
+
+    func toggleEditingMode() {
+        isEditing.toggle()
+        memoListView.collectionView.allowsMultipleSelection = isEditing
+        memoListView.collectionView.visibleCells.compactMap { $0 as? MemoCollectionViewCell }.forEach {
+            $0.setEditing(isEditing, animated: true)
+        }
+        composeRightBarButtons()
+    }
+
+    private func composeRightBarButtons() {
         let menuItems: [UIAction] = {
             let multiSelect = UIAction(title: "메모 선택".localized(), image: UIImage(systemName: "checkmark.circle")) { [weak self] _ in
                 self?.navigationController?.isToolbarHidden = false
-                self?.toggleEditiongMode()
+                self?.toggleEditingMode()
                 self?.toolbarItems = [UIBarButtonItem(
                     title: "삭제".localized(),
                     style: .plain,
@@ -87,29 +131,16 @@ final class MemoListViewController: BaseViewController {
             image: UIImage(systemName: "ellipsis"),
             menu: UIMenu(options: .displayInline, children: menuItems)
         )
-        navigationItem.rightBarButtonItems = [ellipsisButton, composeButton]
-    }
-
-    @objc private func composeButtonTapped() {
-        let memoComposeViewController = MemoComposeViewController(
-            memoViewModel: memoViewModel,
-            characterListViewModel: characterListViewModel,
-            memo: nil
+        let doneButton = UIBarButtonItem(
+            image: UIImage(systemName: "checkmark.circle"),
+            style: .plain,
+            target: self,
+            action: #selector(doneButtonTapped)
         )
-        navigationController?.pushViewController(memoComposeViewController, animated: true)
-    }
-
-    @objc private func deleteButtonTapped() {
-        toggleEditiongMode()
-        navigationController?.isToolbarHidden = true
-    }
-
-    func toggleEditiongMode() {
-        isEditing.toggle()
-        memoListView.collectionView.allowsMultipleSelection = isEditing
-
-        memoListView.collectionView.visibleCells.compactMap { $0 as? MemoCollectionViewCell }.forEach {
-            $0.setEditing(isEditing, animated: true)
+        if isEditing {
+            navigationItem.rightBarButtonItems = [doneButton]
+        } else {
+            navigationItem.rightBarButtonItems = [ellipsisButton, composeButton]
         }
     }
 }
@@ -179,6 +210,11 @@ extension MemoListViewController: UICollectionViewDelegate {
             memo: memo
         )
         navigationController?.pushViewController(memoComposeViewController, animated: true)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        let cell = cell as? MemoCollectionViewCell
+        cell?.setEditing(isEditing, animated: true)
     }
 }
 

@@ -127,10 +127,6 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
                 // 셀 tint
                 self.contentView.backgroundColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 0.12)
                 self.contentView.layer.borderColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 0.25).cgColor
-                // Teal 채우기 + 체크 아이콘 표시
-//                self.checkmarkView.backgroundColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1)
-//                self.checkmarkView.layer.borderColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1).cgColor
-//                self.checkmarkImage.alpha = 1
             } else {
                 // 빈 원
                 self.checkmarkImage.image = UIImage(systemName: "circle", withConfiguration: config)

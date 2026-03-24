@@ -7,8 +7,8 @@ import Combine
 import UIKit
 
 final class MemoListViewController: BaseViewController {
-    private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Memo>
-    private typealias memoDataSource = UICollectionViewDiffableDataSource<Section, Memo>
+    private typealias Snapshot = NSDiffableDataSourceSnapshot<MemoSection, Memo>
+    private typealias memoDataSource = UICollectionViewDiffableDataSource<MemoSection, Memo>
     
     private let memoListView: MemoListView
     private let searchController: UISearchController
@@ -76,8 +76,8 @@ final class MemoListViewController: BaseViewController {
     }
 
     @objc private func deleteButtonTapped() {
-        let willDeleteMemos = memoListView.collectionView.indexPathsForSelectedItems?.map {
-            memoViewModel.filteredMemos[$0.row]
+        let willDeleteMemos = memoListView.collectionView.indexPathsForSelectedItems?.compactMap {
+            dataSource?.itemIdentifier(for: $0)
         }
         do {
             try memoViewModel.delete(memos: willDeleteMemos ?? [])
@@ -98,8 +98,8 @@ final class MemoListViewController: BaseViewController {
     }
 
     @objc private func selectAllButtonTapped() {
-        (0..<memoViewModel.filteredMemos.count).forEach {
-            let indexPath = IndexPath(row: $0, section: 0)
+        dataSource?.snapshot().itemIdentifiers.forEach {
+            let indexPath = dataSource?.indexPath(for: $0)
             memoListView.collectionView.selectItem(
                 at: indexPath,
                 animated: true,
@@ -208,12 +208,34 @@ private extension MemoListViewController {
             cell.setEditing(self.isEditing, animated: true)
             return cell
         })
+        dataSource?.supplementaryViewProvider = {
+            collectionView,
+            kind,
+            indexPath in
+            let header = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: MemoSectionHeaderView.reuseIdentifier,
+                for: indexPath
+            ) as? MemoSectionHeaderView
+
+            let section = self.dataSource?.snapshot().sectionIdentifiers[indexPath.section]
+            header?.configure(section: section ?? .general)
+            return header
+        }
     }
 
     func updateSnapshot(for memos: [Memo]) {
         var snapshot = Snapshot()
-        snapshot.appendSections([.main])
-        snapshot.appendItems(memos, toSection: .main)
+        let pinned = memos.filter { $0.isPinned }
+        let general = memos.filter { !$0.isPinned }
+        if !pinned.isEmpty {
+            snapshot.appendSections([.pinned])
+            snapshot.appendItems(pinned, toSection: .pinned)
+        }
+
+        snapshot.appendSections([.general])
+        snapshot.appendItems(general, toSection: .general)
+
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }
@@ -223,7 +245,7 @@ private extension MemoListViewController {
 extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if isEditing { return }
-        let memo = memoViewModel.filteredMemos[indexPath.row]
+        let memo = dataSource?.itemIdentifier(for: indexPath)
         let memoComposeViewController = MemoComposeViewController(
             memoViewModel: memoViewModel,
             characterListViewModel: characterListViewModel,
@@ -238,8 +260,8 @@ extension MemoListViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
-        guard let indexPath = indexPaths.first else { return nil }
-        let memo = memoViewModel.filteredMemos[indexPath.row]
+        guard let indexPath = indexPaths.first,
+                var memo = dataSource?.itemIdentifier(for: indexPath) else { return nil }
 
         let config = UIContextMenuConfiguration(previewProvider: {
             let previewProvider = MemoComposeViewController(
@@ -249,7 +271,7 @@ extension MemoListViewController: UICollectionViewDelegate {
             )
             return previewProvider
         }) { _ in
-            MemoMenuFactory.menu {
+            MemoMenuFactory.menu(isPinned: memo.isPinned) {
                 // Delete
                 do {
                     try self.memoViewModel.delete(memos: [memo])
@@ -258,14 +280,20 @@ extension MemoListViewController: UICollectionViewDelegate {
                 }
             } share: {
                 // Share
-            }
+            } togglePin: {
+                memo.isPinned.toggle()
+                do {
+                    try self.memoViewModel.update(memo: memo)
+                } catch {
 
+                }
+            }
         }
         return config
     }
 }
 
-private enum Section {
-    case main
+enum MemoSection: Int, CaseIterable {
     case pinned
+    case general
 }

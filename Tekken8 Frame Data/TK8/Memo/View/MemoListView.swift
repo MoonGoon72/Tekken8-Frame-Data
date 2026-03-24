@@ -16,17 +16,36 @@ final class MemoListView: BaseView {
             heightDimension: .fractionalHeight(1.0)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .fractionalHeight(0.1)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = .init(top: 0, leading: 8, bottom: 0, trailing: 8)
-        section.interGroupSpacing = 15
+        section.contentInsets = .init(top: 0, leading: 8, bottom: 16, trailing: 8)
+        section.interGroupSpacing = 10
+
+        // Header
+        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(32))
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        section.boundarySupplementaryItems = [header]
         let layout = UICollectionViewCompositionalLayout(section: section)
         let collectionView = UICollectionView(frame: .infinite, collectionViewLayout: layout)
-        collectionView.register(MemoCollectionViewCell.self, forCellWithReuseIdentifier: MemoCollectionViewCell.reuseIdentifier)
+        collectionView.register(
+            MemoCollectionViewCell.self,
+            forCellWithReuseIdentifier: MemoCollectionViewCell.reuseIdentifier
+        )
+        collectionView.register(
+            MemoSectionHeaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: MemoSectionHeaderView.reuseIdentifier
+        )
         return collectionView
     }()
 

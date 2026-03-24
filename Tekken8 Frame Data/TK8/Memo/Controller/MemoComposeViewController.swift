@@ -13,12 +13,14 @@ final class MemoComposeViewController: BaseViewController {
     private let characterSelectViewController: CharacterSelectViewController
     private var memo: Memo?
     private var selectedCharacterName: String?
+    private var isPinned: Bool
 
     init(memoViewModel: MemoViewModel, characterListViewModel: any CharacterSelectable, memo: Memo?) {
         self.memoViewModel = memoViewModel
         self.characterListViewModel = characterListViewModel
         self.memo = memo
         selectedCharacterName = memo?.characterName ?? "common"
+        isPinned = memo?.isPinned ?? false
         memoComposeView = MemoComposeView()
         characterSelectViewController = CharacterSelectViewController(viewModel: characterListViewModel)
         super.init(nibName: nil, bundle: nil)
@@ -53,25 +55,7 @@ final class MemoComposeViewController: BaseViewController {
 
     override func setupNavigationBar() {
         super.setupNavigationBar()
-
-        let menu = MemoMenuFactory.menu {
-            // Delete
-            do {
-                if let memo = self.memo {
-                    try self.memoViewModel.delete(memos: [memo])
-                }
-                self.navigationController?.popViewController(animated: true)
-            } catch {
-
-            }
-        } share: {
-            // Share
-        }
-        let ellipsisButton = UIBarButtonItem(
-            image: UIImage(systemName: "ellipsis"),
-            menu: menu
-        )
-        navigationItem.rightBarButtonItem = ellipsisButton
+        composeRightBarButton()
     }
 
     override func setupDelegation() {
@@ -92,7 +76,12 @@ final class MemoComposeViewController: BaseViewController {
         do {
             guard var memo else {
                 // Create
-                try memoViewModel.create(character: selectedCharacterName ?? "common", title: title, body: body)
+                try memoViewModel.create(
+                    character: selectedCharacterName ?? "common",
+                    title: title,
+                    body: body,
+                    isPinned: isPinned
+                )
                 return
             }
             guard isUpdated(title: title, body: body) else { return }
@@ -100,6 +89,7 @@ final class MemoComposeViewController: BaseViewController {
             memo.characterName = selectedCharacterName ?? "common"
             memo.title = title
             memo.body = body
+            memo.isPinned = isPinned
             try memoViewModel.update(memo: memo)
         } catch {
             // 문제 발생 Alert
@@ -107,7 +97,39 @@ final class MemoComposeViewController: BaseViewController {
     }
 
     private func isUpdated(title: String, body: String) -> Bool {
-        return memo?.characterName != selectedCharacterName || memo?.title != title || memo?.body != body
+        return memo?.characterName != selectedCharacterName || memo?.title != title || memo?.body != body || memo?.isPinned != isPinned
+    }
+
+    private func composeRightBarButton() {
+        if !memoComposeView.bodyContent.isEmpty || !memoComposeView.titleContent.isEmpty {
+            navigationItem.rightBarButtonItem = generateEllipsisButton()
+        } else {
+            navigationItem.rightBarButtonItem = .none
+        }
+    }
+
+    private func generateEllipsisButton() -> UIBarButtonItem {
+        let menu = MemoMenuFactory.menu(isPinned: self.isPinned) {
+            // Delete
+            do {
+                if let memo = self.memo {
+                    try self.memoViewModel.delete(memos: [memo])
+                }
+                self.navigationController?.popViewController(animated: true)
+            } catch {
+
+            }
+        } share: {
+            // Share
+        } togglePin: {
+            self.isPinned.toggle()
+            self.composeRightBarButton()
+        }
+        let ellipsisButton = UIBarButtonItem(
+            image: UIImage(systemName: "ellipsis"),
+            menu: menu
+        )
+        return ellipsisButton
     }
 
     @MainActor required init?(coder: NSCoder) {
@@ -128,6 +150,7 @@ extension MemoComposeViewController: Selectable {
 extension MemoComposeViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         memoComposeView.updatePlaceholders()
+        composeRightBarButton()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextInRanges ranges: [NSValue], replacementText text: String) -> Bool {

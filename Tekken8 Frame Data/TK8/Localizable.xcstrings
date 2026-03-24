@@ -56,6 +56,39 @@
         }
       }
     },
+    "고정" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin"
+          }
+        }
+      }
+    },
+    "고정 해제" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpin"
+          }
+        }
+      }
+    },
+    "고정됨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PINNED"
+          }
+        }
+      }
+    },
     "공유" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -96,6 +129,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "rage"
+          }
+        }
+      }
+    },
+    "메모" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MEMOS"
           }
         }
       }

@@ -208,7 +208,6 @@ private extension MoveListViewController {
             .subtracting(tailSections)
 
         // 중간 섹션 정렬: "해당 섹션이 처음 나타난 아이템의 id" 오름차순
-        // (네가 기존에 쓰던 기준과 동일)
         let sortedMiddle = middleSet.sorted { a, b in
             let minA = items.filter { $0.section == a }.map(\.id).min() ?? .max
             let minB = items.filter { $0.section == b }.map(\.id).min() ?? .max

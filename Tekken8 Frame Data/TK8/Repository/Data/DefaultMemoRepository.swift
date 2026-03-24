@@ -7,7 +7,7 @@ import CoreData
 
 protocol MemoRepository {
     // CRUD
-    func save(character: String, title: String, body: String) throws
+    func save(character: String, title: String, body: String, isPinned: Bool) throws
     func fetchMemos() throws -> [Memo]
     func update(memo: Memo) throws
     func delete(memo: Memo) throws
@@ -20,13 +20,14 @@ final class DefaultMemoRepository: MemoRepository {
         self.coreDataManager = coreDataManager
     }
 
-    func save(character: String, title: String, body: String) throws {
+    func save(character: String, title: String, body: String, isPinned: Bool) throws {
         let context = coreDataManager.context
         let entity = MemoEntity(context: context)
         entity.id = UUID()
         entity.characterNameEN = character
         entity.title = title
         entity.body = body
+        entity.isPinned = isPinned
         entity.updatedAt = Date()
         try coreDataManager.saveContext()
     }
@@ -41,6 +42,7 @@ final class DefaultMemoRepository: MemoRepository {
                 characterName: $0.characterNameEN ?? "none",
                 title: $0.title ?? "",
                 body: $0.body ?? "",
+                isPinned: $0.isPinned,
                 updatedAt: $0.updatedAt ?? Date()
             )
         }
@@ -52,10 +54,16 @@ final class DefaultMemoRepository: MemoRepository {
         let prevMemo = try coreDataManager.fetch(request)
         guard let entity = prevMemo.first else { return }
 
-        entity.characterNameEN = memo.characterName
-        entity.title = memo.title
-        entity.body = memo.body
-        entity.updatedAt = Date()
+        // Pin만 바뀐경우 Date를 갱신하면 안됨
+        if isPinOnlyChanged(from: entity, to: memo) {
+            entity.isPinned = memo.isPinned
+        } else {
+            entity.characterNameEN = memo.characterName
+            entity.title = memo.title
+            entity.body = memo.body
+            entity.isPinned = memo.isPinned
+            entity.updatedAt = Date()
+        }
         try coreDataManager.saveContext()
     }
     
@@ -65,5 +73,12 @@ final class DefaultMemoRepository: MemoRepository {
         guard let willDeleteMemo = try coreDataManager.fetch(request).first else { return }
         coreDataManager.delete(willDeleteMemo)
         try coreDataManager.saveContext()
+    }
+
+    private func isPinOnlyChanged(from entity: MemoEntity, to memo: Memo) -> Bool {
+        return entity.characterNameEN == memo.characterName &&
+            entity.title == memo.title &&
+            entity.body == memo.body &&
+            entity.isPinned != memo.isPinned
     }
 }

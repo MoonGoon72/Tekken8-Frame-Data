@@ -22,9 +22,9 @@ final class MemoViewModel: ObservableObject {
         filteredMemos = memos
     }
 
-    func create(character: String, title: String, body: String) throws {
+    func create(character: String, title: String, body: String, isPinned: Bool) throws {
         try performAndFetch {
-            try memoRepository.save(character: character, title: title, body: body)
+            try memoRepository.save(character: character, title: title, body: body, isPinned: isPinned)
         }
     }
 

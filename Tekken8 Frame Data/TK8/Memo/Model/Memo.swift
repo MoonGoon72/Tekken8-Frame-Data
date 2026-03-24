@@ -10,6 +10,7 @@ struct Memo: Hashable {
     var characterName: String
     var title: String
     var body: String
+    var isPinned: Bool
     var updatedAt: Date
 
     static func ==(lhs: Memo, rhs: Memo) -> Bool {
@@ -17,6 +18,7 @@ struct Memo: Hashable {
         && lhs.characterName == rhs.characterName
         && lhs.title == rhs.title
         && lhs.body == rhs.body
+        && lhs.isPinned == rhs.isPinned
         && lhs.updatedAt == rhs.updatedAt
     }
 
@@ -25,6 +27,7 @@ struct Memo: Hashable {
         hasher.combine(characterName)
         hasher.combine(title)
         hasher.combine(body)
+        hasher.combine(isPinned)
         hasher.combine(updatedAt)
     }
 }

@@ -166,13 +166,13 @@
         }
       }
     },
-    "메모 셀을 길게 누르면 고정, 삭제, 공유 등의 메뉴가 나타납니다." : {
+    "메모 셀을 길게 누르면 고정, 삭제 등의 메뉴가 나타납니다." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When you press and hold a note cell, a menu with options such as Pin, Delete, and Share will appear."
+            "value" : "When you press and hold a note cell, a menu with options such as Pin, Delete will appear."
           }
         }
       }

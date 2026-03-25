@@ -278,8 +278,6 @@ extension MemoListViewController: UICollectionViewDelegate {
                 } catch {
 
                 }
-            } share: {
-                // Share
             } togglePin: {
                 memo.isPinned.toggle()
                 do {

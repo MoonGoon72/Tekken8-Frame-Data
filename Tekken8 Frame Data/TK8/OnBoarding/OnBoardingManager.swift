@@ -38,7 +38,7 @@ enum OnboardingManager {
                 icon: "hand.tap",
                 iconColor: UIColor(red: 0.52, green: 0.72, blue: 0.92, alpha: 1),
                 title: "롱프레스".localized(),
-                description: "메모 셀을 길게 누르면 고정, 삭제, 공유 등의 메뉴가 나타납니다.".localized()
+                description: "메모 셀을 길게 누르면 고정, 삭제 등의 메뉴가 나타납니다.".localized()
             ),
         ]
         return OnboardingViewController(features: features, version: "v\(version)")

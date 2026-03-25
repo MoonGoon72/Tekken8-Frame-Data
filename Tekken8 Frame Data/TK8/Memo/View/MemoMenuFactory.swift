@@ -7,14 +7,8 @@ import Foundation
 import UIKit
 
 enum MemoMenuFactory {
-    static func menu(isPinned: Bool, delete: @escaping () -> Void, share: @escaping () -> Void, togglePin: @escaping () -> Void) -> UIMenu {
+    static func menu(isPinned: Bool, delete: @escaping () -> Void, togglePin: @escaping () -> Void) -> UIMenu {
         var items: [UIAction] {
-            // TODO: 핀 토글기능
-            let share = UIAction(
-                title: "공유".localized(),
-                image: UIImage(systemName: "paperplane")) { _ in
-                    share()
-                }
             let delete = UIAction(
                 title: "삭제".localized(),
                 image: UIImage(systemName: "trash"),
@@ -28,7 +22,7 @@ enum MemoMenuFactory {
             ) { _ in
                 togglePin()
             }
-            let items = [delete, share, togglePin]
+            let items = [delete, togglePin]
             return items
         }
         let menu = UIMenu(children: items)

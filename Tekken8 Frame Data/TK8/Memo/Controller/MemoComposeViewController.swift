@@ -119,8 +119,6 @@ final class MemoComposeViewController: BaseViewController {
             } catch {
 
             }
-        } share: {
-            // Share
         } togglePin: {
             self.isPinned.toggle()
             self.composeRightBarButton()

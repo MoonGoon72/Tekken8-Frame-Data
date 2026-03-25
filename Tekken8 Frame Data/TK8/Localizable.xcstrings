@@ -133,6 +133,17 @@
         }
       }
     },
+    "롱프레스" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long press"
+          }
+        }
+      }
+    },
     "메모" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -151,6 +162,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select memo"
+          }
+        }
+      }
+    },
+    "메모 셀을 길게 누르면 고정, 삭제, 공유 등의 메뉴가 나타납니다." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you press and hold a note cell, a menu with options such as Pin, Delete, and Share will appear."
           }
         }
       }
@@ -309,6 +331,28 @@
         }
       }
     },
+    "캐릭터를 탭하면 모든 기술의 발동, 가드, 히트, 카운터 프레임을 확인할 수 있습니다." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a character to view the activation, guard, hit, and counter frames for all their moves."
+          }
+        }
+      }
+    },
+    "캐릭터별로 메모를 작성하고 수정할 수 있습니다. 중요한 메모는 고정해서 상단에 유지하세요." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can create and edit notes for each character. Pin important notes to keep them at the top."
+          }
+        }
+      }
+    },
     "특중" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -327,6 +371,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "s.low"
+          }
+        }
+      }
+    },
+    "프레임 데이터" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frame Data"
           }
         }
       }

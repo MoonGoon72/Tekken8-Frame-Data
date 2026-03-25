@@ -40,7 +40,16 @@ final class CharacterListViewController: BaseViewController {
         view = characterCollectionView
         fetchCharacters()
     }
-    
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        if OnboardingManager.shouldShowOnboarding {
+            let onboardingVC = OnboardingManager.makeOnboardingVC()
+            present(onboardingVC, animated: true)
+            OnboardingManager.markAsShown()
+        }
+    }
+
     override func setupDelegation() {
         super.setupDelegation()
         

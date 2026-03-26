@@ -16,13 +16,16 @@ struct MoveCell: View, ReuseIdentifiable {
             HStack {
                 Text(move.skillNamePrimary)
                     .font(.headline)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 3)
                 if let attribute = move.attribute, attribute != "" {
                     AttributeView(attributes: attribute)
                 }
                 Spacer()
                 if let sub = move.skillNameSecondary, !sub.isEmpty {
-                    Text(sub).font(.subheadline)
+                    Text(sub)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.4))
                 }
             }
 
@@ -32,15 +35,25 @@ struct MoveCell: View, ReuseIdentifiable {
 
             SpecView(move: move)
 
-            if let description = move.description, !description.isEmpty { DescriptionView(description: description) }
+            if let description = move.description, !description.isEmpty {
+                DescriptionView(description: description)
+            }
         }
         .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .shadow(radius: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.white.opacity(0.07))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(.white.opacity(0.12), lineWidth: 0.5)
+        )
+
         .onTapGesture {
+            #if DEBUG
             print(move.command)
             print(move.description ?? "")
+            #endif
         }
     }
 }
@@ -82,77 +95,92 @@ struct JudgmentView: View {
     }
 }
 
-private struct JudgeBadge: View {
+// MARK: - JudgeBadge
+
+struct JudgeBadge: View {
     let text: String
 
-    private var backgroundColor: Color {
+    private var badgeColor: Color {
         switch text {
-        case "상": return Color.red.opacity(0.75)
-        case "중": return Color.yellow.opacity(0.75)
-        case "하": return Color.blue.opacity(0.75)
-        case "특중": return Color.green.opacity(0.75)
-        default:   return Color.purple.opacity(0.75)
+        case "상": return Color(red: 0.94, green: 0.37, blue: 0.37)  // coral red
+        case "중": return Color(red: 0.98, green: 0.78, blue: 0.46)  // warm amber
+        case "하": return Color(red: 0.52, green: 0.72, blue: 0.92)  // soft blue
+        case "특중": return Color(red: 0.36, green: 0.79, blue: 0.65) // teal
+        default:   return Color(red: 0.68, green: 0.60, blue: 0.88)  // soft purple
         }
     }
 
     var body: some View {
         Text(LocalizedStringKey(stringLiteral: text))
             .font(.caption)
-            .padding(.horizontal, 6)
+            .fontWeight(.medium)
+            .foregroundStyle(badgeColor)
+            .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(backgroundColor)
-            .cornerRadius(4)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(badgeColor.opacity(0.2))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(badgeColor.opacity(0.3), lineWidth: 0.5)
+            )
     }
 }
 
-// MARK: Spec View
+// MARK: - SpecView
 
 struct SpecView: View {
-    private let move: LocalizedMove
-    
-    init(move: LocalizedMove) {
-        self.move = move
-    }
+    let move: LocalizedMove
     
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Constants.Texts.damage)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                Text(move.damage ?? "-")
-                    .font(.system(size: 13))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Constants.Texts.startup)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                Text(move.startupFrame ?? "-")
-                    .font(.system(size: 13))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Constants.Texts.guard)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                Text(move.guardFrame ?? "-")
-                    .font(.system(size: 13))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Constants.Texts.hit)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                Text(move.hitFrame ?? "-")
-                    .font(.system(size: 13))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Constants.Texts.counter)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                Text(move.counterFrame ?? "-")
-                    .font(.system(size: 13))
-            }
+        HStack(spacing: 0) {
+            specItem(label: Constants.Texts.damage, value: move.damage)
+            specDivider
+            specItem(label: Constants.Texts.startup, value: move.startupFrame)
+            specDivider
+            specItem(label: Constants.Texts.guard, value: move.guardFrame)
+            specDivider
+            specItem(label: Constants.Texts.hit, value: move.hitFrame)
+            specDivider
+            specItem(label: Constants.Texts.counter, value: move.counterFrame)
         }
-        .font(.caption)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.white.opacity(0.04))
+        )
+    }
+
+    private func specItem(
+        label: LocalizedStringKey,
+        value: String?,
+        colorize: Bool = false
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.35))
+            Text(value ?? "-")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(colorize ? frameColor(value) : .white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+    }
+
+    private var specDivider: some View {
+        Rectangle()
+            .fill(.white.opacity(0.08))
+            .frame(width: 0.5)
+            .padding(.vertical, 6)
+    }
+
+    private func frameColor(_ value: String?) -> Color {
+        guard let value, let num = Int(value) else { return .white }
+        if num > 0 { return Color(red: 0.36, green: 0.79, blue: 0.65) }  // teal +
+        if num < 0 { return Color(red: 0.94, green: 0.37, blue: 0.37) }  // red -
+        return .white
     }
 }
 
@@ -204,22 +232,15 @@ struct CommandView: View {
 // MARK: DescriptionView
 
 struct DescriptionView: View {
-    private let description: String
-    
-    init(description: String) {
-        self.description = description
-    }
+    let description: String
     
     var body: some View {
         Divider()
+            .background(.white.opacity(0.08))
         ForEach(descriptionSplitter(description), id: \.self) { command in
             CommandView(command: command, isDescription: true)
+                .foregroundStyle(.white.opacity(0.55))
         }
-    }
-    
-    private func descriptionPrettyPrinter(_ description: String) -> String {
-        let newDescription = description.replacingOccurrences(of: "| ", with: "\n")
-        return newDescription
     }
     
     private func descriptionSplitter(_ description: String) -> [String] {
@@ -299,7 +320,7 @@ struct FlowLayout: Layout {
 private extension String {
     /// "중중중", "중,중,상", "상/중|하", "상 중 하" 모두 ["중","중","중"] 등으로 분리
     func tokenizeJudgments() -> [String] {
-            let allowed = Set(["상","중","하","특중"]) // ← 특중 추가
+            let allowed = Set(["상", "중", "하", "특중", "특하", "상단가불", "중단가불", "가불"]) // ← 특중 추가
             let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return [] }
 
@@ -326,7 +347,23 @@ private extension String {
     }
 }
 
-//#Preview {
-//    let move = Move(id: 1, characterName: "니나 윌리엄스", section: "히트", skillNameEN: "shake cancel", skillNameKR: "쉐캔", skillNickname: "쉐이크 캔슬", command: "6n23rp", judgment: "중", damage: "100", startupFrame: "15f", guardFrame: "+7", hitFrame: "+14", counterFrame: "+26", attribute: "", description: "개사기")
-//    MoveCell(move: move)
-//}
+#Preview {
+    let localizedMove = LocalizedMove(
+        id: 1,
+        sortOrder: 1,
+        section: "일반",
+        skillNamePrimary: "초풍",
+        skillNameSecondary: "초풍",
+        command: "1n6ar",
+        commandEN: "f,n,d,df+rp",
+        judgment: "중단가불",
+        damage: "100",
+        startupFrame: "12",
+        guardFrame: "5",
+        hitFrame: "5",
+        counterFrame: "3",
+        attribute: "powercrush",
+        description: "- "
+    )
+    MoveCell(move: localizedMove)
+}

@@ -18,7 +18,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "<p>Bug report, suggestions, frame data five inputs, etc.</p>"
+            "value" : "<p>Please report bugs, suggestions, incorrect frame data entries, and other issues.</p>"
           }
         }
       }
@@ -56,6 +56,50 @@
         }
       }
     },
+    "고정" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin"
+          }
+        }
+      }
+    },
+    "고정 해제" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unpin"
+          }
+        }
+      }
+    },
+    "고정됨" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PINNED"
+          }
+        }
+      }
+    },
+    "공유" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
     "기술명, 커맨드를 입력해주세요." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -85,6 +129,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "rage"
+          }
+        }
+      }
+    },
+    "롱프레스" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long press"
+          }
+        }
+      }
+    },
+    "메모" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MEMOS"
+          }
+        }
+      }
+    },
+    "메모 선택" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select memo"
+          }
+        }
+      }
+    },
+    "메모 셀을 길게 누르면 고정, 삭제 등의 메뉴가 나타납니다." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you press and hold a note cell, a menu with options such as Pin, Delete will appear."
           }
         }
       }
@@ -133,6 +221,17 @@
         }
       }
     },
+    "삭제" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
     "상" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -166,13 +265,35 @@
         }
       }
     },
+    "작성할 메모를 입력하세요." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write your memo here..."
+          }
+        }
+      }
+    },
+    "전체 선택" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All"
+          }
+        }
+      }
+    },
     "중" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "middle"
+            "value" : "mid"
           }
         }
       }
@@ -206,6 +327,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please enter the character name."
+          }
+        }
+      }
+    },
+    "캐릭터를 탭하면 모든 기술의 발동, 가드, 히트, 카운터 프레임을 확인할 수 있습니다." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a character to view the activation, guard, hit, and counter frames for all their moves."
+          }
+        }
+      }
+    },
+    "캐릭터별로 메모를 작성하고 수정할 수 있습니다. 중요한 메모는 고정해서 상단에 유지하세요." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can create and edit notes for each character. Pin important notes to keep them at the top."
+          }
+        }
+      }
+    },
+    "특중" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "s.mid"
+          }
+        }
+      }
+    },
+    "특하" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "s.low"
+          }
+        }
+      }
+    },
+    "프레임 데이터" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frame Data"
           }
         }
       }

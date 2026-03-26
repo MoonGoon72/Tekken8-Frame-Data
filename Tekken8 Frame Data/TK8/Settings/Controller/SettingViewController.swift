@@ -27,8 +27,9 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
         view = tableView
         // TODO: localizing
         title = Constants.Literals.title
+        view.backgroundColor = .tkBackground
     }
-    
+
     override func setupDelegation() {
         setupTableViewDelegation()
     }
@@ -67,19 +68,44 @@ extension SettingViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.Literals.cellIdentifier, for: indexPath)
         let item = settingsItems[indexPath.row]
-        cell.textLabel?.text = item.title
 
+        // Glass 스타일 배경
+        cell.backgroundColor = UIColor.white.withAlphaComponent(0.07)
+
+        // 텍스트 스타일
+        cell.textLabel?.text = item.title
+        cell.textLabel?.textColor = .white
+        cell.textLabel?.font = .systemFont(ofSize: 16)
+
+        // Accessory (버전 라벨)
         if let accessory = item.accessoryText {
             let versionLabel = UILabel()
             versionLabel.text = accessory
-            versionLabel.textColor = .secondaryLabel
+            versionLabel.textColor = UIColor.white.withAlphaComponent(0.4)
+            versionLabel.font = .systemFont(ofSize: 15)
             versionLabel.sizeToFit()
             cell.accessoryView = versionLabel
         } else {
             cell.accessoryView = nil
         }
-        
+
+        // Chevron 색상
         cell.accessoryType = item.showsDisclosureIndicator ? .disclosureIndicator : .none
+        cell.tintColor = UIColor.white.withAlphaComponent(0.3)
+
+        // 선택 시 하이라이트
+        let selectdBackground = UIView()
+        selectdBackground.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        cell.selectedBackgroundView = selectdBackground
+
+        // separator 색상
+        if indexPath.row < settingsItems.count - 1 {
+            cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        } else {
+            // 마지막 셀은 separator 없음
+            cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: .greatestFiniteMagnitude)
+        }
+
         return cell
     }
 }

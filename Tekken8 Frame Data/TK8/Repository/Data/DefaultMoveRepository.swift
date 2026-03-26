@@ -7,6 +7,10 @@
 
 import CoreData
 
+protocol MoveRepository {
+    func fetchMoves(characterName name: String) async throws -> [Move]
+}
+
 final class DefaultMoveRepository: MoveRepository {
     private let manager: SupabaseManageable
     private let coreData: CoreDataManageable
@@ -21,7 +25,8 @@ final class DefaultMoveRepository: MoveRepository {
         request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
         request.predicate = NSPredicate(format: "characterName == %@", name)
         
-        if let result = try? coreData.fetch(request), !result.isEmpty {
+        let result = try coreData.fetch(request)
+        if !result.isEmpty {
             return result.map({ MoveDTO(entity: $0).toDomain() })
         }
         

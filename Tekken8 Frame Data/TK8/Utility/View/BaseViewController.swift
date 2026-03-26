@@ -5,17 +5,22 @@
 //  Created by 문영균 on 4/13/25.
 //
 
+import Combine
 import UIKit
 
 class BaseViewController: UIViewController {
-    
+
+    var subscriptionSet: Set<AnyCancellable>
+
     // MARK: Initializer
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        subscriptionSet = []
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
     }
     
     required init?(coder: NSCoder) {
+        subscriptionSet = []
         super.init(coder: coder)
     }
     
@@ -43,7 +48,10 @@ class BaseViewController: UIViewController {
         
         navigationItem.hidesSearchBarWhenScrolling = true
     }
-    
+
+    deinit {
+        subscriptionSet.removeAll()
+    }
     // MARK: Tekken8 Frame Data lifecycle
     
     func setupDelegation() {}

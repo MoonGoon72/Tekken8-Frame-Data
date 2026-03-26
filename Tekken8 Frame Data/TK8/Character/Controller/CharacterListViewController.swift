@@ -15,13 +15,12 @@ final class CharacterListViewController: BaseViewController {
     private typealias CharacterDataSource = UICollectionViewDiffableDataSource<Section, Character>
 
     private let characterCollectionView: CharacterCollectionView
-    private let characterListViewModel: CharacterListViewModel
+    private let characterListViewModel: any CharacterFetchable & CharacterSelectable
     private let container: DIContainer
     private let searchController: UISearchController
-    private var filteredCancellable: AnyCancellable?
     private var dataSource: CharacterDataSource?
     
-    init(characterListViewModel viewModel: CharacterListViewModel, container: DIContainer) {
+    init(characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable, container: DIContainer) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
         self.container = container
@@ -41,7 +40,16 @@ final class CharacterListViewController: BaseViewController {
         view = characterCollectionView
         fetchCharacters()
     }
-    
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        if OnboardingManager.shouldShowOnboarding {
+            let onboardingVC = OnboardingManager.makeOnboardingVC()
+            present(onboardingVC, animated: true)
+            OnboardingManager.markAsShown()
+        }
+    }
+
     override func setupDelegation() {
         super.setupDelegation()
         
@@ -61,11 +69,11 @@ final class CharacterListViewController: BaseViewController {
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.tintColor = .tkRed
-        let donationButton = UIBarButtonItem(
-            image: UIImage(systemName: "dollarsign.circle"),
+        let memoButton = UIBarButtonItem(
+            image: UIImage(systemName: "note.text"),
             style: .plain,
             target: self,
-            action: #selector(donationButtonTapped)
+            action: #selector(memoButtonTapped)
         )
         let settingsButton = UIBarButtonItem(
             image: UIImage(systemName: "gearshape"),
@@ -73,7 +81,7 @@ final class CharacterListViewController: BaseViewController {
             target: self,
             action: #selector(settingsButtonTapped)
         )
-        navigationItem.rightBarButtonItems = [settingsButton, donationButton]
+        navigationItem.rightBarButtonItems = [settingsButton, memoButton]
     }
     
     @objc private func settingsButtonTapped() {
@@ -81,21 +89,26 @@ final class CharacterListViewController: BaseViewController {
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
 
+    @objc private func memoButtonTapped() {
+        let memoViewController = container.makeMemoListViewController(characterListViewModel: characterListViewModel)
+        navigationController?.pushViewController(memoViewController, animated: true)
+    }
+    
     @objc private func donationButtonTapped() {
         if let url = URL(string: "https://buymeacoffee.com/moongoon") {
             UIApplication.shared.open(url)
         }
     }
-
     override func bindViewModel() {
         super.bindViewModel()
         
-        filteredCancellable = characterListViewModel
-            .$filteredCharacters
+        characterListViewModel
+            .filteredCharactersPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredCharacters in
                 self?.updateSnapshot(for: filteredCharacters)
             }
+            .store(in: &subscriptionSet)
     }
     
     private func fetchCharacters() {
@@ -109,7 +122,6 @@ final class CharacterListViewController: BaseViewController {
 
 private extension CharacterListViewController {
     func setupSearchController() {
-        searchController.delegate = self
         searchController.searchResultsUpdater = self
         searchController.automaticallyShowsCancelButton = true
         searchController.searchBar.placeholder = Texts.placeholder.localized()
@@ -150,10 +162,17 @@ extension CharacterListViewController: UISearchResultsUpdating {
 private extension CharacterListViewController {
     func setupDiffableDataSource() {
         dataSource = CharacterDataSource(collectionView: characterCollectionView.characterCollectionView)
-        { collectionView, indexPath, itemIdentifier in
+        {
+            collectionView,
+            indexPath,
+            itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration {
-                CharacterCell(character: itemIdentifier, viewModel: self.characterListViewModel)
+                CharacterCell(
+                    character: itemIdentifier,
+                    characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
+                    characterImages: self.characterListViewModel.characterImages
+                )
             }
             return cell
         }
@@ -172,7 +191,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let character = characterListViewModel.filteredCharacters[indexPath.row]
+        guard let character = dataSource?.itemIdentifier(for: indexPath) else { return }
         let moveListViewController = container.makeMoveListViewController(character: character)
         Analytics.logEvent("Character_selected", parameters: ["name": character.nameEN])
         navigationController?.pushViewController(moveListViewController, animated: true)

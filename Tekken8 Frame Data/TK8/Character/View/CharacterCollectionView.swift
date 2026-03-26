@@ -14,9 +14,9 @@ final class CharacterCollectionView: BaseView {
     let characterCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.itemSize = .init(width: UIScreen.main.bounds.width - 8, height: 100)
+        layout.itemSize = .init(width: UIScreen.main.bounds.width, height: 100)
         layout.minimumLineSpacing = 8
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: CharacterCell.reuseIdentifier)

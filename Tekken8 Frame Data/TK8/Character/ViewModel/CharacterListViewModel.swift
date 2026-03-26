@@ -10,8 +10,33 @@ import Foundation
 import UIKit
 
 @MainActor
-final class CharacterListViewModel: ObservableObject {
-    @Published private(set) var characterImages: [Int64: UIImage] = [:]
+protocol CharacterFetchable {
+    func fetchCharacters()
+}
+
+@MainActor
+protocol CharacterSelectable: ObservableObject {
+    func filter(by keyword: String)
+    func resetFilter()
+    func loadImage(for character: Character) throws
+    func image(for key: String) -> UIImage?
+    var characterImagesPublisher: AnyPublisher<[String: UIImage], Never> { get }
+    var filteredCharactersPublisher: AnyPublisher<[Character], Never> { get }
+    var filteredCharacters: [Character] { get }
+    var characterImages: [String: UIImage] { get }
+}
+
+@MainActor
+final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
+    var characterImagesPublisher: AnyPublisher<[String : UIImage], Never> {
+        return $characterImages
+            .eraseToAnyPublisher()
+    }
+    var filteredCharactersPublisher: AnyPublisher<[Character], Never> {
+        return $filteredCharacters
+            .eraseToAnyPublisher()
+    }
+    @Published private(set) var characterImages: [String: UIImage] = [:]
     @Published private(set) var filteredCharacters: [Character] = []
     private(set) var characters: [Character] = []
     private var cancellables = Set<AnyCancellable>()
@@ -72,12 +97,12 @@ final class CharacterListViewModel: ObservableObject {
         Task {
             let url = try repository.characterImageURL(character: character).absoluteString
             if let image = await ImageCacheManager.shared.fetch(for: url) {
-                characterImages[character.id] = image
+                characterImages[character.nameEN] = image
             }
         }
     }
     
-    func image(for character: Character) -> UIImage? {
-        return characterImages[character.id]
+    func image(for key: String) -> UIImage? {
+        return characterImages[key]
     }
 }

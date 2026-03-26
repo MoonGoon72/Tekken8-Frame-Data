@@ -50,7 +50,6 @@ struct KRToENTranslator {
         ("히트 스매시", "Heat Smash"),
         ("카운터 히트", "Counter hit"),
         // 단건 문장들
-        ("상대에게 등을 보이는 상태로", "To face backward"),
         ("근거리 정면을 보고 선 상태에서 히트 시 혹은 근거리 서서 가드 시에 잡기로", "Throw on close range standing front hit or on close range standing block"),
         ("근거리 정면 히트 시 잡기로", "Throw on close range front hit"),
         ("옆구르기 낙법 가능", "Side ukemi can be used"),

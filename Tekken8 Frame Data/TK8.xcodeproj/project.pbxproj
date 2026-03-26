@@ -24,6 +24,13 @@
 			remoteGlobalIDString = E4024B2A2D3F399E007C855C;
 			remoteInfo = "Tekken8 Frame Data";
 		};
+		E46BDF3C2F581471001CEFD0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E4024B232D3F399E007C855C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E4024B2A2D3F399E007C855C;
+			remoteInfo = TK8;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -44,25 +51,11 @@
 		E41737912D8BD84200FE79E1 /* Exceptions for "TK8" folder in "SupabaseAPITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Character/Model/Character.swift,
-				Move/Model/LocalizedMove.swift,
-				Move/Model/Move.swift,
 				Repository/Network/Supabase/SupabaseManageable.swift,
 				Version/Model/FrameDataVersion.swift,
 				Version/Model/TekkenVersion.swift,
 			);
 			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;
-		};
-		E4D98A822DD488AC00DD0944 /* Exceptions for "TK8" folder in "TK8Tests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Move/Model/LocalizedMove.swift,
-				Move/Model/Move.swift,
-				Move/Translator/KRToENTranslator.swift,
-				"Utility/Extensions/String+CommandParsing.swift",
-				Utility/GlobalConstants.swift,
-			);
-			target = E46814362DD48870004CA6E9 /* TK8Tests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -72,7 +65,6 @@
 			exceptions = (
 				E41736F22D8A6F8500FE79E1 /* Exceptions for "TK8" folder in "TK8" target */,
 				E41737912D8BD84200FE79E1 /* Exceptions for "TK8" folder in "SupabaseAPITests" target */,
-				E4D98A822DD488AC00DD0944 /* Exceptions for "TK8" folder in "TK8Tests" target */,
 			);
 			path = TK8;
 			sourceTree = "<group>";
@@ -207,6 +199,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				E46BDF3D2F581471001CEFD0 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E46814382DD48870004CA6E9 /* TK8Tests */,
@@ -236,6 +229,7 @@
 					};
 					E46814362DD48870004CA6E9 = {
 						CreatedOnToolsVersion = 16.2;
+						TestTargetID = E4024B2A2D3F399E007C855C;
 					};
 				};
 			};
@@ -320,6 +314,11 @@
 			target = E4024B2A2D3F399E007C855C /* TK8 */;
 			targetProxy = E417378A2D8BD7FC00FE79E1 /* PBXContainerItemProxy */;
 		};
+		E46BDF3D2F581471001CEFD0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E4024B2A2D3F399E007C855C /* TK8 */;
+			targetProxy = E46BDF3C2F581471001CEFD0 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -334,7 +333,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1.2.2;
+				CURRENT_PROJECT_VERSION = 2.0.0;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = K4356CVQKW;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -347,12 +346,12 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -378,7 +377,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1.2.2;
+				CURRENT_PROJECT_VERSION = 2.0.0;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = K4356CVQKW;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -391,12 +390,12 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -575,6 +574,7 @@
 		E468143C2DD48870004CA6E9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -591,12 +591,14 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TK8.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TK8";
 			};
 			name = Debug;
 		};
 		E468143D2DD48870004CA6E9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -613,6 +615,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TK8.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TK8";
 			};
 			name = Release;
 		};

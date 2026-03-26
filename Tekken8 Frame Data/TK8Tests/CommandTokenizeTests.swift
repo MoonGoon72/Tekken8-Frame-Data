@@ -3,6 +3,7 @@
 //  TK8Tests
 //
 
+@testable import TK8
 import Foundation
 import XCTest
 

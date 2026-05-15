@@ -65,14 +65,22 @@ final class MoveListViewController: BaseViewController {
         navigationController?.navigationBar.tintColor = .tkRed
         navigationController?.navigationBar.topItem?.title = ""
         let settingsButton = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(settingsButtonTapped))
-        navigationItem.rightBarButtonItem = settingsButton
+        let filterButton = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease"), style: .plain, target: self, action: #selector(filterButtonTapped))
+        navigationItem.rightBarButtonItems = [settingsButton, filterButton]
     }
 
     @objc private func settingsButtonTapped() {
         let settingsViewController = SettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
-    
+
+    @objc private func filterButtonTapped() {
+        let filterView = FilterView(moveListViewModel: moveListViewModel)
+        let filterViewController = UIHostingController(rootView: filterView)
+        navigationController?.modalPresentationStyle = .popover
+        navigationController?.pushViewController(filterViewController, animated: true)
+    }
+
     override func bindViewModel() {
         super.bindViewModel()
         
@@ -102,7 +110,7 @@ extension MoveListViewController: UISearchControllerDelegate, UISearchResultsUpd
     func updateSearchResults(for searchController: UISearchController) {
         let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         // 필터링 로직
-        moveListViewModel.filter(by: text)
+        moveListViewModel.updateKeyword(by: text)
         Analytics.logEvent("search_move", parameters: [
             "character_name": character.nameEN,
             "keyword": text

@@ -5,16 +5,25 @@
 //  Created by 문영균 on 4/13/25.
 //
 
+import Combine
 import Foundation
+
+struct FilterCondition {
+    var keyword: String = ""
+    var sections: [String] = []
+    var attributes: [String] = []
+}
 
 @MainActor
 final class MoveListViewModel {
     @Published private(set) var filtered: [LocalizedMove] = []
+    @Published var filterCondition: FilterCondition = FilterCondition()
     
+    private var cancellables = Set<AnyCancellable>()
     private(set) var moves: [Move] = []
     private var localized: [LocalizedMove] = []
-    private var overallSectionsKR: [String] = [] // 원본 섹션 등장 순 (ko 기준)
-    
+    private(set) var overallSections: [String] = []
+
     private let repository: MoveRepository
     private let translator = TranslatorEngine()
     
@@ -30,6 +39,10 @@ final class MoveListViewModel {
     
     init(moveRepository repository: MoveRepository) {
         self.repository = repository
+        $filterCondition.sink { condition in
+            self.filter(by: condition)
+        }
+        .store(in: &cancellables)
     }
     
     func setLanguage(code: String?) {
@@ -44,17 +57,26 @@ final class MoveListViewModel {
             do {
                 let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
                 moves = fetchedMoves
-                overallSectionsKR = Array<Move>.overallSectionOrder(from: fetchedMoves)
                 await relocalizeAndSort()
             } catch {
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }
         }
     }
-    
-    func filter(by keyword: String) {
+
+    func updateKeyword(by keyword: String) {
+        filterCondition.keyword = keyword
+    }
+
+    func applyFilter(_ condition: FilterCondition) {
+        filterCondition.attributes = condition.attributes
+        filterCondition.sections = condition.sections
+    }
+
+    private func filter(by condition: FilterCondition) {
+        let keyword = condition.keyword
         let key = keyword.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else {
+        guard !key.isEmpty || !condition.attributes.isEmpty || !condition.sections.isEmpty else {
             filtered = sortLocalized(localized)
             return
         }
@@ -72,6 +94,8 @@ final class MoveListViewModel {
                 || lm.command.lowercased().contains(key)
                 || (lm.commandEN?.lowercased().contains(key) ?? false)
                 || (lm.description?.lowercased().contains(key) ?? false)
+                || condition.sections.contains(lm.section)
+                || condition.attributes.contains(lm.attribute ?? "")
                 || attrMatch
             }
         )
@@ -95,6 +119,7 @@ final class MoveListViewModel {
         }
 
         localized = mapped
+        overallSections = Array<LocalizedMove>.overallSectionOrder(from: localized)
         filtered  = sortLocalized(mapped)
     }
     
@@ -102,23 +127,9 @@ final class MoveListViewModel {
         // 섹션 순서는:
         // 1) 언어별 선호 섹션 (preferredSections)
         // 2) 나머지는 "첫 등장 순서" 유지
-        let sectionsInOrder: [String] = {
-            let all = items.compactMap { $0.section }
-            var seen = Set<String>()
-            var order: [String] = []
-            // 1) 선호 섹션
-            for s in preferredSections where all.contains(s) {
-                if seen.insert(s).inserted { order.append(s) }
-            }
-            // 2) 첫 등장 순
-            for s in all where seen.insert(s).inserted {
-                order.append(s)
-            }
-            return order
-        }()
 
         func sectionPriority(_ sec: String?) -> (Int, Int) {
-            guard let s = sec, let i = sectionsInOrder.firstIndex(of: s) else { return (1, .max) }
+            guard let s = sec, let i = overallSections.firstIndex(of: s) else { return (1, .max) }
             return (0, i)
         }
 

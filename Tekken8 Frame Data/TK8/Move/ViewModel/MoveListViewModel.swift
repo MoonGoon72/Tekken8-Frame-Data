@@ -83,20 +83,14 @@ final class MoveListViewModel {
         
         filtered = sortLocalized(
             localized.filter { lm in
-                let attrMatch: Bool = {
-                    if key.contains("파크") || key.contains("파워크러쉬") || key.contains("powercrush") {
-                        return lm.attribute?.contains("powercrush") ?? false
-                    }
-                    return false
-                }()
-                return lm.skillNamePrimary.lowercased().contains(key)
+                return (keyword.isEmpty ? true :
+                (lm.skillNamePrimary.lowercased().contains(key)
                 || (lm.skillNameSecondary?.lowercased().contains(key) ?? false)
                 || lm.command.lowercased().contains(key)
                 || (lm.commandEN?.lowercased().contains(key) ?? false)
-                || (lm.description?.lowercased().contains(key) ?? false)
-                || condition.sections.contains(lm.section)
-                || condition.attributes.contains(lm.attribute ?? "")
-                || attrMatch
+                || (lm.description?.lowercased().contains(key) ?? false)))
+                && (condition.sections.isEmpty ? true : condition.sections.contains(lm.section))
+                && (condition.attributes.isEmpty ? true : condition.attributes.contains(lm.attribute ?? ""))
             }
         )
     }

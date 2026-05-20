@@ -25,7 +25,7 @@ private extension Color {
     static let tk8Hairline2  = Color.white.opacity(0.14)
 
     init(hex: String) {
-        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
+        let s = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
         var rgb: UInt64 = 0
         Scanner(string: s).scanHexInt64(&rgb)
         self.init(
@@ -60,17 +60,21 @@ struct FilterState: Equatable {
 }
 
 struct FilterView: View {
-    @State var state: FilterState = FilterState()
+    @State var state: FilterState
     @Environment(\.dismiss) private var dismiss
     let moveListViewModel: MoveListViewModel
 
     init(moveListViewModel: MoveListViewModel) {
         self.moveListViewModel = moveListViewModel
+        state = FilterState(
+            sections: moveListViewModel.filterCondition.sections.map { .text(text: $0) },
+            attributes: moveListViewModel.filterCondition.attributes.map { .icon(text: $0) }
+        )
         sectionOptions = moveListViewModel.overallSections.map { ChipItem.text(text: $0) }
     }
 
-    let sectionOptions: [ChipItem]
-    private let attributeOptions: [ChipItem] = [.icon(text: "heat"), .icon(text: "homing"), .icon(text: "wall_break"), .icon(text: "floor_break")]
+    private let sectionOptions: [ChipItem]
+    private let attributeOptions: [ChipItem] = [.icon(text: "heatburst"), .icon(text: "homing"), .icon(text: "wall_break"), .icon(text: "floor_break"), .icon(text: "tornado")]
     var body: some View {
         VStack {
             header
@@ -80,7 +84,7 @@ struct FilterView: View {
                 VStack(spacing: 0) {
                     sectionBlock
                     separator
-
+                    attributeBlock
                 }
             }
             footer
@@ -113,9 +117,9 @@ struct FilterView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Color.tk8Text2)
                     .frame(width: 28, height: 28)
-                    .background(Color.tkBackground1)
+                    .background(Color.tk8Bg2)
                     .clipShape(Circle())
             }
         }
@@ -183,6 +187,29 @@ struct FilterView: View {
                 }
             }
     }
+
+    // MARK: - Attribute Block
+
+    private var attributeBlock: some View {
+        FilterBlock(
+            title: "속성".localized(),
+            hint: "\(state.attributes.count) / \(attributeOptions.count)",
+            clearAction: state.attributes.isEmpty ? nil : { state.attributes = [] }) {
+                FlowLayout(spacing: 6) {
+                    ForEach(attributeOptions, id: \.self) { option in
+                        ChipButton(
+                            item: option,
+                            color: .tkRed,
+                            isActive: state.attributes.contains(option)) {
+                                state.attributes.toggle(option)
+                            }
+                    }
+                }
+            }
+    }
+
+    // MARK: - Startup Block
+    
 
     private func apply() {
         var filterCondition = FilterCondition()
@@ -284,6 +311,10 @@ private struct ChipButton: View {
                     )
             case .icon(let text):
                 Image(text)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 34, height: 34)
+                    .opacity(isActive ? 1 : 0.62)
             }
 
         }

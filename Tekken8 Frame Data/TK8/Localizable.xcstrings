@@ -12,9 +12,6 @@
         }
       }
     },
-    "%lld" : {
-
-    },
     "<p>버그 리포트, 건의사항, 프레임 데이터 오입력 등등을 제보해주세요.</p>" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25,9 +22,6 @@
           }
         }
       }
-    },
-    "Hello, World!" : {
-
     },
     "가드" : {
       "extractionState" : "manual",
@@ -249,6 +243,28 @@
         }
       }
     },
+    "섹션" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Section"
+          }
+        }
+      }
+    },
+    "속성" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attribute"
+          }
+        }
+      }
+    },
     "앱 버전" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -282,6 +298,17 @@
         }
       }
     },
+    "적용" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply"
+          }
+        }
+      }
+    },
     "전체 선택" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -304,6 +331,17 @@
         }
       }
     },
+    "지우기" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
     "철권 버전" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -311,6 +349,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tekken version"
+          }
+        }
+      }
+    },
+    "초기화" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
           }
         }
       }
@@ -388,6 +437,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Frame Data"
+          }
+        }
+      }
+    },
+    "필터" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        }
+      }
+    },
+    "필터링 조건을 적용해 기술을 필터링 할 수 있습니다." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can filter moves by applying filtering conditions."
           }
         }
       }

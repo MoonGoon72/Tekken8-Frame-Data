@@ -8,7 +8,7 @@ import UIKit
 
 enum OnboardingManager {
     private static let shownVersionKey = "onboarding_shown_version"
-    private static let currentVersion = 1
+    private static let currentVersion = 2
 
     static var shouldShowOnboarding: Bool {
         let shownVersion = UserDefaults.standard.integer(forKey: shownVersionKey)
@@ -40,6 +40,12 @@ enum OnboardingManager {
                 title: "롱프레스".localized(),
                 description: "메모 셀을 길게 누르면 고정, 삭제 등의 메뉴가 나타납니다.".localized()
             ),
+            OnboardingFeature(
+                icon: "line.3.horizontal.decrease.circle",
+                iconColor: UIColor(red: 0.52, green: 0.72, blue: 0.92, alpha: 1),
+                title: "필터링".localized(),
+                description: "필터링 조건을 적용해 기술을 필터링 할 수 있습니다.".localized()
+            )
         ]
         return OnboardingViewController(features: features, version: "v\(version)")
     }

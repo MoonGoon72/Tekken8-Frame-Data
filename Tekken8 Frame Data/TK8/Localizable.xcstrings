@@ -12,6 +12,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "<p>버그 리포트, 건의사항, 프레임 데이터 오입력 등등을 제보해주세요.</p>" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22,6 +25,9 @@
           }
         }
       }
+    },
+    "Hello, World!" : {
+
     },
     "가드" : {
       "extractionState" : "manual",
@@ -448,6 +454,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filter"
+          }
+        }
+      }
+    },
+    "필터링" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtering"
           }
         }
       }

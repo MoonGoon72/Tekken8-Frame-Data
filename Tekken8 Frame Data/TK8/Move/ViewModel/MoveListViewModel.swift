@@ -12,6 +12,8 @@ struct FilterCondition {
     var keyword: String = ""
     var sections: [String] = []
     var attributes: [String] = []
+    var startupRange: ClosedRange<Int>?
+    var guardRange: ClosedRange<Int>?
 }
 
 @MainActor
@@ -69,14 +71,21 @@ final class MoveListViewModel {
     }
 
     func applyFilter(_ condition: FilterCondition) {
+        filterCondition.keyword = condition.keyword
         filterCondition.attributes = condition.attributes
         filterCondition.sections = condition.sections
+        filterCondition.startupRange = condition.startupRange
+        filterCondition.guardRange = condition.guardRange
     }
 
     private func filter(by condition: FilterCondition) {
         let keyword = condition.keyword
         let key = keyword.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty || !condition.attributes.isEmpty || !condition.sections.isEmpty else {
+        guard !key.isEmpty
+                || !condition.attributes.isEmpty
+                || !condition.sections.isEmpty
+                || condition.startupRange != nil
+                || condition.guardRange != nil else {
             filtered = sortLocalized(localized)
             return
         }
@@ -91,6 +100,8 @@ final class MoveListViewModel {
                 || (lm.description?.lowercased().contains(key) ?? false)))
                 && (condition.sections.isEmpty ? true : condition.sections.contains(lm.section))
                 && (condition.attributes.isEmpty ? true : condition.attributes.contains(lm.attribute ?? ""))
+                && MoveFrameRangeMatcher.matches(lm.startupFrame, in: condition.startupRange)
+                && MoveFrameRangeMatcher.matches(lm.guardFrame, in: condition.guardRange)
             }
         )
     }
@@ -141,3 +152,57 @@ final class MoveListViewModel {
     }
 }
 
+enum MoveFrameRangeMatcher {
+    private static let numberRegex = try! NSRegularExpression(pattern: #"(?<!\d)[+-]?\d+"#)
+    private static let rangeSeparators = ["~", "～"]
+
+    static func matches(_ rawValue: String?, in selectedRange: ClosedRange<Int>?) -> Bool {
+        guard let selectedRange else { return true }
+        guard let rawValue else { return false }
+
+        return ranges(in: rawValue).contains { frameRange in
+            frameRange.overlaps(selectedRange)
+        }
+    }
+
+    static func ranges(in rawValue: String) -> [ClosedRange<Int>] {
+        let matches = numberRegex.matches(
+            in: rawValue,
+            range: NSRange(rawValue.startIndex..., in: rawValue)
+        )
+
+        let numbers: [(value: Int, range: Range<String.Index>)] = matches.compactMap { match in
+            guard let textRange = Range(match.range, in: rawValue) else { return nil }
+            let rawNumber = String(rawValue[textRange])
+            let normalizedNumber = rawNumber.hasPrefix("+") ? String(rawNumber.dropFirst()) : rawNumber
+            guard let value = Int(normalizedNumber) else { return nil }
+            return (value, textRange)
+        }
+
+        guard !numbers.isEmpty else { return [] }
+
+        var usedIndexes = Set<Int>()
+        var ranges: [ClosedRange<Int>] = []
+
+        for index in numbers.indices.dropLast() {
+            let current = numbers[index]
+            let next = numbers[index + 1]
+            let separator = rawValue[current.range.upperBound..<next.range.lowerBound]
+
+            guard rangeSeparators.contains(where: { separator.contains($0) }) else { continue }
+
+            let lower = min(current.value, next.value)
+            let upper = max(current.value, next.value)
+            ranges.append(lower...upper)
+            usedIndexes.insert(index)
+            usedIndexes.insert(index + 1)
+        }
+
+        for index in numbers.indices where !usedIndexes.contains(index) {
+            let value = numbers[index].value
+            ranges.append(value...value)
+        }
+
+        return ranges
+    }
+}

@@ -15,6 +15,94 @@
     "%lld" : {
 
     },
+    "-14~-10" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "-14~-10"
+          }
+        }
+      }
+    },
+    "-15 이하" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "<= -15"
+          }
+        }
+      }
+    },
+    "-9~-1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "-9~-1"
+          }
+        }
+      }
+    },
+    "0 이상" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ">= 0"
+          }
+        }
+      }
+    },
+    "10~12" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10~12"
+          }
+        }
+      }
+    },
+    "13~15" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "13~15"
+          }
+        }
+      }
+    },
+    "16~20" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16~20"
+          }
+        }
+      }
+    },
+    "21+" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "21+"
+          }
+        }
+      }
+    },
     "<p>버그 리포트, 건의사항, 프레임 데이터 오입력 등등을 제보해주세요.</p>" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26,9 +114,6 @@
         }
       }
     },
-    "Hello, World!" : {
-
-    },
     "가드" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36,6 +121,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "guard"
+          }
+        }
+      }
+    },
+    "가드프레임" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guard Frame"
           }
         }
       }
@@ -271,6 +367,17 @@
         }
       }
     },
+    "시작프레임" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Startup Frame"
+          }
+        }
+      }
+    },
     "앱 버전" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -369,6 +476,12 @@
           }
         }
       }
+    },
+    "최대 프레임" : {
+
+    },
+    "최소 프레임" : {
+
     },
     "카운터" : {
       "extractionState" : "manual",

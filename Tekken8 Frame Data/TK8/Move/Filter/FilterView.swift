@@ -39,6 +39,9 @@ private extension Color {
 // MARK: - Filter State
 
 struct FilterState: Equatable {
+    static let startupBounds = 0...40
+    static let guardBounds = -40...30
+
     var sections: [ChipItem] = []
     var attributes: [ChipItem] = []
     var startupMin: Int = 0
@@ -46,16 +49,34 @@ struct FilterState: Equatable {
     var guardMin: Int = -40
     var guardMax: Int = 30
 
+    var isStartupDefault: Bool {
+        startupMin == Self.startupBounds.lowerBound && startupMax == Self.startupBounds.upperBound
+    }
+
+    var isGuardDefault: Bool {
+        guardMin == Self.guardBounds.lowerBound && guardMax == Self.guardBounds.upperBound
+    }
+
     var activeCount: Int {
         sections.count + attributes.count
-        + (startupMin != 0 || startupMax != 40 ? 1 : 0)
-        + (guardMin != -40 || guardMax != 30 ? 1: 0)
+        + (isStartupDefault ? 0 : 1)
+        + (isGuardDefault ? 0 : 1)
     }
 
     mutating func reset() {
         sections = []; attributes = []
-        startupMin = 0; startupMax = 40
-        guardMin = -40; guardMax = 30
+        resetStartup()
+        resetGuard()
+    }
+
+    mutating func resetStartup() {
+        startupMin = Self.startupBounds.lowerBound
+        startupMax = Self.startupBounds.upperBound
+    }
+
+    mutating func resetGuard() {
+        guardMin = Self.guardBounds.lowerBound
+        guardMax = Self.guardBounds.upperBound
     }
 }
 
@@ -66,15 +87,36 @@ struct FilterView: View {
 
     init(moveListViewModel: MoveListViewModel) {
         self.moveListViewModel = moveListViewModel
+        let condition = moveListViewModel.filterCondition
+        let startupRange = condition.startupRange ?? FilterState.startupBounds
+        let guardRange = condition.guardRange ?? FilterState.guardBounds
+
         state = FilterState(
-            sections: moveListViewModel.filterCondition.sections.map { .text(text: $0) },
-            attributes: moveListViewModel.filterCondition.attributes.map { .icon(text: $0) }
+            sections: condition.sections.map { .text(text: $0) },
+            attributes: condition.attributes.map { .icon(text: $0) },
+            startupMin: Self.clamp(startupRange.lowerBound, in: FilterState.startupBounds),
+            startupMax: Self.clamp(startupRange.upperBound, in: FilterState.startupBounds),
+            guardMin: Self.clamp(guardRange.lowerBound, in: FilterState.guardBounds),
+            guardMax: Self.clamp(guardRange.upperBound, in: FilterState.guardBounds)
         )
         sectionOptions = moveListViewModel.overallSections.map { ChipItem.text(text: $0) }
     }
 
     private let sectionOptions: [ChipItem]
     private let attributeOptions: [ChipItem] = [.icon(text: "heatburst"), .icon(text: "homing"), .icon(text: "powercrush"), .icon(text: "wall_break"), .icon(text: "floor_break"), .icon(text: "tornado")]
+    private let startupPresets: [FrameRangePreset] = [
+        .init(title: "10~12", range: 10...12),
+        .init(title: "13~15", range: 13...15),
+        .init(title: "16~20", range: 16...20),
+        .init(title: "21+", range: 21...FilterState.startupBounds.upperBound)
+    ]
+    private let guardPresets: [FrameRangePreset] = [
+        .init(title: "-15 이하", range: FilterState.guardBounds.lowerBound...(-15)),
+        .init(title: "-14~-10", range: -14...(-10)),
+        .init(title: "-9~-1", range: -9...(-1)),
+        .init(title: "0 이상", range: 0...FilterState.guardBounds.upperBound)
+    ]
+
     var body: some View {
         VStack {
             header
@@ -85,6 +127,10 @@ struct FilterView: View {
                     sectionBlock
                     separator
                     attributeBlock
+                    separator
+                    startupBlock
+                    separator
+                    guardBlock
                 }
             }
             footer
@@ -209,14 +255,61 @@ struct FilterView: View {
     }
 
     // MARK: - Startup Block
-    
+
+    private var startupBlock: some View {
+        FilterBlock(
+            title: "시작프레임".localized(),
+            hint: "\(Self.formatPlainFrame(state.startupMin)) - \(Self.formatPlainFrame(state.startupMax))",
+            clearAction: state.isStartupDefault ? nil : { state.resetStartup() }) {
+                FrameRangeControl(
+                    lowerValue: $state.startupMin,
+                    upperValue: $state.startupMax,
+                    bounds: FilterState.startupBounds,
+                    accent: .tk8Heat,
+                    presets: startupPresets,
+                    valueFormatter: Self.formatPlainFrame
+                )
+            }
+    }
+
+    // MARK: - Guard Block
+
+    private var guardBlock: some View {
+        FilterBlock(
+            title: "가드프레임".localized(),
+            hint: "\(Self.formatSignedFrame(state.guardMin)) - \(Self.formatSignedFrame(state.guardMax))",
+            clearAction: state.isGuardDefault ? nil : { state.resetGuard() }) {
+                FrameRangeControl(
+                    lowerValue: $state.guardMin,
+                    upperValue: $state.guardMax,
+                    bounds: FilterState.guardBounds,
+                    accent: .tk8Safe,
+                    presets: guardPresets,
+                    valueFormatter: Self.formatSignedFrame
+                )
+            }
+    }
 
     private func apply() {
         var filterCondition = FilterCondition()
         filterCondition.sections = state.sections.map { $0.value }
         filterCondition.attributes = state.attributes.map { $0.value }
         filterCondition.keyword = moveListViewModel.filterCondition.keyword
+        filterCondition.startupRange = state.isStartupDefault ? nil : state.startupMin...state.startupMax
+        filterCondition.guardRange = state.isGuardDefault ? nil : state.guardMin...state.guardMax
         moveListViewModel.applyFilter(filterCondition)
+    }
+
+    private static func clamp(_ value: Int, in bounds: ClosedRange<Int>) -> Int {
+        min(max(value, bounds.lowerBound), bounds.upperBound)
+    }
+
+    private static func formatPlainFrame(_ value: Int) -> String {
+        "\(value)"
+    }
+
+    private static func formatSignedFrame(_ value: Int) -> String {
+        value > 0 ? "+\(value)" : "\(value)"
     }
 }
 
@@ -283,6 +376,89 @@ private struct FilterBlock<Action: View, Content: View>: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 18)
+    }
+}
+
+// MARK: - Frame Range Control
+
+private struct FrameRangePreset: Hashable {
+    let title: String
+    let range: ClosedRange<Int>
+}
+
+private struct FrameRangeControl: View {
+    @Binding var lowerValue: Int
+    @Binding var upperValue: Int
+
+    let bounds: ClosedRange<Int>
+    let accent: Color
+    let presets: [FrameRangePreset]
+    let valueFormatter: (Int) -> String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                FrameValuePill(text: valueFormatter(lowerValue), accent: accent)
+
+                Rectangle()
+                    .fill(Color.tk8Hairline2)
+                    .frame(height: 1)
+
+                FrameValuePill(text: valueFormatter(upperValue), accent: accent)
+            }
+
+            RangeSliderView(
+                lowerValue: $lowerValue,
+                upperValue: $upperValue,
+                bounds: bounds,
+                accent: accent,
+                valueFormatter: valueFormatter
+            )
+
+            FlowLayout(spacing: 6) {
+                ForEach(presets, id: \.self) { preset in
+                    Button {
+                        lowerValue = preset.range.lowerBound
+                        upperValue = preset.range.upperBound
+                    } label: {
+                        Text(preset.title.localized())
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isActive(preset) ? .white : Color.tk8Text2)
+                            .padding(.horizontal, 10)
+                            .frame(height: 30)
+                            .background(isActive(preset) ? accent : Color.tk8Bg2)
+                            .clipShape(RoundedRectangle(cornerRadius: 9))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(isActive(preset) ? accent : Color.tk8Hairline, lineWidth: 0.5)
+                            )
+                    }
+                }
+            }
+        }
+    }
+
+    private func isActive(_ preset: FrameRangePreset) -> Bool {
+        lowerValue == preset.range.lowerBound && upperValue == preset.range.upperBound
+    }
+}
+
+private struct FrameValuePill: View {
+    let text: String
+    let accent: Color
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 13, weight: .heavy, design: .monospaced))
+            .foregroundStyle(.white)
+            .frame(minWidth: 58)
+            .frame(height: 30)
+            .background(accent.opacity(0.16))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(accent.opacity(0.42), lineWidth: 0.5)
+            )
     }
 }
 

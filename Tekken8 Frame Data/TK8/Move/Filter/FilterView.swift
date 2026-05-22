@@ -103,7 +103,7 @@ struct FilterView: View {
     }
 
     private let sectionOptions: [ChipItem]
-    private let attributeOptions: [ChipItem] = [.icon(text: "heatburst"), .icon(text: "homing"), .icon(text: "powercrush"), .icon(text: "wall_break"), .icon(text: "floor_break"), .icon(text: "tornado")]
+    private let attributeOptions: [ChipItem] = [.icon(text: "heatburst"), .icon(text: "homing"), .icon(text: "powercrush"), .icon(text: "tornado"), .icon(text: "wall_break"), .icon(text: "floor_break")]
     private let startupPresets: [FrameRangePreset] = [
         .init(title: "10~12", range: 10...12),
         .init(title: "13~15", range: 13...15),

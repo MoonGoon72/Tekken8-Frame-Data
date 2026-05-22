@@ -76,7 +76,7 @@ extension CharacterSelectViewController: UISearchControllerDelegate, UISearchRes
     func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.automaticallyShowsCancelButton = true
-        searchController.searchBar.placeholder = "캐릭터 이름을 입력해주세요.".localized()
+        searchController.searchBar.placeholder = "Please enter the character name.".localized()
         navigationItem.searchController = searchController
     }
 

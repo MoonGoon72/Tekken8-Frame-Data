@@ -51,7 +51,7 @@ final class MemoComposeView: BaseView {
     }()
     private let titlePlaceholder: UILabel = {
         let label = UILabel()
-        label.text = "제목".localized()
+        label.text = "Title".localized()
         label.font = .systemFont(ofSize: 22, weight: .semibold)
         label.textColor = UIColor.white.withAlphaComponent(0.2)
         return label
@@ -74,7 +74,7 @@ final class MemoComposeView: BaseView {
     }()
     private let bodyPlaceholder: UILabel = {
         let label = UILabel()
-        label.text = "작성할 메모를 입력하세요.".localized()
+        label.text = "Write your memo here...".localized()
         label.font = .systemFont(ofSize: 16)
         label.textColor = UIColor.white.withAlphaComponent(0.15)
         return label

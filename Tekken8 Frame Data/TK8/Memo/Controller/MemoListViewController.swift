@@ -119,19 +119,19 @@ final class MemoListViewController: BaseViewController {
 
     private func composeRightBarButtons() {
         let menuItems: [UIAction] = {
-            let multiSelect = UIAction(title: "메모 선택".localized(), image: UIImage(systemName: "checkmark.circle")) { [weak self] _ in
+            let multiSelect = UIAction(title: "Select memo".localized(), image: UIImage(systemName: "checkmark.circle")) { [weak self] _ in
                 self?.navigationController?.isToolbarHidden = false
                 self?.toggleEditingMode()
                 self?.toolbarItems = [
                     UIBarButtonItem(
-                        title: "전체 선택".localized(),
+                        title: "Select All".localized(),
                         style: .plain,
                         target: self,
                         action: #selector(self?.selectAllButtonTapped)
                     ),
                     UIBarButtonItem(systemItem: .flexibleSpace),
                     UIBarButtonItem(
-                        title: "삭제".localized(),
+                        title: "Delete".localized(),
                         style: .plain,
                         target: self,
                         action: #selector(self?.deleteButtonTapped)

@@ -59,7 +59,7 @@ struct RangeSliderView: View {
                                 lowerValue = min(value, upperValue)
                             }
                     )
-                    .accessibilityLabel("최소 프레임")
+                    .accessibilityLabel("Minimum Frame".localized())
                     .accessibilityValue(valueFormatter(lowerValue))
 
                 thumb
@@ -75,7 +75,7 @@ struct RangeSliderView: View {
                                 upperValue = max(value, lowerValue)
                             }
                     )
-                    .accessibilityLabel("최대 프레임")
+                    .accessibilityLabel("Maximum Frame".localized())
                     .accessibilityValue(valueFormatter(upperValue))
                     .zIndex(1)
             }

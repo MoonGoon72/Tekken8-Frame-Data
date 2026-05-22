@@ -25,26 +25,26 @@ enum OnboardingManager {
             OnboardingFeature(
                 icon: "list.bullet.rectangle",
                 iconColor: UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1),
-                title: "프레임 데이터".localized(),
-                description: "캐릭터를 탭하면 모든 기술의 발동, 가드, 히트, 카운터 프레임을 확인할 수 있습니다.".localized()
+                title: "Frame Data".localized(),
+                description: "Tap a character to view the activation, guard, hit, and counter frames for all their moves.".localized()
             ),
             OnboardingFeature(
                 icon: "note.text",
                 iconColor: UIColor(red: 0.98, green: 0.78, blue: 0.46, alpha: 1),
-                title: "메모".localized(),
-                description: "캐릭터별로 메모를 작성하고 수정할 수 있습니다. 중요한 메모는 고정해서 상단에 유지하세요.".localized()
+                title: "MEMOS".localized(),
+                description: "You can create and edit notes for each character. Pin important notes to keep them at the top.".localized()
             ),
             OnboardingFeature(
                 icon: "hand.tap",
                 iconColor: UIColor(red: 0.52, green: 0.72, blue: 0.92, alpha: 1),
-                title: "롱프레스".localized(),
-                description: "메모 셀을 길게 누르면 고정, 삭제 등의 메뉴가 나타납니다.".localized()
+                title: "Long press".localized(),
+                description: "When you press and hold a note cell, a menu with options such as Pin, Delete will appear.".localized()
             ),
             OnboardingFeature(
                 icon: "line.3.horizontal.decrease.circle",
                 iconColor: UIColor(red: 0.52, green: 0.72, blue: 0.92, alpha: 1),
-                title: "필터링".localized(),
-                description: "필터링 조건을 적용해 기술을 필터링 할 수 있습니다.".localized()
+                title: "Filtering".localized(),
+                description: "You can filter moves by applying filtering conditions.".localized()
             )
         ]
         return OnboardingViewController(features: features, version: "v\(version)")

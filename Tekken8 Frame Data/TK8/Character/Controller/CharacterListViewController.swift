@@ -204,6 +204,6 @@ private enum Section {
 
 private extension CharacterListViewController {
     enum Texts {
-        static let placeholder = "캐릭터 이름을 입력해주세요."
+        static let placeholder = "Please enter the character name."
     }
 }

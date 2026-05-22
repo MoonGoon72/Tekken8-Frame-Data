@@ -111,10 +111,10 @@ struct FilterView: View {
         .init(title: "21+", range: 21...FilterState.startupBounds.upperBound)
     ]
     private let guardPresets: [FrameRangePreset] = [
-        .init(title: "-15 이하", range: FilterState.guardBounds.lowerBound...(-15)),
+        .init(title: "<= -15", range: FilterState.guardBounds.lowerBound...(-15)),
         .init(title: "-14~-10", range: -14...(-10)),
         .init(title: "-9~-1", range: -9...(-1)),
-        .init(title: "0 이상", range: 0...FilterState.guardBounds.upperBound)
+        .init(title: ">= 0", range: 0...FilterState.guardBounds.upperBound)
     ]
 
     var body: some View {
@@ -142,7 +142,7 @@ struct FilterView: View {
 
     private var header: some View {
         HStack {
-            Text("필터".localized())
+            Text("Filter".localized())
                 .font(.system(size: 17, weight: .heavy))
                 .foregroundStyle(.white)
 
@@ -179,7 +179,7 @@ struct FilterView: View {
         VStack(spacing: 0) {
             Divider().background(Color.tk8Hairline)
             HStack(spacing: 10) {
-                Button("초기화".localized()) {
+                Button("Reset".localized()) {
                     state.reset()
                 }
                 .font(.system(size: 14, weight: .bold))
@@ -190,7 +190,7 @@ struct FilterView: View {
                     apply()
                     dismiss()
                 } label: {
-                    Text("적용".localized())
+                    Text("Apply".localized())
                         .font(.system(size: 15, weight: .heavy))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -218,7 +218,7 @@ struct FilterView: View {
 
     private var sectionBlock: some View {
         FilterBlock(
-            title: "섹션".localized(),
+            title: "Section".localized(),
             hint: "\(state.sections.count) / \(sectionOptions.count)",
             clearAction: state.sections.isEmpty ? nil : { state.sections = [] }) {
                 FlowLayout(spacing: 6) {
@@ -238,7 +238,7 @@ struct FilterView: View {
 
     private var attributeBlock: some View {
         FilterBlock(
-            title: "속성".localized(),
+            title: "Attribute".localized(),
             hint: "\(state.attributes.count) / \(attributeOptions.count)",
             clearAction: state.attributes.isEmpty ? nil : { state.attributes = [] }) {
                 FlowLayout(spacing: 6) {
@@ -258,7 +258,7 @@ struct FilterView: View {
 
     private var startupBlock: some View {
         FilterBlock(
-            title: "시작프레임".localized(),
+            title: "Startup Frame".localized(),
             hint: "\(Self.formatPlainFrame(state.startupMin)) - \(Self.formatPlainFrame(state.startupMax))",
             clearAction: state.isStartupDefault ? nil : { state.resetStartup() }) {
                 FrameRangeControl(
@@ -276,7 +276,7 @@ struct FilterView: View {
 
     private var guardBlock: some View {
         FilterBlock(
-            title: "가드프레임".localized(),
+            title: "Guard Frame".localized(),
             hint: "\(Self.formatSignedFrame(state.guardMin)) - \(Self.formatSignedFrame(state.guardMax))",
             clearAction: state.isGuardDefault ? nil : { state.resetGuard() }) {
                 FrameRangeControl(
@@ -365,7 +365,7 @@ private struct FilterBlock<Action: View, Content: View>: View {
                 Spacer()
 
                 if let clearAction {
-                    Button("지우기".localized(), action: clearAction)
+                    Button("Clear".localized(), action: clearAction)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Color.tk8Text3)
                 } else if let action {

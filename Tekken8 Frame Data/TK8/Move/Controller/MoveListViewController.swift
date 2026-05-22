@@ -237,6 +237,6 @@ extension MoveListViewController: UICollectionViewDelegate {
 
 private extension MoveListViewController {
     enum Texts {
-        static let placeholder = "검색"
+        static let placeholder = "Search"
     }
 }

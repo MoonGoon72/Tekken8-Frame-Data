@@ -108,7 +108,7 @@ private extension CharacterSelectViewController {
             collectionView,
             indexPath,
             itemIdentifier in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Constants.characterHostingCell, for: indexPath)
             cell.contentConfiguration = UIHostingConfiguration{
                 CharacterCell(
                     character: itemIdentifier,
@@ -126,4 +126,8 @@ private extension CharacterSelectViewController {
         snapshot.appendItems(characters, toSection: .main)
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
+}
+
+private enum Constants {
+    static let characterHostingCell = "characterHostingCell"
 }

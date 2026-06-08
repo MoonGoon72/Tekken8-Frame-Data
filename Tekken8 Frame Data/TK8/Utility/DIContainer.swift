@@ -19,7 +19,8 @@ final class DIContainer {
     @MainActor func makeCharacterListViewController() -> CharacterListViewController {
         let repository = DefaultCharacterRepository(manager: supabaseManager, coreData: coreDataManager)
         let viewModel = CharacterListViewModel(characterRepository: repository)
-        return CharacterListViewController(characterListViewModel: viewModel, container: self)
+        let preference = CharacterLayoutPreference(manager: UserDefaultsManager())
+        return CharacterListViewController(characterListViewModel: viewModel, container: self, preference: preference)
     }
     
     @MainActor func makeMoveListViewController(character: Character) -> MoveListViewController {

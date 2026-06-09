@@ -22,6 +22,12 @@ final class CharacterListViewController: BaseViewController {
 
     private let preference: CharacterLayoutPreference
     private var currentLayoutMode: CharacterCollectionViewMode
+    private lazy var layoutToggleButton = UIBarButtonItem(
+        image: layoutToggleButtonImage(for: currentLayoutMode),
+        style: .plain,
+        target: self,
+        action: #selector(layoutToggleButtonTapped)
+    )
 
     init(
         characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable,
@@ -80,12 +86,6 @@ final class CharacterListViewController: BaseViewController {
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.tintColor = .tkRed
 
-        let layoutToggleButton = UIBarButtonItem(
-            image: UIImage(systemName: preference.fetchLayoutMode() == .list ? "square.grid.2x2" : "list.bullet"),
-            style: .plain,
-            target: self,
-            action: #selector(layoutToggleButtonTapped)
-        )
         let memoButton = UIBarButtonItem(
             image: UIImage(systemName: "note.text"),
             style: .plain,
@@ -98,7 +98,7 @@ final class CharacterListViewController: BaseViewController {
             target: self,
             action: #selector(settingsButtonTapped)
         )
-        navigationItem.rightBarButtonItems = [layoutToggleButton, settingsButton, memoButton]
+        navigationItem.rightBarButtonItems = [settingsButton, layoutToggleButton, memoButton]
     }
     
     @objc private func settingsButtonTapped() {
@@ -109,12 +109,6 @@ final class CharacterListViewController: BaseViewController {
     @objc private func memoButtonTapped() {
         let memoViewController = container.makeMemoListViewController(characterListViewModel: characterListViewModel)
         navigationController?.pushViewController(memoViewController, animated: true)
-    }
-    
-    @objc private func donationButtonTapped() {
-        if let url = URL(string: "https://buymeacoffee.com/moongoon") {
-            UIApplication.shared.open(url)
-        }
     }
 
     @objc private func layoutToggleButtonTapped() {
@@ -141,8 +135,17 @@ final class CharacterListViewController: BaseViewController {
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 
-    private func updateLayoutToggleButtonImage(for: CharacterCollectionViewMode) {
+    private func updateLayoutToggleButtonImage(for mode: CharacterCollectionViewMode) {
+        layoutToggleButton.image = layoutToggleButtonImage(for: mode)
+    }
 
+    private func layoutToggleButtonImage(for mode: CharacterCollectionViewMode) -> UIImage? {
+        switch mode {
+        case .list:
+            return UIImage(systemName: "square.grid.2x2")
+        case .grid:
+            return UIImage(systemName: "list.bullet")
+        }
     }
 
     override func bindViewModel() {

@@ -135,3 +135,13 @@ iOSInjectionProject/
 
 ### Plist ###
 Tekken8 Frame Data/TK8/GoogleService-Info.plist
+
+### Local agent notes ###
+AGENTS.md
+CLAUDE.md
+MODULARIZATION_GUIDE.md
+implementation-notes.md
+
+### Local data scripts ###
+scripts/
+docs/move-csv-update-guide.md

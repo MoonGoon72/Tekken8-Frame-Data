@@ -26,10 +26,14 @@ final class CharacterSelectViewController: BaseViewController {
     private var dataSource: CharacterDataSource?
     weak var delegate: Selectable?
 
-    init(viewModel: any CharacterSelectable) {
+    private let currentLayoutMode: CharacterCollectionViewMode
+
+    init(viewModel: any CharacterSelectable, layoutMode: CharacterCollectionViewMode) {
         self.viewModel = viewModel
         characterSelectView = CharacterCollectionView()
         searchController = UISearchController(searchResultsController: nil)
+        currentLayoutMode = layoutMode
+        characterSelectView.applyViewMode(currentLayoutMode)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -109,13 +113,25 @@ private extension CharacterSelectViewController {
             indexPath,
             itemIdentifier in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Constants.characterHostingCell, for: indexPath)
-            cell.contentConfiguration = UIHostingConfiguration{
-                CharacterCell(
-                    character: itemIdentifier,
-                    characterImagePublisher: self.viewModel.characterImagesPublisher,
-                    characterImages: self.viewModel.characterImages
-                )
+            switch self.currentLayoutMode {
+            case .list:
+                cell.contentConfiguration = UIHostingConfiguration{
+                    CharacterCell(
+                        character: itemIdentifier,
+                        characterImagePublisher: self.viewModel.characterImagesPublisher,
+                        characterImages: self.viewModel.characterImages
+                    )
+                }
+            case .grid:
+                cell.contentConfiguration = UIHostingConfiguration{
+                    CharacterGridCell(
+                        character: itemIdentifier,
+                        characterImagePublisher: self.viewModel.characterImagesPublisher,
+                        characterImages: self.viewModel.characterImages
+                    )
+                }
             }
+
             return cell
         }
     }

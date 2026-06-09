@@ -9,19 +9,26 @@ import UIKit
 final class MemoListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<MemoSection, Memo>
     private typealias memoDataSource = UICollectionViewDiffableDataSource<MemoSection, Memo>
-    
+    private typealias MemoComposeFactory = (Memo?) -> MemoComposeViewController
+
     private let memoListView: MemoListView
     private let searchController: UISearchController
     private let memoViewModel: MemoViewModel
     private var dataSource: memoDataSource?
     private let characterListViewModel: any CharacterSelectable
 
-    init(viewModel: MemoViewModel, characterListViewModel: any CharacterSelectable) {
+    private let makeMemoComposeViewController: MemoComposeFactory
+
+    init(
+        viewModel: MemoViewModel,
+        characterListViewModel: any CharacterSelectable,
+        makeMemoComposeViewController: @escaping (Memo?) -> MemoComposeViewController
+    ) {
         self.memoListView = MemoListView()
         searchController = UISearchController(searchResultsController: nil)
         memoViewModel = viewModel
         self.characterListViewModel = characterListViewModel
-
+        self.makeMemoComposeViewController = makeMemoComposeViewController
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -67,11 +74,7 @@ final class MemoListViewController: BaseViewController {
     }
 
     @objc private func composeButtonTapped() {
-        let memoComposeViewController = MemoComposeViewController(
-            memoViewModel: memoViewModel,
-            characterListViewModel: characterListViewModel,
-            memo: nil
-        )
+        let memoComposeViewController = makeMemoComposeViewController(nil)
         navigationController?.pushViewController(memoComposeViewController, animated: true)
     }
 
@@ -246,11 +249,7 @@ extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if isEditing { return }
         let memo = dataSource?.itemIdentifier(for: indexPath)
-        let memoComposeViewController = MemoComposeViewController(
-            memoViewModel: memoViewModel,
-            characterListViewModel: characterListViewModel,
-            memo: memo
-        )
+        let memoComposeViewController = makeMemoComposeViewController(memo)
         navigationController?.pushViewController(memoComposeViewController, animated: true)
     }
 
@@ -263,12 +262,9 @@ extension MemoListViewController: UICollectionViewDelegate {
         guard let indexPath = indexPaths.first,
                 var memo = dataSource?.itemIdentifier(for: indexPath) else { return nil }
 
-        let config = UIContextMenuConfiguration(previewProvider: {
-            let previewProvider = MemoComposeViewController(
-                memoViewModel: self.memoViewModel,
-                characterListViewModel: self.characterListViewModel,
-                memo: memo
-            )
+        let config = UIContextMenuConfiguration(
+            previewProvider: {
+                let previewProvider = self.makeMemoComposeViewController(memo)
             return previewProvider
         }) { _ in
             MemoMenuFactory.menu(isPinned: memo.isPinned) {

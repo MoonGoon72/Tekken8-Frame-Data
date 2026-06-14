@@ -29,11 +29,11 @@ final class MemoSectionHeaderView: UICollectionReusableView, ReuseIdentifiable {
             let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
             iconView.image = UIImage(systemName: "pin.fill", withConfiguration: config)
             iconView.tintColor = UIColor(red: 0.98, green: 0.78, blue: 0.46, alpha: 0.7)
-            titleLabel.text = "고정됨".localized()
+            titleLabel.text = "PINNED".localized()
             titleLabel.textColor = UIColor(red: 0.98, green: 0.78, blue: 0.46, alpha: 0.7)
         case .general:
             iconView.image = nil
-            titleLabel.text = "메모".localized()
+            titleLabel.text = "MEMOS".localized()
             titleLabel.textColor = UIColor.white.withAlphaComponent(0.3)
         }
     }

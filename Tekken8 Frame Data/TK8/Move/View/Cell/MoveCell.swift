@@ -252,14 +252,14 @@ struct DescriptionView: View {
 
 private enum Constants {
     enum Texts {
-        static let damage: LocalizedStringKey = "데미지"
-        static let startup: LocalizedStringKey = "발동"
-        static let `guard`: LocalizedStringKey = "가드"
-        static let hit: LocalizedStringKey = "히트"
-        static let counter: LocalizedStringKey = "카운터"
-        static let high: LocalizedStringKey = "상"
-        static let middle: LocalizedStringKey = "중"
-        static let low: LocalizedStringKey = "하"
+        static let damage: LocalizedStringKey = "damage"
+        static let startup: LocalizedStringKey = "startup"
+        static let `guard`: LocalizedStringKey = "guard"
+        static let hit: LocalizedStringKey = "hit"
+        static let counter: LocalizedStringKey = "counter"
+        static let high: LocalizedStringKey = "high"
+        static let middle: LocalizedStringKey = "mid"
+        static let low: LocalizedStringKey = "low"
     }
 }
 

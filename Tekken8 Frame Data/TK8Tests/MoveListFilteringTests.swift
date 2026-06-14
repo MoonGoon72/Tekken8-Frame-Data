@@ -192,4 +192,23 @@ final class MoveListFilteringTests: XCTestCase {
             XCTAssertFalse(filtered.isEmpty, "\(section) 섹션에 해당하는 기술이 있어야 함")
         }
     }
+
+    // MARK: - Frame Range Filtering
+
+    func test_frame_range_filtering_parses_signed_values() {
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("+5", in: 0...30))
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("-12", in: -14...(-10)))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("-12", in: 0...30))
+    }
+
+    func test_frame_range_filtering_matches_overlapping_ranges() {
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("10~12", in: 11...15))
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("-14~-10", in: -15...(-12)))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("10~12", in: 13...15))
+    }
+
+    func test_frame_range_filtering_treats_comma_values_as_discrete_values() {
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("10, 21", in: 21...21))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("10, 21", in: 15...18))
+    }
 }

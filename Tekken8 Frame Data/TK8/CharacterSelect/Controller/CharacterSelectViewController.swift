@@ -26,10 +26,14 @@ final class CharacterSelectViewController: BaseViewController {
     private var dataSource: CharacterDataSource?
     weak var delegate: Selectable?
 
-    init(viewModel: any CharacterSelectable) {
+    private let currentLayoutMode: CharacterCollectionViewMode
+
+    init(viewModel: any CharacterSelectable, layoutMode: CharacterCollectionViewMode) {
         self.viewModel = viewModel
         characterSelectView = CharacterCollectionView()
         searchController = UISearchController(searchResultsController: nil)
+        currentLayoutMode = layoutMode
+        characterSelectView.applyViewMode(currentLayoutMode)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -76,7 +80,7 @@ extension CharacterSelectViewController: UISearchControllerDelegate, UISearchRes
     func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.automaticallyShowsCancelButton = true
-        searchController.searchBar.placeholder = "캐릭터 이름을 입력해주세요.".localized()
+        searchController.searchBar.placeholder = "Please enter the character name.".localized()
         navigationItem.searchController = searchController
     }
 
@@ -108,14 +112,26 @@ private extension CharacterSelectViewController {
             collectionView,
             indexPath,
             itemIdentifier in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
-            cell.contentConfiguration = UIHostingConfiguration{
-                CharacterCell(
-                    character: itemIdentifier,
-                    characterImagePublisher: self.viewModel.characterImagesPublisher,
-                    characterImages: self.viewModel.characterImages
-                )
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Constants.characterHostingCell, for: indexPath)
+            switch self.currentLayoutMode {
+            case .list:
+                cell.contentConfiguration = UIHostingConfiguration{
+                    CharacterCell(
+                        character: itemIdentifier,
+                        characterImagePublisher: self.viewModel.characterImagesPublisher,
+                        characterImages: self.viewModel.characterImages
+                    )
+                }
+            case .grid:
+                cell.contentConfiguration = UIHostingConfiguration{
+                    CharacterGridCell(
+                        character: itemIdentifier,
+                        characterImagePublisher: self.viewModel.characterImagesPublisher,
+                        characterImages: self.viewModel.characterImages
+                    )
+                }
             }
+
             return cell
         }
     }
@@ -126,4 +142,8 @@ private extension CharacterSelectViewController {
         snapshot.appendItems(characters, toSection: .main)
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
+}
+
+private enum Constants {
+    static let characterHostingCell = "characterHostingCell"
 }

@@ -10,14 +10,14 @@ enum MemoMenuFactory {
     static func menu(isPinned: Bool, delete: @escaping () -> Void, togglePin: @escaping () -> Void) -> UIMenu {
         var items: [UIAction] {
             let delete = UIAction(
-                title: "삭제".localized(),
+                title: "Delete".localized(),
                 image: UIImage(systemName: "trash"),
                 attributes: .destructive
             ) { _ in
                     delete()
                 }
             let togglePin = UIAction(
-                title: isPinned ? "고정 해제".localized() : "고정".localized(),
+                title: isPinned ? "Unpin".localized() : "Pin".localized(),
                 image: UIImage(systemName: isPinned ? "pin.slash.fill" : "pin.fill"),
             ) { _ in
                 togglePin()

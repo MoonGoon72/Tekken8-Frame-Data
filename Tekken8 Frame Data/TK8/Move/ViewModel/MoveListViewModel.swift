@@ -5,16 +5,27 @@
 //  Created by 문영균 on 4/13/25.
 //
 
+import Combine
 import Foundation
+
+struct FilterCondition {
+    var keyword: String = ""
+    var sections: [String] = []
+    var attributes: [String] = []
+    var startupRange: ClosedRange<Int>?
+    var guardRange: ClosedRange<Int>?
+}
 
 @MainActor
 final class MoveListViewModel {
     @Published private(set) var filtered: [LocalizedMove] = []
+    @Published var filterCondition: FilterCondition = FilterCondition()
     
+    private var cancellables = Set<AnyCancellable>()
     private(set) var moves: [Move] = []
     private var localized: [LocalizedMove] = []
-    private var overallSectionsKR: [String] = [] // 원본 섹션 등장 순 (ko 기준)
-    
+    private(set) var overallSections: [String] = []
+
     private let repository: MoveRepository
     private let translator = TranslatorEngine()
     
@@ -30,6 +41,10 @@ final class MoveListViewModel {
     
     init(moveRepository repository: MoveRepository) {
         self.repository = repository
+        $filterCondition.sink { condition in
+            self.filter(by: condition)
+        }
+        .store(in: &cancellables)
     }
     
     func setLanguage(code: String?) {
@@ -44,35 +59,49 @@ final class MoveListViewModel {
             do {
                 let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
                 moves = fetchedMoves
-                overallSectionsKR = Array<Move>.overallSectionOrder(from: fetchedMoves)
                 await relocalizeAndSort()
             } catch {
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }
         }
     }
-    
-    func filter(by keyword: String) {
+
+    func updateKeyword(by keyword: String) {
+        filterCondition.keyword = keyword
+    }
+
+    func applyFilter(_ condition: FilterCondition) {
+        filterCondition.keyword = condition.keyword
+        filterCondition.attributes = condition.attributes
+        filterCondition.sections = condition.sections
+        filterCondition.startupRange = condition.startupRange
+        filterCondition.guardRange = condition.guardRange
+    }
+
+    private func filter(by condition: FilterCondition) {
+        let keyword = condition.keyword
         let key = keyword.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else {
+        guard !key.isEmpty
+                || !condition.attributes.isEmpty
+                || !condition.sections.isEmpty
+                || condition.startupRange != nil
+                || condition.guardRange != nil else {
             filtered = sortLocalized(localized)
             return
         }
         
         filtered = sortLocalized(
             localized.filter { lm in
-                let attrMatch: Bool = {
-                    if key.contains("파크") || key.contains("파워크러쉬") || key.contains("powercrush") {
-                        return lm.attribute?.contains("powercrush") ?? false
-                    }
-                    return false
-                }()
-                return lm.skillNamePrimary.lowercased().contains(key)
+                return (keyword.isEmpty ? true :
+                (lm.skillNamePrimary.lowercased().contains(key)
                 || (lm.skillNameSecondary?.lowercased().contains(key) ?? false)
                 || lm.command.lowercased().contains(key)
                 || (lm.commandEN?.lowercased().contains(key) ?? false)
-                || (lm.description?.lowercased().contains(key) ?? false)
-                || attrMatch
+                || (lm.description?.lowercased().contains(key) ?? false)))
+                && (condition.sections.isEmpty ? true : condition.sections.contains(lm.section))
+                && (condition.attributes.isEmpty ? true : condition.attributes.contains(lm.attribute ?? ""))
+                && MoveFrameRangeMatcher.matches(lm.startupFrame, in: condition.startupRange)
+                && MoveFrameRangeMatcher.matches(lm.guardFrame, in: condition.guardRange)
             }
         )
     }
@@ -95,6 +124,7 @@ final class MoveListViewModel {
         }
 
         localized = mapped
+        overallSections = Array<LocalizedMove>.overallSectionOrder(from: localized)
         filtered  = sortLocalized(mapped)
     }
     
@@ -102,23 +132,9 @@ final class MoveListViewModel {
         // 섹션 순서는:
         // 1) 언어별 선호 섹션 (preferredSections)
         // 2) 나머지는 "첫 등장 순서" 유지
-        let sectionsInOrder: [String] = {
-            let all = items.compactMap { $0.section }
-            var seen = Set<String>()
-            var order: [String] = []
-            // 1) 선호 섹션
-            for s in preferredSections where all.contains(s) {
-                if seen.insert(s).inserted { order.append(s) }
-            }
-            // 2) 첫 등장 순
-            for s in all where seen.insert(s).inserted {
-                order.append(s)
-            }
-            return order
-        }()
 
         func sectionPriority(_ sec: String?) -> (Int, Int) {
-            guard let s = sec, let i = sectionsInOrder.firstIndex(of: s) else { return (1, .max) }
+            guard let s = sec, let i = overallSections.firstIndex(of: s) else { return (1, .max) }
             return (0, i)
         }
 
@@ -136,3 +152,57 @@ final class MoveListViewModel {
     }
 }
 
+enum MoveFrameRangeMatcher {
+    private static let numberRegex = try! NSRegularExpression(pattern: #"(?<!\d)[+-]?\d+"#)
+    private static let rangeSeparators = ["~", "～"]
+
+    static func matches(_ rawValue: String?, in selectedRange: ClosedRange<Int>?) -> Bool {
+        guard let selectedRange else { return true }
+        guard let rawValue else { return false }
+
+        return ranges(in: rawValue).contains { frameRange in
+            frameRange.overlaps(selectedRange)
+        }
+    }
+
+    static func ranges(in rawValue: String) -> [ClosedRange<Int>] {
+        let matches = numberRegex.matches(
+            in: rawValue,
+            range: NSRange(rawValue.startIndex..., in: rawValue)
+        )
+
+        let numbers: [(value: Int, range: Range<String.Index>)] = matches.compactMap { match in
+            guard let textRange = Range(match.range, in: rawValue) else { return nil }
+            let rawNumber = String(rawValue[textRange])
+            let normalizedNumber = rawNumber.hasPrefix("+") ? String(rawNumber.dropFirst()) : rawNumber
+            guard let value = Int(normalizedNumber) else { return nil }
+            return (value, textRange)
+        }
+
+        guard !numbers.isEmpty else { return [] }
+
+        var usedIndexes = Set<Int>()
+        var ranges: [ClosedRange<Int>] = []
+
+        for index in numbers.indices.dropLast() {
+            let current = numbers[index]
+            let next = numbers[index + 1]
+            let separator = rawValue[current.range.upperBound..<next.range.lowerBound]
+
+            guard rangeSeparators.contains(where: { separator.contains($0) }) else { continue }
+
+            let lower = min(current.value, next.value)
+            let upper = max(current.value, next.value)
+            ranges.append(lower...upper)
+            usedIndexes.insert(index)
+            usedIndexes.insert(index + 1)
+        }
+
+        for index in numbers.indices where !usedIndexes.contains(index) {
+            let value = numbers[index].value
+            ranges.append(value...value)
+        }
+
+        return ranges
+    }
+}

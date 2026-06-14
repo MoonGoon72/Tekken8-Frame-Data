@@ -11,9 +11,9 @@ final class MockMemoRepository: MemoRepository {
     var saveError: Error?
     var fetchError: Error?
 
-    func save(character: String, title: String, body: String) throws {
+    func save(character: String, title: String, body: String, isPinned: Bool) throws {
         if let error = saveError { throw error }
-        memos.append(Memo(id: UUID(), characterName: character, title: title, body: body, updatedAt: Date()))
+        memos.append(Memo(id: UUID(), characterName: character, title: title, body: body, isPinned: isPinned, updatedAt: Date()))
     }
 
     func fetchMemos() throws -> [Memo] {

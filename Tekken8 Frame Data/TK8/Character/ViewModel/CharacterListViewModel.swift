@@ -18,7 +18,7 @@ protocol CharacterFetchable {
 protocol CharacterSelectable: ObservableObject {
     func filter(by keyword: String)
     func resetFilter()
-    func loadImage(for character: Character) throws
+    func loadImage(for character: Character)
     func image(for key: String) -> UIImage?
     var characterImagesPublisher: AnyPublisher<[String: UIImage], Never> { get }
     var filteredCharactersPublisher: AnyPublisher<[Character], Never> { get }
@@ -66,7 +66,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
                 }
                 filteredCharacters = characters
                 for character in characters {
-                    try loadImage(for: character)
+                    loadImage(for: character)
                 }
             } catch {
                 NSLog("❌ Error fetching characters: \(error)")
@@ -93,11 +93,22 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
         filteredCharacters = characters
     }
     
-    func loadImage(for character: Character) throws {
+    func loadImage(for character: Character) {
+        guard characterImages[character.nameEN] == nil else { return }
+
+        if let image = UIImage(named: character.nameEN) {
+            characterImages[character.nameEN] = image
+            return
+        }
+
         Task {
-            let url = try repository.characterImageURL(character: character).absoluteString
-            if let image = await ImageCacheManager.shared.fetch(for: url) {
-                characterImages[character.nameEN] = image
+            do {
+                let url = try repository.characterImageURL(character: character).absoluteString
+                if let image = await ImageCacheManager.shared.fetch(for: url) {
+                    characterImages[character.nameEN] = image
+                }
+            } catch {
+                NSLog("이미지 URL 생성 실패: \(error.localizedDescription)")
             }
         }
     }

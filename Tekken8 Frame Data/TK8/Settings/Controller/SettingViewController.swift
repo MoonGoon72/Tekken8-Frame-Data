@@ -143,13 +143,13 @@ private extension SettingViewController {
         var title: String {
             switch self {
             case .appVersion:
-                "앱 버전".localized()
+                "Version Info".localized()
             case .tekkenVersion:
-                "철권 버전".localized()
+                "Tekken version".localized()
             case .reportIssue:
-                "문제 신고".localized()
+                "Report".localized()
             case .donate:
-                "후원".localized()
+                "Donation".localized()
             }
         }
         
@@ -177,15 +177,15 @@ private extension SettingViewController {
     enum Constants {
         enum Literals {
             static let cellIdentifier = "SettingCell"
-            static let title = "설정".localized()
+            static let title = "Settings".localized()
             static let tekkenVersion = "TekkenVersion"
             enum Report {
                 static let email = "moongoon.cnu@gmail.com"
                 static let title = "Tekken8 Frame Data Bug Report"
-                static let body = "<p>버그 리포트, 건의사항, 프레임 데이터 오입력 등등을 제보해주세요.</p>".localized()
-                static let sendFailTitle = "메일 전송 실패".localized()
-                static let sendFailMessage = "메일 설정을 확인해주세요.".localized()
-                static let alertAccept = "확인".localized()
+                static let body = "<p>Please report bugs, suggestions, incorrect frame data entries, and other issues.</p>".localized()
+                static let sendFailTitle = "Mail transfer failure".localized()
+                static let sendFailMessage = "Please check the mail settings.".localized()
+                static let alertAccept = "Accept".localized()
             }
         }
     }

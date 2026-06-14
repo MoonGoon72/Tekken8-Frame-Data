@@ -32,17 +32,19 @@ final class MemoRepositoryTests: XCTestCase {
             characterName: "Nina",
             title: "니나 오로성",
             body: "쉐캔을 잘해야함",
+            isPinned: false,
             updatedAt: Date()
         ), Memo(
             id: UUID(),
             characterName: "Steve",
             title: "스티브 오로성",
             body: "위빙 잘하기",
+            isPinned: false,
             updatedAt: Date()
         )
         ]
         // when
-        try memos.forEach { XCTAssertNoThrow(try sut.save(character: $0.characterName, title: $0.title, body: $0.body)) }
+        try memos.forEach { XCTAssertNoThrow(try sut.save(character: $0.characterName, title: $0.title, body: $0.body, isPinned: $0.isPinned)) }
         // then
         let count = try sut.fetchMemos().count
         XCTAssertEqual(count, 2)
@@ -58,7 +60,7 @@ final class MemoRepositoryTests: XCTestCase {
 
     func test_update_수정_후_변경된_내용_반영() throws {
         // given: 저장 후 fetch해서 memo를 가져오고
-        try sut.save(character: "Nina", title: "오로성", body: "쉐켄 잘하기")
+        try sut.save(character: "Nina", title: "오로성", body: "쉐켄 잘하기", isPinned: false)
         var prevMemo = try sut.fetchMemos().first!
         // when: update 호출하고
         prevMemo.body = "아이보리 많이 쓰기"
@@ -76,16 +78,18 @@ final class MemoRepositoryTests: XCTestCase {
             characterName: "Nina",
             title: "니나 오로성",
             body: "쉐캔을 잘해야함",
+            isPinned: false,
             updatedAt: Date()
         ), Memo(
             id: UUID(),
             characterName: "Steve",
             title: "스티브 오로성",
             body: "위빙 잘하기",
+            isPinned: false,
             updatedAt: Date()
         )
         ]
-        try tmp.forEach { XCTAssertNoThrow(try sut.save(character: $0.characterName, title: $0.title, body: $0.body)) }
+        try tmp.forEach { XCTAssertNoThrow(try sut.save(character: $0.characterName, title: $0.title, body: $0.body, isPinned: $0.isPinned)) }
         let memos = try sut.fetchMemos()
         let willDeleteMemo = memos[0]
         // when

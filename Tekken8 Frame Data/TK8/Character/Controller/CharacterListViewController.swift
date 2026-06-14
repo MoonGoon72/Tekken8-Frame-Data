@@ -19,13 +19,29 @@ final class CharacterListViewController: BaseViewController {
     private let container: DIContainer
     private let searchController: UISearchController
     private var dataSource: CharacterDataSource?
-    
-    init(characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable, container: DIContainer) {
+
+    private let preference: CharacterLayoutPreference
+    private var currentLayoutMode: CharacterCollectionViewMode
+    private lazy var layoutToggleButton = UIBarButtonItem(
+        image: layoutToggleButtonImage(for: currentLayoutMode),
+        style: .plain,
+        target: self,
+        action: #selector(layoutToggleButtonTapped)
+    )
+
+    init(
+        characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable,
+        container: DIContainer,
+        preference: CharacterLayoutPreference
+    ) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
         self.container = container
+        self.preference = preference
         searchController = UISearchController(searchResultsController: nil)
-        
+        currentLayoutMode = preference.fetchLayoutMode()
+        characterCollectionView.applyViewMode(currentLayoutMode)
+
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -69,6 +85,7 @@ final class CharacterListViewController: BaseViewController {
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.tintColor = .tkRed
+
         let memoButton = UIBarButtonItem(
             image: UIImage(systemName: "note.text"),
             style: .plain,
@@ -81,7 +98,7 @@ final class CharacterListViewController: BaseViewController {
             target: self,
             action: #selector(settingsButtonTapped)
         )
-        navigationItem.rightBarButtonItems = [settingsButton, memoButton]
+        navigationItem.rightBarButtonItems = [settingsButton, layoutToggleButton, memoButton]
     }
     
     @objc private func settingsButtonTapped() {
@@ -93,12 +110,44 @@ final class CharacterListViewController: BaseViewController {
         let memoViewController = container.makeMemoListViewController(characterListViewModel: characterListViewModel)
         navigationController?.pushViewController(memoViewController, animated: true)
     }
-    
-    @objc private func donationButtonTapped() {
-        if let url = URL(string: "https://buymeacoffee.com/moongoon") {
-            UIApplication.shared.open(url)
+
+    @objc private func layoutToggleButtonTapped() {
+        currentLayoutMode = toggleMode()
+
+        preference.updateLayoutMode(currentLayoutMode)
+        characterCollectionView.applyViewMode(currentLayoutMode, animated: false)
+        updateLayoutToggleButtonImage(for: currentLayoutMode)
+        reloadVisibleCharacters()
+    }
+
+    private func toggleMode() -> CharacterCollectionViewMode {
+        switch currentLayoutMode {
+        case .list:
+            return .grid
+        case .grid:
+            return .list
         }
     }
+
+    private func reloadVisibleCharacters() {
+        guard var snapshot = dataSource?.snapshot() else { return }
+        snapshot.reloadItems(snapshot.itemIdentifiers)
+        dataSource?.apply(snapshot, animatingDifferences: false)
+    }
+
+    private func updateLayoutToggleButtonImage(for mode: CharacterCollectionViewMode) {
+        layoutToggleButton.image = layoutToggleButtonImage(for: mode)
+    }
+
+    private func layoutToggleButtonImage(for mode: CharacterCollectionViewMode) -> UIImage? {
+        switch mode {
+        case .list:
+            return UIImage(systemName: "square.grid.2x2")
+        case .grid:
+            return UIImage(systemName: "list.bullet")
+        }
+    }
+
     override func bindViewModel() {
         super.bindViewModel()
         
@@ -166,14 +215,26 @@ private extension CharacterListViewController {
             collectionView,
             indexPath,
             itemIdentifier in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CharacterCell.reuseIdentifier, for: indexPath)
-            cell.contentConfiguration = UIHostingConfiguration {
-                CharacterCell(
-                    character: itemIdentifier,
-                    characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
-                    characterImages: self.characterListViewModel.characterImages
-                )
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Constants.characterHostingCell, for: indexPath)
+            switch self.currentLayoutMode {
+            case .list:
+                cell.contentConfiguration = UIHostingConfiguration {
+                    CharacterCell(
+                        character: itemIdentifier,
+                        characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
+                        characterImages: self.characterListViewModel.characterImages
+                    )
+                }
+            case .grid:
+                cell.contentConfiguration = UIHostingConfiguration {
+                    CharacterGridCell(
+                        character: itemIdentifier,
+                        characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
+                        characterImages: self.characterListViewModel.characterImages
+                    )
+                }
             }
+
             return cell
         }
     }
@@ -202,8 +263,12 @@ private enum Section {
     case main
 }
 
+private enum Constants {
+    static let characterHostingCell = "characterHostingCell"
+}
+
 private extension CharacterListViewController {
     enum Texts {
-        static let placeholder = "캐릭터 이름을 입력해주세요."
+        static let placeholder = "Please enter the character name."
     }
 }

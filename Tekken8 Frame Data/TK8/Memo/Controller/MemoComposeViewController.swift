@@ -10,19 +10,24 @@ final class MemoComposeViewController: BaseViewController {
     private let memoComposeView: MemoComposeView
     private let memoViewModel: MemoViewModel
     private let characterListViewModel: any CharacterSelectable
-    private let characterSelectViewController: CharacterSelectViewController
+    private let makeCharacterSelectViewController: () -> CharacterSelectViewController
     private var memo: Memo?
     private var selectedCharacterName: String?
     private var isPinned: Bool
 
-    init(memoViewModel: MemoViewModel, characterListViewModel: any CharacterSelectable, memo: Memo?) {
+    init(
+        memoViewModel: MemoViewModel,
+        characterListViewModel: any CharacterSelectable,
+        memo: Memo?,
+        makeCharacterSelectViewController: @escaping () -> CharacterSelectViewController
+    ) {
         self.memoViewModel = memoViewModel
         self.characterListViewModel = characterListViewModel
         self.memo = memo
         selectedCharacterName = memo?.characterName ?? "common"
         isPinned = memo?.isPinned ?? false
         memoComposeView = MemoComposeView()
-        characterSelectViewController = CharacterSelectViewController(viewModel: characterListViewModel)
+        self.makeCharacterSelectViewController = makeCharacterSelectViewController
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -60,11 +65,12 @@ final class MemoComposeViewController: BaseViewController {
 
     override func setupDelegation() {
         super.setupDelegation()
-        characterSelectViewController.delegate = self
         memoComposeView.setTextViewDelegate(self)
     }
 
     @objc private func characterSelectButtonTapped() {
+        let characterSelectViewController = makeCharacterSelectViewController()
+        characterSelectViewController.delegate = self
         navigationController?.pushViewController(characterSelectViewController, animated: true)
     }
 

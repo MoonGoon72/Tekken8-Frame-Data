@@ -136,6 +136,9 @@ iOSInjectionProject/
 ### Plist ###
 Tekken8 Frame Data/TK8/GoogleService-Info.plist
 
+### Local secrets ###
+.env.local
+
 ### Local agent notes ###
 AGENTS.md
 CLAUDE.md

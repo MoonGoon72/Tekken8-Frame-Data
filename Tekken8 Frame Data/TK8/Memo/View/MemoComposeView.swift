@@ -68,6 +68,8 @@ final class MemoComposeView: BaseView {
         textView.font = .systemFont(ofSize: 16)
         textView.textColor = .white
         textView.backgroundColor = .clear
+        textView.alwaysBounceVertical = true
+        textView.keyboardDismissMode = .interactive
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         return textView
@@ -131,6 +133,13 @@ final class MemoComposeView: BaseView {
 
     func activateTextView() {
         bodyTextView.becomeFirstResponder()
+    }
+
+    func scrollCaretToVisible(in textView: UITextView) {
+        guard let selectedRange = textView.selectedTextRange else { return }
+
+        let caretRect = textView.caretRect(for: selectedRange.end)
+        textView.scrollRectToVisible(caretRect.insetBy(dx: 0, dy: -12), animated: true)
     }
 
     // MARK: - Private
@@ -209,7 +218,7 @@ private extension MemoComposeView {
             bodyTextView.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 12),
             bodyTextView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             bodyTextView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            bodyTextView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            bodyTextView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -12),
 
             bodyPlaceholder.topAnchor.constraint(equalTo: bodyTextView.topAnchor),
             bodyPlaceholder.leadingAnchor.constraint(equalTo: bodyTextView.leadingAnchor),

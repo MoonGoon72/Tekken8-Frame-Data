@@ -14,6 +14,7 @@ final class MemoComposeViewController: BaseViewController {
     private var memo: Memo?
     private var selectedCharacterName: String?
     private var isPinned: Bool
+    private var isTextEditing = false
 
     init(
         memoViewModel: MemoViewModel,
@@ -60,7 +61,7 @@ final class MemoComposeViewController: BaseViewController {
 
     override func setupNavigationBar() {
         super.setupNavigationBar()
-        composeRightBarButton()
+        composeRightBarButtons()
     }
 
     override func setupDelegation() {
@@ -72,6 +73,10 @@ final class MemoComposeViewController: BaseViewController {
         let characterSelectViewController = makeCharacterSelectViewController()
         characterSelectViewController.delegate = self
         navigationController?.pushViewController(characterSelectViewController, animated: true)
+    }
+
+    @objc private func doneButtonTapped() {
+        view.endEditing(true)
     }
 
     private func save() {
@@ -106,11 +111,24 @@ final class MemoComposeViewController: BaseViewController {
         return memo?.characterName != selectedCharacterName || memo?.title != title || memo?.body != body || memo?.isPinned != isPinned
     }
 
-    private func composeRightBarButton() {
-        if !memoComposeView.bodyContent.isEmpty || !memoComposeView.titleContent.isEmpty {
-            navigationItem.rightBarButtonItem = generateEllipsisButton()
+    private func composeRightBarButtons() {
+        let hasContent = !memoComposeView.bodyContent.isEmpty || !memoComposeView.titleContent.isEmpty
+        let ellipsisButton = hasContent ? generateEllipsisButton() : nil
+
+        guard isTextEditing else {
+            navigationItem.rightBarButtonItems = ellipsisButton.map { [$0] }
+            return
+        }
+
+        let doneButton = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(doneButtonTapped)
+        )
+        if let ellipsisButton {
+            navigationItem.rightBarButtonItems = [doneButton, ellipsisButton]
         } else {
-            navigationItem.rightBarButtonItem = .none
+            navigationItem.rightBarButtonItems = [doneButton]
         }
     }
 
@@ -127,7 +145,7 @@ final class MemoComposeViewController: BaseViewController {
             }
         } togglePin: {
             self.isPinned.toggle()
-            self.composeRightBarButton()
+            self.composeRightBarButtons()
         }
         let ellipsisButton = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
@@ -152,9 +170,20 @@ extension MemoComposeViewController: Selectable {
 }
 
 extension MemoComposeViewController: UITextViewDelegate {
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        isTextEditing = true
+        composeRightBarButtons()
+    }
+
+    func textViewDidEndEditing(_ textView: UITextView) {
+        isTextEditing = false
+        composeRightBarButtons()
+    }
+
     func textViewDidChange(_ textView: UITextView) {
         memoComposeView.updatePlaceholders()
-        composeRightBarButton()
+        memoComposeView.scrollCaretToVisible(in: textView)
+        composeRightBarButtons()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextInRanges ranges: [NSValue], replacementText text: String) -> Bool {

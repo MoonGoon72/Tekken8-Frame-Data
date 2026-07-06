@@ -186,6 +186,10 @@ extension MemoComposeViewController: UITextViewDelegate {
         composeRightBarButtons()
     }
 
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        memoComposeView.scrollCaretToVisible(in: textView)
+    }
+
     func textView(_ textView: UITextView, shouldChangeTextInRanges ranges: [NSValue], replacementText text: String) -> Bool {
         // Title에서 Enter 입력 시 body로 이동
         if textView === memoComposeView.titleField, text == "\n" {

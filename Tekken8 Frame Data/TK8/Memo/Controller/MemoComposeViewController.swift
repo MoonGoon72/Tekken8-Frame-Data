@@ -15,6 +15,12 @@ final class MemoComposeViewController: BaseViewController {
     private var selectedCharacterName: String?
     private var isPinned: Bool
     private var isTextEditing = false
+    private var ellipsisButton: UIBarButtonItem?
+    private var ellipsisButtonState: EllipsisButtonState?
+
+    private struct EllipsisButtonState: Equatable {
+        let isPinned: Bool
+    }
 
     init(
         memoViewModel: MemoViewModel,
@@ -113,7 +119,7 @@ final class MemoComposeViewController: BaseViewController {
 
     private func composeRightBarButtons() {
         let hasContent = !memoComposeView.bodyContent.isEmpty || !memoComposeView.titleContent.isEmpty
-        let ellipsisButton = hasContent ? generateEllipsisButton() : nil
+        let ellipsisButton = currentEllipsisButton(hasContent: hasContent)
 
         guard isTextEditing else {
             navigationItem.rightBarButtonItems = ellipsisButton.map { [$0] }
@@ -132,8 +138,24 @@ final class MemoComposeViewController: BaseViewController {
         }
     }
 
+    private func currentEllipsisButton(hasContent: Bool) -> UIBarButtonItem? {
+        guard hasContent else {
+            ellipsisButton = nil
+            ellipsisButtonState = nil
+            return nil
+        }
+
+        let state = EllipsisButtonState(isPinned: isPinned)
+        if ellipsisButtonState != state {
+            ellipsisButton = generateEllipsisButton()
+            ellipsisButtonState = state
+        }
+        return ellipsisButton
+    }
+
     private func generateEllipsisButton() -> UIBarButtonItem {
-        let menu = MemoMenuFactory.menu(isPinned: self.isPinned) {
+        let menu = MemoMenuFactory.menu(isPinned: isPinned) { [weak self] in
+            guard let self else { return }
             // Delete
             do {
                 if let memo = self.memo {
@@ -143,7 +165,8 @@ final class MemoComposeViewController: BaseViewController {
             } catch {
 
             }
-        } togglePin: {
+        } togglePin: { [weak self] in
+            guard let self else { return }
             self.isPinned.toggle()
             self.composeRightBarButtons()
         }

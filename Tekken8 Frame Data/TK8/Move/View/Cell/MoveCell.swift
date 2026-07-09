@@ -102,10 +102,10 @@ struct JudgeBadge: View {
 
     private var badgeColor: Color {
         switch text {
-        case "상": return Color(red: 0.94, green: 0.37, blue: 0.37)  // coral red
-        case "중": return Color(red: 0.98, green: 0.78, blue: 0.46)  // warm amber
-        case "하": return Color(red: 0.52, green: 0.72, blue: 0.92)  // soft blue
-        case "특중": return Color(red: 0.36, green: 0.79, blue: 0.65) // teal
+        case "상", "high": return Color(red: 0.94, green: 0.37, blue: 0.37)  // coral red
+        case "중", "mid": return Color(red: 0.98, green: 0.78, blue: 0.46)  // warm amber
+        case "하", "low": return Color(red: 0.52, green: 0.72, blue: 0.92)  // soft blue
+        case "특중", "s.mid": return Color(red: 0.36, green: 0.79, blue: 0.65) // teal
         default:   return Color(red: 0.68, green: 0.60, blue: 0.88)  // soft purple
         }
     }
@@ -320,26 +320,29 @@ struct FlowLayout: Layout {
 private extension String {
     /// "중중중", "중,중,상", "상/중|하", "상 중 하" 모두 ["중","중","중"] 등으로 분리
     func tokenizeJudgments() -> [String] {
-            let allowed = Set(["상", "중", "하", "특중", "특하", "상단가불", "중단가불", "가불"]) // ← 특중 추가
-            let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { return [] }
+        let allowed = Set([
+            "상", "중", "하", "특중", "특하", "상단가불", "중단가불", "가불",
+            "high", "mid", "low", "s.mid", "s.low", "unblockable",
+            "high unblockable", "mid unblockable",
+        ])
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
 
-            // 1) 구분자 기준 split
-            let separators = CharacterSet(charactersIn: ",/|·・ㆍ").union(.whitespacesAndNewlines)
-            let parts = trimmed.components(separatedBy: separators).filter { !$0.isEmpty }
-
-            if parts.count > 1 {
-                return parts.filter { allowed.contains($0) }
-            }
-
-            // 2) 단일 토큰인 경우: 전체가 allowed면 그대로 반환
-            if allowed.contains(trimmed) {
-                return [trimmed]
-            }
-
-            // 3) 글자 단위 fallback
-            return trimmed.map { String($0) }.filter { allowed.contains($0) }
+        if allowed.contains(trimmed) {
+            return [trimmed]
         }
+
+        // 1) 구분자 기준 split
+        let separators = CharacterSet(charactersIn: ",/|·・ㆍ").union(.whitespacesAndNewlines)
+        let parts = trimmed.components(separatedBy: separators).filter { !$0.isEmpty }
+
+        if parts.count > 1 {
+            return parts.filter { allowed.contains($0) }
+        }
+
+        // 2) 글자 단위 fallback
+        return trimmed.map { String($0) }.filter { allowed.contains($0) }
+    }
 
     /// "상중하" → ["상","중","하"]; "중중중" → ["중","중","중"]
     func expandJudgmentRun() -> [String] {

@@ -11,6 +11,7 @@ protocol MemoRepository {
     func fetchMemos() throws -> [Memo]
     func update(memo: Memo) throws
     func delete(memo: Memo) throws
+    func upsert(memos: [Memo]) throws -> MemoImportResult
 }
 
 final class DefaultMemoRepository: MemoRepository {
@@ -31,6 +32,34 @@ final class DefaultMemoRepository: MemoRepository {
         entity.updatedAt = Date()
         try coreDataManager.saveContext()
     }
+
+    func upsert(memos: [Memo]) throws -> MemoImportResult {
+        var insertedCount = 0
+        var updatedCount = 0
+        var skippedCount = 0
+
+        for memo in memos {
+            if let entity = try fetchMemoEntity(id: memo.id) {
+                guard shouldUpdate(entity: entity, with: memo) else {
+                    skippedCount += 1
+                    continue
+                }
+                apply(memo, to: entity, preserveUpdatedAt: true)
+                updatedCount += 1
+            } else {
+                let entity = MemoEntity(context: coreDataManager.context)
+                apply(memo, to: entity, preserveUpdatedAt: true)
+                insertedCount += 1
+            }
+        }
+
+        try coreDataManager.saveContext()
+        return MemoImportResult(
+            insertedCount: insertedCount,
+            updatedCount: updatedCount,
+            skippedCount: skippedCount
+        )
+    }
     
     func fetchMemos() throws -> [Memo] {
         let request = MemoEntity.fetchRequest()
@@ -49,10 +78,7 @@ final class DefaultMemoRepository: MemoRepository {
     }
     
     func update(memo: Memo) throws {
-        let request = MemoEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", memo.id as CVarArg)
-        let prevMemo = try coreDataManager.fetch(request)
-        guard let entity = prevMemo.first else { return }
+        guard let entity = try fetchMemoEntity(id: memo.id) else { return }
 
         // Pin만 바뀐경우 Date를 갱신하면 안됨
         if isPinOnlyChanged(from: entity, to: memo) {
@@ -80,5 +106,26 @@ final class DefaultMemoRepository: MemoRepository {
             entity.title == memo.title &&
             entity.body == memo.body &&
             entity.isPinned != memo.isPinned
+    }
+
+    private func fetchMemoEntity(id: UUID) throws -> MemoEntity? {
+        let request = MemoEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        request.fetchLimit = 1
+        return try coreDataManager.fetch(request).first
+    }
+
+    private func shouldUpdate(entity: MemoEntity, with memo: Memo) -> Bool {
+        let updatedAt = entity.updatedAt ?? .distantPast
+        return memo.updatedAt > updatedAt
+    }
+
+    private func apply(_ memo: Memo, to entity: MemoEntity, preserveUpdatedAt: Bool) {
+        entity.id = memo.id
+        entity.characterNameEN = memo.characterName
+        entity.title = memo.title
+        entity.body = memo.body
+        entity.isPinned = memo.isPinned
+        entity.updatedAt = preserveUpdatedAt ? memo.updatedAt : Date()
     }
 }

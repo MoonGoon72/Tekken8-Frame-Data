@@ -10,9 +10,11 @@ final class MemoViewModel: ObservableObject {
     @Published private(set) var filteredMemos: [Memo] = []
     private(set) var memos: [Memo] = []
     private let memoRepository: MemoRepository
+    private let memoBackupCodec: MemoBackupCodec
 
-    init(memoRepository: MemoRepository) {
+    init(memoRepository: MemoRepository, memoBackupCodec: MemoBackupCodec = MemoBackupCodec()) {
         self.memoRepository = memoRepository
+        self.memoBackupCodec = memoBackupCodec
     }
 
     // MARK: CRUD methods
@@ -38,6 +40,23 @@ final class MemoViewModel: ObservableObject {
         try performAndFetch {
             try memos.forEach { try memoRepository.delete(memo: $0) }
         }
+    }
+
+    func exportMemos() throws -> MemoBackupExport {
+        let exportedAt = Date()
+        let memos = try memoRepository.fetchMemos()
+        let data = try memoBackupCodec.encode(memos: memos, exportedAt: exportedAt)
+        return MemoBackupExport(
+            data: data,
+            fileName: MemoBackupDocument.fileName(exportedAt: exportedAt)
+        )
+    }
+
+    func importMemos(from data: Data) throws -> MemoImportResult {
+        let memos = try memoBackupCodec.decodeMemos(from: data)
+        let result = try memoRepository.upsert(memos: memos)
+        try fetch()
+        return result
     }
 
     // MARK: Filter method

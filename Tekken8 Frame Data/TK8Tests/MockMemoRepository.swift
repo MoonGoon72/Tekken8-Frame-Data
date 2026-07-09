@@ -29,4 +29,30 @@ final class MockMemoRepository: MemoRepository {
     func delete(memo: Memo) {
         memos.removeAll { $0.id == memo.id }
     }
+
+    func upsert(memos: [Memo]) throws -> MemoImportResult {
+        var insertedCount = 0
+        var updatedCount = 0
+        var skippedCount = 0
+
+        for memo in memos {
+            guard let index = self.memos.firstIndex(where: { $0.id == memo.id }) else {
+                self.memos.append(memo)
+                insertedCount += 1
+                continue
+            }
+            guard memo.updatedAt > self.memos[index].updatedAt else {
+                skippedCount += 1
+                continue
+            }
+            self.memos[index] = memo
+            updatedCount += 1
+        }
+
+        return MemoImportResult(
+            insertedCount: insertedCount,
+            updatedCount: updatedCount,
+            skippedCount: skippedCount
+        )
+    }
 }

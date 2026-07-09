@@ -223,4 +223,53 @@ final class KRToENTranslatorTests: XCTestCase {
         let result = KRToENTranslator.translate("지상 히트 시 잡기 풀기 불가능한 특수 상태를 유발")
         XCTAssertEqual(result, "Triggers special stun state on ground hit that cannot be throw escaped")
     }
+
+    // MARK: - Judgment Translation
+
+    func test_judgment_translates_to_english_for_english_locale() {
+        XCTAssertEqual(JudgmentTranslator.localize("상", to: .en), "high")
+        XCTAssertEqual(JudgmentTranslator.localize("중", to: .en), "mid")
+        XCTAssertEqual(JudgmentTranslator.localize("하", to: .en), "low")
+    }
+
+    func test_judgment_keeps_korean_for_korean_locale() {
+        XCTAssertEqual(JudgmentTranslator.localize("상", to: .ko), "상")
+        XCTAssertEqual(JudgmentTranslator.localize("중", to: .ko), "중")
+        XCTAssertEqual(JudgmentTranslator.localize("하", to: .ko), "하")
+    }
+
+    func test_judgment_translates_compound_values_to_english() {
+        XCTAssertEqual(JudgmentTranslator.localize("상중하", to: .en), "high mid low")
+        XCTAssertEqual(JudgmentTranslator.localize("중단가불", to: .en), "mid unblockable")
+    }
+
+    func test_judgment_translates_special_values_to_english() {
+        XCTAssertEqual(JudgmentTranslator.localize("특중", to: .en), "s.mid")
+        XCTAssertEqual(JudgmentTranslator.localize("특하", to: .en), "s.low")
+        XCTAssertEqual(JudgmentTranslator.localize("가불", to: .en), "unblockable")
+        XCTAssertEqual(JudgmentTranslator.localize("상단가불", to: .en), "high unblockable")
+    }
+
+    func test_judgment_handles_nil_and_empty_values() {
+        XCTAssertNil(JudgmentTranslator.localize(nil, to: .en))
+        XCTAssertNil(JudgmentTranslator.localize(nil, to: .ko))
+        XCTAssertEqual(JudgmentTranslator.localize("", to: .en), "")
+        XCTAssertEqual(JudgmentTranslator.localize("", to: .ko), "")
+    }
+
+    func test_judgment_translates_separated_values_to_english() {
+        XCTAssertEqual(JudgmentTranslator.localize("상,중,하", to: .en), "high mid low")
+    }
+
+    func test_judgmentView_keeps_unblockable_compounds_as_single_badge() {
+        let highUnblockable = JudgmentView(judgment: JudgmentTranslator.localize("상단가불", to: .en) ?? "")
+        let midUnblockable = JudgmentView(judgment: JudgmentTranslator.localize("중단가불", to: .en) ?? "")
+
+        XCTAssertEqual(mirroredJudgments(in: highUnblockable), ["high unblockable"])
+        XCTAssertEqual(mirroredJudgments(in: midUnblockable), ["mid unblockable"])
+    }
+
+    private func mirroredJudgments(in view: JudgmentView) -> [String]? {
+        Mirror(reflecting: view).children.first { $0.label == "judgments" }?.value as? [String]
+    }
 }

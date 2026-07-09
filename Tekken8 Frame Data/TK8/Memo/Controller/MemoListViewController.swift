@@ -197,6 +197,9 @@ final class MemoListViewController: BaseViewController {
 
     private func presentShareSheet(fileURL: URL) {
         let activityViewController = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+        activityViewController.completionWithItemsHandler = { _, _, _, _ in
+            try? FileManager.default.removeItem(at: fileURL)
+        }
         if let popover = activityViewController.popoverPresentationController {
             popover.sourceView = view
             popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)

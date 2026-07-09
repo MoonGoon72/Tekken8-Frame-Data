@@ -323,9 +323,14 @@ private extension String {
         let allowed = Set([
             "상", "중", "하", "특중", "특하", "상단가불", "중단가불", "가불",
             "high", "mid", "low", "s.mid", "s.low", "unblockable",
+            "high unblockable", "mid unblockable",
         ])
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
+
+        if allowed.contains(trimmed) {
+            return [trimmed]
+        }
 
         // 1) 구분자 기준 split
         let separators = CharacterSet(charactersIn: ",/|·・ㆍ").union(.whitespacesAndNewlines)
@@ -335,12 +340,7 @@ private extension String {
             return parts.filter { allowed.contains($0) }
         }
 
-        // 2) 단일 토큰인 경우: 전체가 allowed면 그대로 반환
-        if allowed.contains(trimmed) {
-            return [trimmed]
-        }
-
-        // 3) 글자 단위 fallback
+        // 2) 글자 단위 fallback
         return trimmed.map { String($0) }.filter { allowed.contains($0) }
     }
 

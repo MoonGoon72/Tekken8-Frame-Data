@@ -5,6 +5,7 @@
 
 import Combine
 import UIKit
+import UniformTypeIdentifiers
 
 final class MemoListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<MemoSection, Memo>
@@ -16,6 +17,7 @@ final class MemoListViewController: BaseViewController {
     private let memoViewModel: MemoViewModel
     private var dataSource: memoDataSource?
     private let characterListViewModel: any CharacterSelectable
+    private var importConfirmationURL: URL?
 
     private let makeMemoComposeViewController: MemoComposeFactory
 
@@ -111,6 +113,26 @@ final class MemoListViewController: BaseViewController {
         }
     }
 
+    private func exportAllMemos() {
+        do {
+            let export = try memoViewModel.exportMemos()
+            let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(export.fileName)
+            try export.data.write(to: fileURL, options: .atomic)
+            presentShareSheet(fileURL: fileURL)
+        } catch {
+            presentAlert(title: "Export Failed".localized(), message: "Unable to export memos.".localized())
+        }
+    }
+
+    private func importMemos() {
+        let picker = UIDocumentPickerViewController(
+            forOpeningContentTypes: [MemoBackupDocument.contentType],
+            asCopy: true
+        )
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
     func toggleEditingMode() {
         isEditing.toggle()
         memoListView.collectionView.allowsMultipleSelection = isEditing
@@ -122,6 +144,12 @@ final class MemoListViewController: BaseViewController {
 
     private func composeRightBarButtons() {
         let menuItems: [UIAction] = {
+            let exportAllMemos = UIAction(title: "Export All Memos".localized(), image: UIImage(systemName: "square.and.arrow.up")) { [weak self] _ in
+                self?.exportAllMemos()
+            }
+            let importMemos = UIAction(title: "Import Memos".localized(), image: UIImage(systemName: "square.and.arrow.down")) { [weak self] _ in
+                self?.importMemos()
+            }
             let multiSelect = UIAction(title: "Select memo".localized(), image: UIImage(systemName: "checkmark.circle")) { [weak self] _ in
                 self?.navigationController?.isToolbarHidden = false
                 self?.toggleEditingMode()
@@ -141,7 +169,7 @@ final class MemoListViewController: BaseViewController {
                     )
                 ]
             }
-            let items = [multiSelect]
+            let items = [exportAllMemos, importMemos, multiSelect]
             return items
         }()
         let composeButton = UIBarButtonItem(
@@ -165,6 +193,63 @@ final class MemoListViewController: BaseViewController {
         } else {
             navigationItem.rightBarButtonItems = [ellipsisButton, composeButton]
         }
+    }
+
+    private func presentShareSheet(fileURL: URL) {
+        let activityViewController = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+        if let popover = activityViewController.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        present(activityViewController, animated: true)
+    }
+
+    private func presentImportConfirmation(fileURL: URL) {
+        importConfirmationURL = fileURL
+        let alert = UIAlertController(
+            title: "Import Memos".localized(),
+            message: "Memos from the selected file will be merged with your current memos. Newer memos with the same ID will replace older ones.".localized(),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel) { [weak self] _ in
+            self?.importConfirmationURL = nil
+        })
+        alert.addAction(UIAlertAction(title: "Import".localized(), style: .default) { [weak self] _ in
+            guard let self, let url = self.importConfirmationURL else { return }
+            self.importConfirmationURL = nil
+            self.importMemos(from: url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func importMemos(from fileURL: URL) {
+        let shouldStopAccessing = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if shouldStopAccessing {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let result = try memoViewModel.importMemos(from: data)
+            let message = String(
+                format: "Imported %d new memos, updated %d memos, and skipped %d memos.".localized(),
+                result.insertedCount,
+                result.updatedCount,
+                result.skippedCount
+            )
+            presentAlert(title: "Import Complete".localized(), message: message)
+        } catch {
+            presentAlert(title: "Import Failed".localized(), message: "Unable to import memos.".localized())
+        }
+    }
+
+    private func presentAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
+        present(alert, animated: true)
     }
 }
 
@@ -284,6 +369,13 @@ extension MemoListViewController: UICollectionViewDelegate {
             }
         }
         return config
+    }
+}
+
+extension MemoListViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let fileURL = urls.first else { return }
+        presentImportConfirmation(fileURL: fileURL)
     }
 }
 

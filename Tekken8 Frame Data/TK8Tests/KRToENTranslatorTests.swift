@@ -223,4 +223,23 @@ final class KRToENTranslatorTests: XCTestCase {
         let result = KRToENTranslator.translate("지상 히트 시 잡기 풀기 불가능한 특수 상태를 유발")
         XCTAssertEqual(result, "Triggers special stun state on ground hit that cannot be throw escaped")
     }
+
+    // MARK: - Judgment Translation
+
+    func test_judgment_translates_to_english_for_english_locale() {
+        XCTAssertEqual(JudgmentTranslator.localize("상", to: .en), "high")
+        XCTAssertEqual(JudgmentTranslator.localize("중", to: .en), "mid")
+        XCTAssertEqual(JudgmentTranslator.localize("하", to: .en), "low")
+    }
+
+    func test_judgment_keeps_korean_for_korean_locale() {
+        XCTAssertEqual(JudgmentTranslator.localize("상", to: .ko), "상")
+        XCTAssertEqual(JudgmentTranslator.localize("중", to: .ko), "중")
+        XCTAssertEqual(JudgmentTranslator.localize("하", to: .ko), "하")
+    }
+
+    func test_judgment_translates_compound_values_to_english() {
+        XCTAssertEqual(JudgmentTranslator.localize("상중하", to: .en), "high mid low")
+        XCTAssertEqual(JudgmentTranslator.localize("중단가불", to: .en), "mid unblockable")
+    }
 }

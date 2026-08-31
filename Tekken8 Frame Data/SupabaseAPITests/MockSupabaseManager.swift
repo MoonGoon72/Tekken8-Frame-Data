@@ -14,10 +14,6 @@ final class MockSupabaseManager: SupabaseManageable {
         return "1"
     }
     
-    func imageURL(character: String) throws -> URL {
-        return URL(string: "character")!
-    }
-    
     func fetchCharacter() async throws -> [Character] {
         [Character(id: 1, nameEN: "nina", nameKR: "니나", imageURL: "imagePath")]
     }

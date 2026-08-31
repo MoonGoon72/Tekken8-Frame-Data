@@ -35,7 +35,13 @@ final class DefaultCharacterRepository: CharacterRepository {
     }
     
     func characterImageURL(character: Character) throws -> URL {
-        let url = try manager.imageURL(character: character.nameEN)
+        guard let url = URL(string: character.imageURL),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme)
+        else {
+            throw URLError(.badURL)
+        }
+
         return url
     }
 

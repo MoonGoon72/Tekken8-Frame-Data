@@ -29,7 +29,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
           |                   |                    |
           v                   v                    v
   Supabase/PostgREST      Core Data           UserDefaults
-  + Supabase Storage   (cache + memo)      (version + preference)
+                          (cache + memo)      (version + preference)
 ```
 
 `SceneDelegate`가 `DIContainer`를 소유하고 루트 화면을 조립한다. 화면 전환은 `UINavigationController`와 각 ViewController가 담당하며, ViewModel은 Repository protocol에 의존한다. Repository 구현체가 Supabase와 로컬 저장소를 선택하고 DTO를 통해 원격/영속 모델을 앱 도메인 모델로 변환한다.

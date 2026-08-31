@@ -23,14 +23,42 @@ final class CharacterRepositoryTests: XCTestCase {
         XCTAssertEqual(try repository.characterImageURL(character: character), expectedURL)
     }
 
-    func test_characterImageURL_rejectsNonHTTPURL() {
-        let character = Character(id: 1, nameEN: "Bob", nameKR: "밥", imageURL: "imagePath")
+    func test_characterImageURL_acceptsHTTPURL() throws {
+        let expectedURL = URL(string: "http://example.com/bob.png")!
+        let character = Character(
+            id: 1,
+            nameEN: "Bob",
+            nameKR: "밥",
+            imageURL: expectedURL.absoluteString
+        )
         let repository = DefaultCharacterRepository(
             manager: CharacterRepositorySupabaseStub(),
             coreData: InMemoryCoreDataManager()
         )
 
-        XCTAssertThrowsError(try repository.characterImageURL(character: character))
+        XCTAssertEqual(try repository.characterImageURL(character: character), expectedURL)
+    }
+
+    func test_characterImageURL_rejectsNonHTTPURL() {
+        let invalidImageURLs = [
+            "imagePath",
+            "",
+            "ftp://example.com/bob.png",
+            "file:///tmp/bob.png"
+        ]
+
+        for imageURL in invalidImageURLs {
+            let character = Character(id: 1, nameEN: "Bob", nameKR: "밥", imageURL: imageURL)
+            let repository = DefaultCharacterRepository(
+                manager: CharacterRepositorySupabaseStub(),
+                coreData: InMemoryCoreDataManager()
+            )
+
+            XCTAssertThrowsError(
+                try repository.characterImageURL(character: character),
+                "Expected \(imageURL) to be rejected"
+            )
+        }
     }
 }
 

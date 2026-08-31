@@ -9,6 +9,20 @@ import Foundation
 import PostgREST
 import Supabase
 
+enum SupabaseVersionError: LocalizedError, Equatable {
+    case emptyFrameDataVersion
+    case emptyTekkenVersion
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyFrameDataVersion:
+            "frame_data_version 응답이 비어 있습니다."
+        case .emptyTekkenVersion:
+            "tekken_version 응답이 비어 있습니다."
+        }
+    }
+}
+
 final class SupabaseManager: SupabaseManageable {
     private let client: SupabaseClient
     
@@ -49,7 +63,10 @@ final class SupabaseManager: SupabaseManageable {
             .select()
             .execute()
             .value
-        return version[0].version
+        guard let version = version.first else {
+            throw SupabaseVersionError.emptyFrameDataVersion
+        }
+        return version.version
     }
     
     func fetchTekkenVersion() async throws -> String {
@@ -58,7 +75,10 @@ final class SupabaseManager: SupabaseManageable {
             .select()
             .execute()
             .value
-        return version[0].version
+        guard let version = version.first else {
+            throw SupabaseVersionError.emptyTekkenVersion
+        }
+        return version.version
     }
     
 }

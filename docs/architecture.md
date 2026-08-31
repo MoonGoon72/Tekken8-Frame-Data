@@ -133,14 +133,15 @@ SceneDelegate
      |
      |-- VersionManager.checkFrameDataVersion()
      |      |-- Supabase frame_data_version 조회
-     |      `-- 서버 버전이 높으면 Character/Move 삭제
+     |      |-- 서버 버전이 높으면 tekken_version 조회
+     |      `-- 두 버전 응답이 유효할 때만 Character/Move 삭제
      |          + UserDefaults 버전 갱신
-     |          + tekken_version 조회/저장
+     |          + tekken_version 저장
      |
      `-- DIContainer가 CharacterListViewController를 루트로 생성
 ```
 
-캐시 삭제 뒤 `.allDatabaseDeleted` notification이 발행된다. `CharacterListViewModel`이 이를 구독해 캐릭터를 다시 요청한다. 시작 직후 최초 fetch와 비동기 버전 확인이 겹칠 수 있지만, 최종적으로 notification이 재fetch를 유도한다.
+빈 버전 응답은 `SupabaseVersionError`로 전달되며, `SceneDelegate`가 이를 기록하고 기존 캐시를 유지한다. 캐시 삭제 뒤 `.allDatabaseDeleted` notification이 발행된다. `CharacterListViewModel`이 이를 구독해 캐릭터를 다시 요청한다. 시작 직후 최초 fetch와 비동기 버전 확인이 겹칠 수 있지만, 최종적으로 notification이 재fetch를 유도한다.
 
 ### 2. 캐릭터 목록
 

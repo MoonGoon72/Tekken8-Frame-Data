@@ -30,19 +30,15 @@ final class VersionManager: VersionManageable {
 
     func checkFrameDataVersion() async throws {
         let localVersion = fetchLocalVersion()
-        let serverVesion = try await supabaseManager.fetchFrameDataVersion()
+        let serverVersion = try await supabaseManager.fetchFrameDataVersion()
         
-        if localVersion < serverVesion {
+        if localVersion < serverVersion {
+            let tekkenVersion = try await supabaseManager.fetchTekkenVersion()
             try coreDataManager.deleteAll()
-            updateLocalVersion(version: serverVesion)
-            try await checkTekkenVersion()
+            updateLocalVersion(version: serverVersion)
+            updateTekkenVersion(version: tekkenVersion)
             NotificationCenter.default.post(name: .allDatabaseDeleted, object: nil)
         }
-    }
-    
-    private func checkTekkenVersion() async throws {
-        let tekkenVersion = try await supabaseManager.fetchTekkenVersion()
-        updateTekkenVersion(version: tekkenVersion)
     }
 
     private func updateTekkenVersion(version: String) {

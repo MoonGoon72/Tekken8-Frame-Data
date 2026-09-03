@@ -198,7 +198,7 @@ frame_data_version 증가
 - `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, 메모 CRUD와 백업 merge를 검증한다.
 - `SupabaseAPITests`: mock을 사용해 Supabase adapter 경계를 검증한다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
-- Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`로 추적되지 않는 `TK8/Secrets.xcconfig`를 생성한 뒤 Archive가 진행된다. 세 값 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. `API_KEY`는 클라이언트에 포함되는 Supabase anon key만 허용하며 service-role key는 사용하지 않는다.
+- Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다.
 - Core Data 관련 테스트는 in-memory persistent store를 사용한다.
 
 ## 구조 변경 시 동기화 대상

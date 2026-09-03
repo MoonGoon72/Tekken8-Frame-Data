@@ -53,7 +53,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 광고 의존성 | Google Mobile Ads가 앱 타깃에 링크되어 있으나 현재 `TK8` Swift 소스에서 직접 import하거나 호출하지 않음 |
 | 테스트 | XCTest, in-memory Core Data, Supabase 경계 테스트 |
 | 의존성 관리 | Swift Package Manager; 직접 의존성은 `supabase-swift`, `firebase-ios-sdk`, Google Mobile Ads package |
-| CI | GitHub Actions에서 SPM resolve 후 iOS Simulator용 clean build |
+| CI | GitHub Actions에서 SPM resolve 후 iOS Simulator용 clean build, Xcode Cloud에서 `main` 변경 시 Archive 및 TestFlight 전달 |
 
 패키지의 정확한 해상 버전은 `TK8.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`가 기준이다.
 
@@ -81,6 +81,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   │   └── Tekken8FrameData.xcdatamodeld/
 │   ├── TK8Tests/                    # 도메인/번역/필터/메모 단위 테스트
 │   ├── SupabaseAPITests/            # Supabase adapter 경계 테스트
+│   ├── ci_scripts/                  # Xcode Cloud build 전 설정 생성 스크립트
 │   └── TK8.xcodeproj/               # 타깃, scheme, build setting, SPM 설정
 ├── scripts/                         # 프레임 데이터 CSV 변환·검증·Supabase import
 │   └── data/moves/                  # 캐릭터별 원천 CSV와 manifest
@@ -197,6 +198,7 @@ frame_data_version 증가
 - `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, 메모 CRUD와 백업 merge를 검증한다.
 - `SupabaseAPITests`: mock을 사용해 Supabase adapter 경계를 검증한다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
+- Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`로 추적되지 않는 `TK8/Secrets.xcconfig`를 생성한 뒤 Archive가 진행된다. 세 값 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. `API_KEY`는 클라이언트에 포함되는 Supabase anon key만 허용하며 service-role key는 사용하지 않는다.
 - Core Data 관련 테스트는 in-memory persistent store를 사용한다.
 
 ## 구조 변경 시 동기화 대상

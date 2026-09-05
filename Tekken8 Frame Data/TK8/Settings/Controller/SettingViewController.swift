@@ -7,8 +7,7 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
     private let settingsItems: [SettingItem] = [
         .appVersion,
         .tekkenVersion,
-        .reportIssue,
-        .donate
+        .reportIssue
     ]
 
     init() {
@@ -118,15 +117,6 @@ extension SettingViewController: UITableViewDelegate {
         switch item {
         case .reportIssue:
             sendReportMail()
-        case .donate:
-            Analytics.logEvent(AnalyticsEventSelectItem, parameters: [
-                AnalyticsParameterItemID: "donate",
-                AnalyticsParameterItemName: "donate",
-                AnalyticsParameterContentType: "donate"
-            ])
-            if let url = URL(string: "https://buymeacoffee.com/moongoon") {
-                UIApplication.shared.open(url)
-            }
         default:
             break
         }
@@ -138,7 +128,6 @@ private extension SettingViewController {
         case appVersion
         case tekkenVersion
         case reportIssue
-        case donate
         
         var title: String {
             switch self {
@@ -148,8 +137,6 @@ private extension SettingViewController {
                 "Tekken version".localized()
             case .reportIssue:
                 "Report".localized()
-            case .donate:
-                "Donation".localized()
             }
         }
         
@@ -166,7 +153,7 @@ private extension SettingViewController {
         
         var showsDisclosureIndicator: Bool {
             switch self {
-            case .reportIssue, .donate:
+            case .reportIssue:
                 true
             default:
                 false

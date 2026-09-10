@@ -6,7 +6,6 @@
 //
 
 import Combine
-import FirebaseAnalytics
 import SwiftUI
 import UIKit
 
@@ -19,6 +18,10 @@ final class CharacterListViewController: BaseViewController {
     private let container: DIContainer
     private let searchController: UISearchController
     private var dataSource: CharacterDataSource?
+    private let analytics: AnalyticsClient
+    private let searchAnalyticsTracker: SearchAnalyticsTracker
+    private var hasLoadedCharacters = false
+    private var shouldLogMemoEntryImpression = true
 
     private let preference: CharacterLayoutPreference
     private var currentLayoutMode: CharacterCollectionViewMode
@@ -32,7 +35,8 @@ final class CharacterListViewController: BaseViewController {
     init(
         characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable,
         container: DIContainer,
-        preference: CharacterLayoutPreference
+        preference: CharacterLayoutPreference,
+        analytics: AnalyticsClient
     ) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
@@ -41,6 +45,11 @@ final class CharacterListViewController: BaseViewController {
         searchController = UISearchController(searchResultsController: nil)
         currentLayoutMode = preference.fetchLayoutMode()
         characterCollectionView.applyViewMode(currentLayoutMode)
+        self.analytics = analytics
+        searchAnalyticsTracker = SearchAnalyticsTracker(
+            scope: .characterList,
+            analytics: analytics
+        )
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -60,10 +69,35 @@ final class CharacterListViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         if OnboardingManager.shouldShowOnboarding {
-            let onboardingVC = OnboardingManager.makeOnboardingVC()
+            let onboardingVC = OnboardingManager.makeOnboardingVC(analytics: analytics)
+            onboardingVC.onDismiss = { [weak self] in self?.recordVisibleScreen() }
             present(onboardingVC, animated: true)
             OnboardingManager.markAsShown()
         }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        shouldLogMemoEntryImpression = true
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        recordVisibleScreen()
+    }
+
+    private func recordVisibleScreen() {
+        guard presentedViewController == nil else { return }
+        analytics.log(.screenViewed(.characterList))
+        if shouldLogMemoEntryImpression {
+            analytics.log(.memoEntryImpression())
+            shouldLogMemoEntryImpression = false
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        searchAnalyticsTracker.cancel()
     }
 
     override func setupDelegation() {
@@ -102,11 +136,12 @@ final class CharacterListViewController: BaseViewController {
     }
     
     @objc private func settingsButtonTapped() {
-        let settingsViewController = SettingViewController()
+        let settingsViewController = SettingViewController(analytics: analytics)
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
 
     @objc private func memoButtonTapped() {
+        analytics.log(.memoEntryTapped())
         let memoViewController = container.makeMemoListViewController(characterListViewModel: characterListViewModel)
         navigationController?.pushViewController(memoViewController, animated: true)
     }
@@ -153,7 +188,6 @@ final class CharacterListViewController: BaseViewController {
         
         characterListViewModel
             .filteredCharactersPublisher
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredCharacters in
                 self?.updateSnapshot(for: filteredCharacters)
             }
@@ -182,6 +216,7 @@ private extension CharacterListViewController {
 
 extension CharacterListViewController: UISearchControllerDelegate {
     func willDismissSearchController(_ searchController: UISearchController) {
+        searchAnalyticsTracker.cancel()
         characterListViewModel.resetFilter()
     }
 }
@@ -201,8 +236,14 @@ extension CharacterListViewController: UISearchResultsUpdating {
         guard let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         else { return }
         
+        guard hasLoadedCharacters else {
+            searchAnalyticsTracker.cancel()
+            characterListViewModel.filter(by: text)
+            return
+        }
+
+        searchAnalyticsTracker.textDidChange(to: text)
         characterListViewModel.filter(by: text)
-        Analytics.logEvent("search_character", parameters: ["keyword": text])
     }
 }
 
@@ -240,11 +281,18 @@ private extension CharacterListViewController {
     }
     
     func updateSnapshot(for characters: [Character]) {
+        if !characters.isEmpty {
+            hasLoadedCharacters = true
+        }
+
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
         snapshot.appendItems(characters, toSection: .main)
         
-        dataSource?.apply(snapshot, animatingDifferences: false)
+        let attemptID = searchAnalyticsTracker.attemptID
+        dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
+            self?.searchAnalyticsTracker.resultsApplied(count: characters.count, for: attemptID)
+        }
     }
 }
 
@@ -254,7 +302,7 @@ extension CharacterListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let character = dataSource?.itemIdentifier(for: indexPath) else { return }
         let moveListViewController = container.makeMoveListViewController(character: character)
-        Analytics.logEvent("Character_selected", parameters: ["name": character.nameEN])
+        analytics.log(.characterSelected(characterID: character.nameEN.lowercased()))
         navigationController?.pushViewController(moveListViewController, animated: true)
     }
 }

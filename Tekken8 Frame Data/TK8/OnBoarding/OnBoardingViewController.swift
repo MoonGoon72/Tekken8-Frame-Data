@@ -18,7 +18,11 @@ final class OnboardingViewController: UIViewController {
     private let features: [OnboardingFeature]
     private let versionText: String
 
-    init(features: [OnboardingFeature], version: String) {
+    var onDismiss: (() -> Void)?
+    private let analytics: AnalyticsClient
+
+    init(features: [OnboardingFeature], version: String, analytics: AnalyticsClient) {
+        self.analytics = analytics
         self.features = features
         self.versionText = version
         super.init(nibName: nil, bundle: nil)
@@ -122,6 +126,7 @@ final class OnboardingViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        analytics.log(.screenViewed(.onboarding))
         // 등장 애니메이션
         containerView.transform = CGAffineTransform(translationX: 0, y: 40)
         containerView.alpha = 0
@@ -194,7 +199,7 @@ final class OnboardingViewController: UIViewController {
             self.containerView.alpha = 0
             self.dimView.alpha = 0
         }) { _ in
-            self.dismiss(animated: false)
+            self.dismiss(animated: false, completion: self.onDismiss)
         }
     }
 

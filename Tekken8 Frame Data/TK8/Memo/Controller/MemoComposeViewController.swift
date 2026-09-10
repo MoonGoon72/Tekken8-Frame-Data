@@ -11,10 +11,12 @@ final class MemoComposeViewController: BaseViewController {
     private let memoViewModel: MemoViewModel
     private let characterListViewModel: any CharacterSelectable
     private let makeCharacterSelectViewController: () -> CharacterSelectViewController
+    private let analytics: AnalyticsClient
     private var memo: Memo?
     private var selectedCharacterName: String?
     private var isPinned: Bool
     private var isTextEditing = false
+    private var hasHandledDismissSave = false
     private var ellipsisButton: UIBarButtonItem?
     private var ellipsisButtonState: EllipsisButtonState?
 
@@ -26,11 +28,13 @@ final class MemoComposeViewController: BaseViewController {
         memoViewModel: MemoViewModel,
         characterListViewModel: any CharacterSelectable,
         memo: Memo?,
+        analytics: AnalyticsClient,
         makeCharacterSelectViewController: @escaping () -> CharacterSelectViewController
     ) {
         self.memoViewModel = memoViewModel
         self.characterListViewModel = characterListViewModel
         self.memo = memo
+        self.analytics = analytics
         selectedCharacterName = memo?.characterName ?? "common"
         isPinned = memo?.isPinned ?? false
         memoComposeView = MemoComposeView()
@@ -52,11 +56,12 @@ final class MemoComposeViewController: BaseViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        analytics.log(.screenViewed(.memoCompose))
         memoComposeView.activateTextView()
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
         if isMovingFromParent { save() }
     }
 
@@ -86,35 +91,59 @@ final class MemoComposeViewController: BaseViewController {
     }
 
     private func save() {
-        guard !memoComposeView.titleContent.isEmpty ||
-                !memoComposeView.bodyContent.isEmpty else { return }
+        guard !hasHandledDismissSave else { return }
+        hasHandledDismissSave = true
+
         let title = memoComposeView.titleContent
         let body = title + "\n" + memoComposeView.bodyContent
-        do {
-            guard var memo else {
-                // Create
+        let mode: TK8AnalyticsMemoMode = memo == nil ? .create : .edit
+
+        switch memoSaveDecision(
+            memo: memo,
+            selectedCharacterName: selectedCharacterName,
+            title: title,
+            body: body,
+            isPinned: isPinned
+        ) {
+        case .emptyContent:
+            analytics.log(.memoSaveSkipped(mode: mode, reason: .emptyContent))
+        case .unchanged:
+            analytics.log(.memoSaveSkipped(mode: mode, reason: .noChanges))
+        case .create:
+            var didPersist = false
+            do {
                 try memoViewModel.create(
                     character: selectedCharacterName ?? "common",
                     title: title,
                     body: body,
                     isPinned: isPinned
-                )
-                return
+                ) {
+                    didPersist = true
+                    analytics.log(.memoSaveSucceeded(mode: .create))
+                }
+            } catch {
+                if !didPersist {
+                    analytics.log(.memoSaveFailed(mode: .create, failureCode: .repositoryError))
+                }
             }
-            guard isUpdated(title: title, body: body) else { return }
-            // Update
+        case .update:
+            guard var memo else { return }
             memo.characterName = selectedCharacterName ?? "common"
             memo.title = title
             memo.body = body
             memo.isPinned = isPinned
-            try memoViewModel.update(memo: memo)
-        } catch {
-            // 문제 발생 Alert
+            var didPersist = false
+            do {
+                try memoViewModel.update(memo: memo) {
+                    didPersist = true
+                    analytics.log(.memoSaveSucceeded(mode: .edit))
+                }
+            } catch {
+                if !didPersist {
+                    analytics.log(.memoSaveFailed(mode: .edit, failureCode: .repositoryError))
+                }
+            }
         }
-    }
-
-    private func isUpdated(title: String, body: String) -> Bool {
-        return memo?.characterName != selectedCharacterName || memo?.title != title || memo?.body != body || memo?.isPinned != isPinned
     }
 
     private func composeRightBarButtons() {
@@ -180,6 +209,35 @@ final class MemoComposeViewController: BaseViewController {
     @MainActor required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+}
+
+enum MemoSaveDecision: Equatable {
+    case emptyContent
+    case create
+    case unchanged
+    case update
+}
+
+func memoSaveDecision(
+    memo: Memo?,
+    selectedCharacterName: String?,
+    title: String,
+    body: String,
+    isPinned: Bool
+) -> MemoSaveDecision {
+    guard !title.isEmpty || body != "\n" else {
+        return .emptyContent
+    }
+    guard let memo else { return .create }
+
+    let selectedCharacter = selectedCharacterName ?? "common"
+    guard memo.characterName != selectedCharacter ||
+            memo.title != title ||
+            memo.body != body ||
+            memo.isPinned != isPinned else {
+        return .unchanged
+    }
+    return .update
 }
 
 extension MemoComposeViewController: Selectable {

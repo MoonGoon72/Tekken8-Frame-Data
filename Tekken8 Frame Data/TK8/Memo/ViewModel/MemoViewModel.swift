@@ -24,15 +24,17 @@ final class MemoViewModel: ObservableObject {
         filteredMemos = memos
     }
 
-    func create(character: String, title: String, body: String, isPinned: Bool) throws {
+    func create(character: String, title: String, body: String, isPinned: Bool, onPersisted: () -> Void = {}) throws {
         try performAndFetch {
             try memoRepository.save(character: character, title: title, body: body, isPinned: isPinned)
+            onPersisted()
         }
     }
 
-    func update(memo: Memo) throws {
+    func update(memo: Memo, onPersisted: () -> Void = {}) throws {
         try performAndFetch {
             try memoRepository.update(memo: memo)
+            onPersisted()
         }
     }
 

@@ -16,9 +16,17 @@ struct FilterCondition {
     var guardRange: ClosedRange<Int>?
 }
 
+enum MoveListFetchState: Equatable {
+    case idle
+    case loading
+    case loaded
+    case failed
+}
+
 @MainActor
 final class MoveListViewModel {
     @Published private(set) var filtered: [LocalizedMove] = []
+    @Published private(set) var fetchState: MoveListFetchState = .idle
     @Published var filterCondition: FilterCondition = FilterCondition()
     
     private var cancellables = Set<AnyCancellable>()
@@ -56,11 +64,14 @@ final class MoveListViewModel {
     
     func fetchMoves(characterName name: String) {
         Task {
+            fetchState = .loading
             do {
                 let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
                 moves = fetchedMoves
                 await relocalizeAndSort()
+                fetchState = .loaded
             } catch {
+                fetchState = .failed
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }
         }

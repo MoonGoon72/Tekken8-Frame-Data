@@ -6,13 +6,26 @@
 //
 
 import Firebase
+import FirebaseAnalytics
 import UIKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
-            FirebaseApp.configure()
+            #if DEBUG
+            let isDebugBuild = true
+            #else
+            let isDebugBuild = false
+            #endif
+
+            if TK8AnalyticsCollectionPolicy.shouldCollect(
+                isDebugBuild: isDebugBuild,
+                launchArguments: ProcessInfo.processInfo.arguments
+            ) {
+                FirebaseApp.configure()
+                Analytics.setAnalyticsCollectionEnabled(true)
+            }
         }
         return true
     }
@@ -25,4 +38,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 }
-

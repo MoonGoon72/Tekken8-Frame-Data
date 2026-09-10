@@ -1,4 +1,3 @@
-import FirebaseAnalytics
 import MessageUI
 import UIKit
 
@@ -10,7 +9,15 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
         .reportIssue
     ]
 
-    init() {
+    private let analytics: AnalyticsClient
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        analytics.log(.screenViewed(.settings))
+    }
+
+    init(analytics: AnalyticsClient) {
+        self.analytics = analytics
         tableView = SettingTableView()
         
         super.init(nibName: nil, bundle: nil)

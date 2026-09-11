@@ -64,11 +64,25 @@ final class MemoRepositoryTests: XCTestCase {
         var prevMemo = try sut.fetchMemos().first!
         // when: update 호출하고
         prevMemo.body = "아이보리 많이 쓰기"
-        try sut.update(memo: prevMemo)
+        XCTAssertTrue(try sut.update(memo: prevMemo))
         // then: 다시 fetch했을 때 바뀐 내용이 반영됨
         let currentMemo = try sut.fetchMemos().first!
         XCTAssertEqual(currentMemo.body, prevMemo.body)
         XCTAssertNotEqual(currentMemo.updatedAt, prevMemo.updatedAt)
+    }
+
+    func test_update_없는_메모는_저장하지_않고_false_반환() throws {
+        let missingMemo = Memo(
+            id: UUID(),
+            characterName: "Jin",
+            title: "없는 메모",
+            body: "저장되지 않아야 함",
+            isPinned: false,
+            updatedAt: Date()
+        )
+
+        XCTAssertFalse(try sut.update(memo: missingMemo))
+        XCTAssertTrue(try sut.fetchMemos().isEmpty)
     }
 
     func test_delete_삭제_후_fetchMemos_에서_사라짐() throws {

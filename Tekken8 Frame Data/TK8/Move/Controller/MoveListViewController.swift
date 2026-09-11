@@ -6,7 +6,6 @@
 //
 
 import Combine
-import FirebaseAnalytics
 import SwiftUI
 import UIKit
 
@@ -20,15 +19,32 @@ final class MoveListViewController: BaseViewController {
     private let searchController: UISearchController
     private var filteredCancellable: AnyCancellable?
     private var dataSource: MoveDataSource?
+    private var fetchStateCancellable: AnyCancellable?
+    private let analytics: AnalyticsClient
+    private let searchAnalyticsTracker: SearchAnalyticsTracker
+    private var hasLoadedInitialData = false
+    private var isScreenVisible = false
+    private var appliedMoveCount = 0
     
     private let character: Character
     
-    init(character: Character, moveListViewModel viewModel: MoveListViewModel, container: DIContainer) {
+    init(
+        character: Character,
+        moveListViewModel viewModel: MoveListViewModel,
+        container: DIContainer,
+        analytics: AnalyticsClient
+    ) {
         moveListView = MoveListView()
         moveListViewModel = viewModel
         self.container = container
         searchController = UISearchController(searchResultsController: nil)
         self.character = character
+        self.analytics = analytics
+        searchAnalyticsTracker = SearchAnalyticsTracker(
+            scope: .moveList,
+            analytics: analytics,
+            characterID: character.nameEN.lowercased()
+        )
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -42,6 +58,19 @@ final class MoveListViewController: BaseViewController {
         
         view = moveListView
         fetchMoves()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        analytics.log(.screenViewed(.moveList))
+        isScreenVisible = true
+        logInitialDisplayIfNeeded()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        isScreenVisible = false
+        searchAnalyticsTracker.cancel()
     }
     
     override func setupDelegation() {
@@ -70,12 +99,17 @@ final class MoveListViewController: BaseViewController {
     }
 
     @objc private func settingsButtonTapped() {
-        let settingsViewController = SettingViewController()
+        let settingsViewController = SettingViewController(analytics: analytics)
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
 
     @objc private func filterButtonTapped() {
-        let filterView = FilterView(moveListViewModel: moveListViewModel)
+        analytics.log(.filterOpened(characterID: character.nameEN.lowercased()))
+        let filterView = FilterView(
+            moveListViewModel: moveListViewModel,
+            characterID: character.nameEN.lowercased(),
+            analytics: analytics
+        )
         let filterViewController = UIHostingController(rootView: filterView)
         navigationController?.modalPresentationStyle = .popover
         navigationController?.pushViewController(filterViewController, animated: true)
@@ -86,9 +120,20 @@ final class MoveListViewController: BaseViewController {
         
         filteredCancellable = moveListViewModel
             .$filtered
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] filteredMoves in
                 self?.applySnapshot(for: filteredMoves)
+            }
+
+        fetchStateCancellable = moveListViewModel
+            .$fetchState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard state == .failed else { return }
+                guard let self else { return }
+                self.analytics.log(.moveListLoadFailed(
+                    characterID: self.character.nameEN.lowercased(),
+                    failureCode: .repositoryError
+                ))
             }
     }
     
@@ -104,17 +149,20 @@ final class MoveListViewController: BaseViewController {
 
 extension MoveListViewController: UISearchControllerDelegate, UISearchResultsUpdating {
     func willDismissSearchController(_ searchController: UISearchController) {
+        searchAnalyticsTracker.cancel()
         moveListViewModel.resetFilter()
     }
     
     func updateSearchResults(for searchController: UISearchController) {
         let text = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        // 필터링 로직
+        guard moveListViewModel.fetchState == .loaded else {
+            searchAnalyticsTracker.cancel()
+            moveListViewModel.updateKeyword(by: text)
+            return
+        }
+
+        searchAnalyticsTracker.textDidChange(to: text)
         moveListViewModel.updateKeyword(by: text)
-        Analytics.logEvent("search_move", parameters: [
-            "character_name": character.nameEN,
-            "keyword": text
-        ])
     }
 }
 
@@ -173,10 +221,6 @@ private extension MoveListViewController {
     
     func applySnapshot(for moves: [LocalizedMove]) {
         var snapshot = Snapshot()
-        guard !moves.isEmpty else {
-            dataSource?.apply(snapshot, animatingDifferences: false)
-            return
-        }
         
         let orderSections = orderedSections(from: moves)
         snapshot.appendSections(orderSections)
@@ -187,7 +231,23 @@ private extension MoveListViewController {
                 .sorted { $0.id < $1.id }
             snapshot.appendItems(items, toSection: section)
         }
-        dataSource?.apply(snapshot, animatingDifferences: false)
+        let attemptID = searchAnalyticsTracker.attemptID
+        dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
+            guard let self else { return }
+            self.appliedMoveCount = moves.count
+            self.searchAnalyticsTracker.resultsApplied(count: moves.count, for: attemptID)
+            self.logInitialDisplayIfNeeded()
+        }
+    }
+
+    func logInitialDisplayIfNeeded() {
+        if isScreenVisible, appliedMoveCount > 0, !hasLoadedInitialData {
+            hasLoadedInitialData = true
+            analytics.log(.moveListDisplayed(
+                characterID: character.nameEN.lowercased(),
+                moveCount: appliedMoveCount
+            ))
+        }
     }
     
     // 첫 등장 순서를 유지하면서 정렬

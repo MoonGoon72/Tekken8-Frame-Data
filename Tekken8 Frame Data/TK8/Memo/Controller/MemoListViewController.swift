@@ -18,18 +18,27 @@ final class MemoListViewController: BaseViewController {
     private var dataSource: memoDataSource?
     private let characterListViewModel: any CharacterSelectable
     private var importConfirmationURL: URL?
+    private let analytics: AnalyticsClient
+    private let searchAnalyticsTracker: SearchAnalyticsTracker
+    private var hasLoadedMemos = false
 
     private let makeMemoComposeViewController: MemoComposeFactory
 
     init(
         viewModel: MemoViewModel,
         characterListViewModel: any CharacterSelectable,
+        analytics: AnalyticsClient,
         makeMemoComposeViewController: @escaping (Memo?) -> MemoComposeViewController
     ) {
         self.memoListView = MemoListView()
         searchController = UISearchController(searchResultsController: nil)
         memoViewModel = viewModel
         self.characterListViewModel = characterListViewModel
+        self.analytics = analytics
+        searchAnalyticsTracker = SearchAnalyticsTracker(
+            scope: .memoList,
+            analytics: analytics
+        )
         self.makeMemoComposeViewController = makeMemoComposeViewController
         super.init(nibName: nil, bundle: nil)
     }
@@ -44,14 +53,24 @@ final class MemoListViewController: BaseViewController {
         view = memoListView
         do {
             try memoViewModel.fetch()
+            hasLoadedMemos = true
         } catch {
             // TODO: 패치 실패를 알림
         }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        analytics.log(.screenViewed(.memoList))
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        searchAnalyticsTracker.cancel()
+    }
+
     override func bindViewModel() {
         memoViewModel.$filteredMemos
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] memos in
                 self?.updateSnapshot(for: memos)
             }
@@ -76,6 +95,7 @@ final class MemoListViewController: BaseViewController {
     }
 
     @objc private func composeButtonTapped() {
+        analytics.log(.memoComposeStarted(mode: .create))
         let memoComposeViewController = makeMemoComposeViewController(nil)
         navigationController?.pushViewController(memoComposeViewController, animated: true)
     }
@@ -271,6 +291,7 @@ private extension MemoListViewController {
 
 extension MemoListViewController: UISearchControllerDelegate {
     func willDismissSearchController(_ searchController: UISearchController) {
+        searchAnalyticsTracker.cancel()
         memoViewModel.resetFilter()
     }
 }
@@ -284,6 +305,12 @@ extension MemoListViewController: UISearchBarDelegate {
 extension MemoListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         guard let text = searchController.searchBar.text else { return }
+        guard hasLoadedMemos else {
+            searchAnalyticsTracker.cancel()
+            memoViewModel.filter(by: text)
+            return
+        }
+        searchAnalyticsTracker.textDidChange(to: text)
         memoViewModel.filter(by: text)
     }
 }
@@ -327,7 +354,10 @@ private extension MemoListViewController {
         snapshot.appendSections([.general])
         snapshot.appendItems(general, toSection: .general)
 
-        dataSource?.apply(snapshot, animatingDifferences: false)
+        let attemptID = searchAnalyticsTracker.attemptID
+        dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
+            self?.searchAnalyticsTracker.resultsApplied(count: memos.count, for: attemptID)
+        }
     }
 }
 
@@ -337,6 +367,8 @@ extension MemoListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if isEditing { return }
         let memo = dataSource?.itemIdentifier(for: indexPath)
+        guard let memo else { return }
+        analytics.log(.memoComposeStarted(mode: .edit))
         let memoComposeViewController = makeMemoComposeViewController(memo)
         navigationController?.pushViewController(memoComposeViewController, animated: true)
     }

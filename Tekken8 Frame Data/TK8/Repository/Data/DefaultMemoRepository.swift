@@ -9,7 +9,7 @@ protocol MemoRepository {
     // CRUD
     func save(character: String, title: String, body: String, isPinned: Bool) throws
     func fetchMemos() throws -> [Memo]
-    func update(memo: Memo) throws
+    func update(memo: Memo) throws -> Bool
     func delete(memo: Memo) throws
     func upsert(memos: [Memo]) throws -> MemoImportResult
 }
@@ -77,8 +77,8 @@ final class DefaultMemoRepository: MemoRepository {
         }
     }
     
-    func update(memo: Memo) throws {
-        guard let entity = try fetchMemoEntity(id: memo.id) else { return }
+    func update(memo: Memo) throws -> Bool {
+        guard let entity = try fetchMemoEntity(id: memo.id) else { return false }
 
         // Pin만 바뀐경우 Date를 갱신하면 안됨
         if isPinOnlyChanged(from: entity, to: memo) {
@@ -91,6 +91,7 @@ final class DefaultMemoRepository: MemoRepository {
             entity.updatedAt = Date()
         }
         try coreDataManager.saveContext()
+        return true
     }
     
     func delete(memo: Memo) throws {

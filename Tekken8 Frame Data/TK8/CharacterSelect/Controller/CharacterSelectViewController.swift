@@ -28,7 +28,15 @@ final class CharacterSelectViewController: BaseViewController {
 
     private let currentLayoutMode: CharacterCollectionViewMode
 
-    init(viewModel: any CharacterSelectable, layoutMode: CharacterCollectionViewMode) {
+    private let analytics: AnalyticsClient
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        analytics.log(.screenViewed(.characterSelect))
+    }
+
+    init(viewModel: any CharacterSelectable, layoutMode: CharacterCollectionViewMode, analytics: AnalyticsClient) {
+        self.analytics = analytics
         self.viewModel = viewModel
         characterSelectView = CharacterCollectionView()
         searchController = UISearchController(searchResultsController: nil)

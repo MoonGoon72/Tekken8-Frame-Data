@@ -19,7 +19,7 @@ enum OnboardingManager {
         UserDefaults.standard.set(currentVersion, forKey: shownVersionKey)
     }
 
-    static func makeOnboardingVC() -> OnboardingViewController {
+    static func makeOnboardingVC(analytics: AnalyticsClient) -> OnboardingViewController {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         let features: [OnboardingFeature] = [
             OnboardingFeature(
@@ -47,6 +47,6 @@ enum OnboardingManager {
                 description: "You can filter moves by applying filtering conditions.".localized()
             )
         ]
-        return OnboardingViewController(features: features, version: "v\(version)")
+        return OnboardingViewController(features: features, version: "v\(version)", analytics: analytics)
     }
 }

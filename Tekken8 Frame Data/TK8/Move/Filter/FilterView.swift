@@ -84,9 +84,17 @@ struct FilterView: View {
     @State var state: FilterState
     @Environment(\.dismiss) private var dismiss
     let moveListViewModel: MoveListViewModel
+    let characterID: String
+    let analytics: AnalyticsClient
 
-    init(moveListViewModel: MoveListViewModel) {
+    init(
+        moveListViewModel: MoveListViewModel,
+        characterID: String,
+        analytics: AnalyticsClient
+    ) {
         self.moveListViewModel = moveListViewModel
+        self.characterID = characterID
+        self.analytics = analytics
         let condition = moveListViewModel.filterCondition
         let startupRange = condition.startupRange ?? FilterState.startupBounds
         let guardRange = condition.guardRange ?? FilterState.guardBounds
@@ -136,6 +144,7 @@ struct FilterView: View {
             footer
         }
         .background(.tkBackground)
+        .onAppear { analytics.log(.screenViewed(.moveFilter)) }
     }
 
     // MARK: - Header
@@ -180,7 +189,7 @@ struct FilterView: View {
             Divider().background(Color.tk8Hairline)
             HStack(spacing: 10) {
                 Button("Reset".localized()) {
-                    state.reset()
+                    reset()
                 }
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Color.tk8Text2)
@@ -291,6 +300,7 @@ struct FilterView: View {
     }
 
     private func apply() {
+        let activeFilterCount = state.activeCount
         var filterCondition = FilterCondition()
         filterCondition.sections = state.sections.map { $0.value }
         filterCondition.attributes = state.attributes.map { $0.value }
@@ -298,6 +308,27 @@ struct FilterView: View {
         filterCondition.startupRange = state.isStartupDefault ? nil : state.startupMin...state.startupMax
         filterCondition.guardRange = state.isGuardDefault ? nil : state.guardMin...state.guardMax
         moveListViewModel.applyFilter(filterCondition)
+
+        guard activeFilterCount > 0 else { return }
+        analytics.log(.filterApplied(
+            characterID: characterID,
+            activeFilterCount: activeFilterCount,
+            sectionCount: state.sections.count,
+            attributeCount: state.attributes.count,
+            startupRangeActive: !state.isStartupDefault,
+            guardRangeActive: !state.isGuardDefault,
+            resultCount: moveListViewModel.filtered.count
+        ))
+    }
+
+    private func reset() {
+        let previousActiveFilterCount = state.activeCount
+        guard previousActiveFilterCount > 0 else { return }
+        state.reset()
+        analytics.log(.filterReset(
+            characterID: characterID,
+            previousActiveFilterCount: previousActiveFilterCount
+        ))
     }
 
     private static func clamp(_ value: Int, in bounds: ClosedRange<Int>) -> Int {

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: ko-KR
+tone_instructions: >
+  시니어 iOS 엔지니어처럼 간결하게 리뷰하고, 스타일 취향보다 정확성,
+  회귀 위험, UIKit과 SwiftUI 경계, MVVM 및 Repository 책임을 우선 검토해 주세요.
+
+reviews:
+  profile: assertive
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: false
+  tools:
+    swiftlint:
+      enabled: false
+    gitleaks:
+      enabled: true
+    shellcheck:
+      enabled: true
+    actionlint:
+      enabled: true

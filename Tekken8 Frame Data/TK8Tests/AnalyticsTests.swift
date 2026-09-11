@@ -128,6 +128,28 @@ final class AnalyticsTests: XCTestCase {
         XCTAssertEqual(repository.memos[0].body, "updated")
     }
 
+    func test_updateMissingMemoDoesNotAcknowledgePersistence() throws {
+        let repository = MockMemoRepository()
+        let sut = MemoViewModel(memoRepository: repository)
+        let missingMemo = Memo(
+            id: UUID(),
+            characterName: "jin",
+            title: "missing",
+            body: "missing",
+            isPinned: false,
+            updatedAt: Date()
+        )
+        var persisted = 0
+
+        let didPersist = try sut.update(memo: missingMemo) {
+            persisted += 1
+        }
+
+        XCTAssertFalse(didPersist)
+        XCTAssertEqual(persisted, 0)
+        XCTAssertTrue(repository.memos.isEmpty)
+    }
+
     func test_analyticsEventsUseStableNamesAndDoNotContainRawSearchText() {
         let searchEvent = TK8AnalyticsEvent.searchResults(
             scope: .characterList,

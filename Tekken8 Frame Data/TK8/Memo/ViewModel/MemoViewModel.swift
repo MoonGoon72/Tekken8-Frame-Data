@@ -31,11 +31,16 @@ final class MemoViewModel: ObservableObject {
         }
     }
 
-    func update(memo: Memo, onPersisted: () -> Void = {}) throws {
+    @discardableResult
+    func update(memo: Memo, onPersisted: () -> Void = {}) throws -> Bool {
+        var didPersist = false
         try performAndFetch {
-            try memoRepository.update(memo: memo)
-            onPersisted()
+            didPersist = try memoRepository.update(memo: memo)
+            if didPersist {
+                onPersisted()
+            }
         }
+        return didPersist
     }
 
     func delete(memos: [Memo]) throws {

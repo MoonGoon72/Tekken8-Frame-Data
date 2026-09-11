@@ -21,9 +21,10 @@ final class MockMemoRepository: MemoRepository {
         return memos
     }
 
-    func update(memo: Memo) throws {
-        guard let index = memos.firstIndex(where: { $0.id == memo.id }) else { return }
+    func update(memo: Memo) throws -> Bool {
+        guard let index = memos.firstIndex(where: { $0.id == memo.id }) else { return false }
         memos[index] = memo
+        return true
     }
 
     func delete(memo: Memo) {

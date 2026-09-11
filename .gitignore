@@ -140,7 +140,6 @@ Tekken8 Frame Data/TK8/GoogleService-Info.plist
 .env.local
 
 ### Local agent notes ###
-AGENTS.md
 CLAUDE.md
 MODULARIZATION_GUIDE.md
 implementation-notes.md

@@ -190,6 +190,7 @@ final class MemoComposeViewController: BaseViewController {
                 if let memo = self.memo {
                     try self.memoViewModel.delete(memos: [memo])
                 }
+                self.hasHandledDismissSave = true
                 self.navigationController?.popViewController(animated: true)
             } catch {
 

@@ -225,7 +225,9 @@ func memoSaveDecision(
     body: String,
     isPinned: Bool
 ) -> MemoSaveDecision {
-    guard !title.isEmpty || body != "\n" else {
+    let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+    let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedTitle.isEmpty || !trimmedBody.isEmpty else {
         return .emptyContent
     }
     guard let memo else { return .create }

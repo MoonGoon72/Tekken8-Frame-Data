@@ -37,10 +37,10 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `filter_opened` | 기술 목록의 필터 화면을 열 때 | `character_id` |
 | `filter_applied` | 필터 화면에서 활성 조건을 `Apply`로 확정할 때 | `character_id`, `active_filter_count`, `section_count`, `attribute_count`, `startup_range_active`, `guard_range_active`, `result_count` |
 | `filter_reset` | 활성 조건이 있는 상태에서 사용자가 전체 `Reset`을 탭할 때 | `character_id`, `previous_active_filter_count` |
-| `memo_compose_started` | 새 메모 작성 또는 기존 메모 편집 화면으로 실제 이동할 때 | `memo_mode=create|edit` |
-| `memo_save_succeeded` | 메모 create/update의 영속 저장 성공 직후 | `memo_mode=create|edit` |
+| `memo_compose_started` | 새 메모 작성 또는 기존 메모 편집 화면으로 실제 이동할 때 | memo_mode=`create`\|`edit` |
+| `memo_save_succeeded` | 메모 create/update의 영속 저장 성공 직후 | memo_mode=`create`\|`edit` |
 | `memo_save_failed` | 메모 create/update가 실패한 뒤 | `memo_mode`, `failure_code=repository_error` |
-| `memo_save_skipped` | 빈 메모 또는 변경 없는 편집을 저장하지 않고 종료할 때 | `memo_mode`, `reason=empty_content|no_changes` |
+| `memo_save_skipped` | 빈 메모 또는 변경 없는 편집을 저장하지 않고 종료할 때 | `memo_mode`, reason=`empty_content`\|`no_changes` |
 
 `character_id`는 사용자 입력이 아닌 Supabase 캐릭터의 영문 이름을 소문자로 정규화한 안정 식별자다. `search_scope` 값은 `character_list`, `move_list`, `memo_list` 중 하나다.
 

@@ -168,6 +168,36 @@ final class AnalyticsTests: XCTestCase {
             memoSaveDecision(
                 memo: nil,
                 selectedCharacterName: "common",
+                title: " \t\n",
+                body: "\n",
+                isPinned: false
+            ),
+            .emptyContent
+        )
+        XCTAssertEqual(
+            memoSaveDecision(
+                memo: nil,
+                selectedCharacterName: "common",
+                title: "",
+                body: " \n\n\t\n",
+                isPinned: false
+            ),
+            .emptyContent
+        )
+        XCTAssertEqual(
+            memoSaveDecision(
+                memo: nil,
+                selectedCharacterName: "common",
+                title: "Title",
+                body: "\n\n\n",
+                isPinned: false
+            ),
+            .create
+        )
+        XCTAssertEqual(
+            memoSaveDecision(
+                memo: nil,
+                selectedCharacterName: "common",
                 title: "Title",
                 body: "Title\nBody",
                 isPinned: false

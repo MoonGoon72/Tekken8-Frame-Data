@@ -16,6 +16,7 @@ final class MemoComposeViewController: BaseViewController {
     private var selectedCharacterName: String?
     private var isPinned: Bool
     private var isTextEditing = false
+    private var autoFocusPolicy: MemoAutoFocusPolicy
     private var hasHandledDismissSave = false
     private var ellipsisButton: UIBarButtonItem?
     private var ellipsisButtonState: EllipsisButtonState?
@@ -35,6 +36,7 @@ final class MemoComposeViewController: BaseViewController {
         self.characterListViewModel = characterListViewModel
         self.memo = memo
         self.analytics = analytics
+        autoFocusPolicy = MemoAutoFocusPolicy(isNewMemo: memo == nil)
         selectedCharacterName = memo?.characterName ?? "common"
         isPinned = memo?.isPinned ?? false
         memoComposeView = MemoComposeView()
@@ -57,7 +59,9 @@ final class MemoComposeViewController: BaseViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         analytics.log(.screenViewed(.memoCompose))
-        memoComposeView.activateTextView()
+        if autoFocusPolicy.shouldFocusOnAppearance() {
+            memoComposeView.activateTextView()
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -209,6 +213,20 @@ final class MemoComposeViewController: BaseViewController {
 
     @MainActor required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+struct MemoAutoFocusPolicy {
+    private let isNewMemo: Bool
+    private var hasAppeared = false
+
+    init(isNewMemo: Bool) {
+        self.isNewMemo = isNewMemo
+    }
+
+    mutating func shouldFocusOnAppearance() -> Bool {
+        defer { hasAppeared = true }
+        return isNewMemo && !hasAppeared
     }
 }
 

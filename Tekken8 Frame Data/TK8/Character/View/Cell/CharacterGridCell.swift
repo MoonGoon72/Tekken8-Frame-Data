@@ -3,14 +3,12 @@
 //  TK8
 //
 
-import Combine
 import Foundation
 import SwiftUI
 
 struct CharacterGridCell: View, ReuseIdentifiable {
     var character: Character
-    let characterImagePublisher: AnyPublisher<[String: UIImage], Never>
-    @State var characterImages: [String: UIImage]
+    let image: UIImage?
 
     private var localizedName: String {
         let preferredLanguage = Bundle.main.preferredLocalizations.first
@@ -50,15 +48,10 @@ struct CharacterGridCell: View, ReuseIdentifiable {
                     .stroke(.white.opacity(0.12), lineWidth: 0.5)
             )
         }
-        .onReceive(characterImagePublisher) { images in
-            characterImages = images
-        }
     }
 
     private var characterImage: some View {
-        let img = characterImages[character.nameEN]
-
-        return Image(uiImage: img ?? UIImage(named: "mokujin")!)
+        Image(uiImage: image ?? UIImage(named: "mokujin")!)
             .resizable()
             .scaledToFill()
     }
@@ -81,8 +74,7 @@ private enum Constants {
                     nameKR: "니나 윌리엄스",
                     imageURL: "https://i.ibb.co/GXN7B5k/nina.png"
                 ),
-                characterImagePublisher: Empty().eraseToAnyPublisher(),
-                characterImages: [:]
+                image: nil
             )
             .frame(width: 120, height: 160)
             .background(Color(uiColor: .tkBackground)

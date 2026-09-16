@@ -24,6 +24,7 @@ final class CharacterSelectViewController: BaseViewController {
     private let characterSelectView: CharacterCollectionView
     private let searchController: UISearchController
     private var dataSource: CharacterDataSource?
+    private var pendingImageKeys = Set<String>()
     weak var delegate: Selectable?
 
     private let currentLayoutMode: CharacterCollectionViewMode
@@ -61,6 +62,13 @@ final class CharacterSelectViewController: BaseViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] characters in
                 self?.updateSnapshot(for: characters)
+            }
+            .store(in: &subscriptionSet)
+
+        viewModel.characterImagesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] images in
+                self?.reconfigureCharacters(with: images)
             }
             .store(in: &subscriptionSet)
     }
@@ -126,16 +134,14 @@ private extension CharacterSelectViewController {
                 cell.contentConfiguration = UIHostingConfiguration{
                     CharacterCell(
                         character: itemIdentifier,
-                        characterImagePublisher: self.viewModel.characterImagesPublisher,
-                        characterImages: self.viewModel.characterImages
+                        image: self.viewModel.image(for: itemIdentifier.nameEN)
                     )
                 }
             case .grid:
                 cell.contentConfiguration = UIHostingConfiguration{
                     CharacterGridCell(
                         character: itemIdentifier,
-                        characterImagePublisher: self.viewModel.characterImagesPublisher,
-                        characterImages: self.viewModel.characterImages
+                        image: self.viewModel.image(for: itemIdentifier.nameEN)
                     )
                 }
             }
@@ -148,6 +154,19 @@ private extension CharacterSelectViewController {
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
         snapshot.appendItems(characters, toSection: .main)
+        dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
+            guard let self else { return }
+            self.reconfigureCharacters(with: self.viewModel.characterImages)
+        }
+    }
+
+    func reconfigureCharacters(with images: [String: UIImage]) {
+        pendingImageKeys.formUnion(images.keys)
+        guard !pendingImageKeys.isEmpty, var snapshot = dataSource?.snapshot() else { return }
+        let items = snapshot.itemIdentifiers.filter { pendingImageKeys.contains($0.nameEN) }
+        guard !items.isEmpty else { return }
+        pendingImageKeys.subtract(items.map(\.nameEN))
+        snapshot.reconfigureItems(items)
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }

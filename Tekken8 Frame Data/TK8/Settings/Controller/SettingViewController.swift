@@ -3,11 +3,12 @@ import UIKit
 
 class SettingViewController: BaseViewController, MFMailComposeViewControllerDelegate {
     private let tableView: SettingTableView
-    private let settingsItems: [SettingItem] = [
-        .appVersion,
-        .tekkenVersion,
-        .reportIssue
-    ]
+    private var settingsItems: [SettingItem] {
+        var items: [SettingItem] = [.appVersion, .tekkenVersion, .reportIssue]
+        if ads?.privacyOptionsRequired == true { items.append(.adPrivacy) }
+        return items
+    }
+    private let ads: BannerAdService?
 
     private let analytics: AnalyticsClient
 
@@ -16,8 +17,9 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
         analytics.log(.screenViewed(.settings))
     }
 
-    init(analytics: AnalyticsClient) {
+    init(analytics: AnalyticsClient, ads: BannerAdService? = nil) {
         self.analytics = analytics
+        self.ads = ads
         tableView = SettingTableView()
         
         super.init(nibName: nil, bundle: nil)
@@ -38,6 +40,13 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
 
     override func setupDelegation() {
         setupTableViewDelegation()
+    }
+
+    override func bindViewModel() {
+        ads?.$privacyOptionsRequired.removeDuplicates().sink { [weak self] _ in
+            // Published values are delivered before assignment.
+            DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
+        }.store(in: &subscriptionSet)
     }
 
     private func setupTableViewDelegation() {
@@ -124,6 +133,18 @@ extension SettingViewController: UITableViewDelegate {
         switch item {
         case .reportIssue:
             sendReportMail()
+        case .adPrivacy:
+            Task {
+                do {
+                    try await ads?.presentPrivacyOptions(from: self)
+                } catch {
+                    let alert = UIAlertController(title: "Ad privacy options".localized(),
+                                                  message: "Unable to load privacy options. Please try again.".localized(),
+                                                  preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
+                    present(alert, animated: true)
+                }
+            }
         default:
             break
         }
@@ -135,6 +156,7 @@ private extension SettingViewController {
         case appVersion
         case tekkenVersion
         case reportIssue
+        case adPrivacy
         
         var title: String {
             switch self {
@@ -144,6 +166,8 @@ private extension SettingViewController {
                 "Tekken version".localized()
             case .reportIssue:
                 "Report".localized()
+            case .adPrivacy:
+                "Ad privacy options".localized()
             }
         }
         
@@ -160,7 +184,7 @@ private extension SettingViewController {
         
         var showsDisclosureIndicator: Bool {
             switch self {
-            case .reportIssue:
+            case .reportIssue, .adPrivacy:
                 true
             default:
                 false

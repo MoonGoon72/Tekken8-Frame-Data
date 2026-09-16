@@ -11,6 +11,7 @@ import UIKit
 class BaseViewController: UIViewController {
 
     var subscriptionSet: Set<AnyCancellable>
+    var bannerAdHost: BannerAdHost?
 
     // MARK: Initializer
     
@@ -34,6 +35,7 @@ class BaseViewController: UIViewController {
         configureKeyboardDismissOnTap()
         bindViewModel()
         navigationItem.hidesSearchBarWhenScrolling = false
+        bannerAdHost?.install(in: self)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -47,6 +49,22 @@ class BaseViewController: UIViewController {
         super.viewDidAppear(animated)
         
         navigationItem.hidesSearchBarWhenScrolling = true
+        bannerAdHost?.appear()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        bannerAdHost?.disappear()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        bannerAdHost?.layout()
+    }
+
+    override func setEditing(_ editing: Bool, animated: Bool) {
+        super.setEditing(editing, animated: animated)
+        bannerAdHost?.setEditing(editing)
     }
 
     deinit {

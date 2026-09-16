@@ -62,6 +62,34 @@ struct TK8AnalyticsEvent: Equatable {
     let name: String
     let parameters: [String: TK8AnalyticsValue]
 
+    static func bannerImpression(placement: BannerPlacement) -> Self {
+        Self(name: "banner_ad_impression", parameters: [
+            "ad_placement": .string(placement.rawValue),
+            "ad_format": .string("banner")
+        ])
+    }
+
+    static func bannerLoadFailed(placement: BannerPlacement, code: Int) -> Self {
+        Self(name: "banner_ad_load_failed", parameters: [
+            "ad_placement": .string(placement.rawValue),
+            "ad_error_code": .integer(code)
+        ])
+    }
+
+    static func nativeAdImpression(placement: BannerPlacement) -> Self {
+        Self(name: "native_ad_impression", parameters: [
+            "ad_placement": .string(placement.rawValue),
+            "ad_format": .string("native")
+        ])
+    }
+
+    static func nativeAdLoadFailed(placement: BannerPlacement, code: Int) -> Self {
+        Self(name: "native_ad_load_failed", parameters: [
+            "ad_placement": .string(placement.rawValue),
+            "ad_error_code": .integer(code)
+        ])
+    }
+
     static func screenViewed(_ screen: TK8AnalyticsScreen) -> Self {
         Self(
             name: "screen_view",

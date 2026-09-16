@@ -19,12 +19,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             let isDebugBuild = false
             #endif
 
-            if TK8AnalyticsCollectionPolicy.shouldCollect(
+            let collectAnalytics = TK8AnalyticsCollectionPolicy.shouldCollect(
                 isDebugBuild: isDebugBuild,
                 launchArguments: ProcessInfo.processInfo.arguments
-            ) {
+            )
+            if collectAnalytics || BannerAdConfiguration.current.usesLocalTestAds {
                 FirebaseApp.configure()
-                Analytics.setAnalyticsCollectionEnabled(true)
+                Analytics.setAnalyticsCollectionEnabled(collectAnalytics)
             }
         }
         return true

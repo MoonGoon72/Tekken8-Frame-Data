@@ -34,7 +34,8 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
         guard let adUnitID = service.configuration.nativeAdUnitID else { return }
         self.controller = controller
         requestedPlacements = placements
-        for placement in placements where nativeAds[placement] == nil && !loadingPlacements.contains(placement) {
+        removeStalePlacements(keeping: Set(placements))
+        for placement in placements where requestedPlacements.contains(placement) && nativeAds[placement] == nil && !loadingPlacements.contains(placement) {
             loadingPlacements.insert(placement)
             let generation = requestGeneration
             Task { [weak self, weak controller] in
@@ -42,6 +43,7 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
                 let canRequest = await self.service.prepare(from: controller)
                 guard canRequest,
                       self.requestGeneration == generation,
+                      self.requestedPlacements.contains(placement),
                       controller.viewIfLoaded?.window != nil else {
                     self.removeLoadingPlacement(placement, generation: generation)
                     return
@@ -56,6 +58,18 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
     }
 
     func nativeAd(for placement: Int) -> NativeAd? { nativeAds[placement] }
+
+    func reset() {
+        requestGeneration += 1
+        requestedPlacements.removeAll()
+        controller = nil
+        nativeAds.values.forEach { $0.delegate = nil }
+        nativeAds.removeAll()
+        adLoaders.values.forEach { $0.delegate = nil }
+        adLoaders.removeAll()
+        loaderPlacements.removeAll()
+        loadingPlacements.removeAll()
+    }
 
     func adLoader(_ adLoader: AdLoader, didReceive nativeAd: NativeAd) {
         guard let placement = loaderPlacements[ObjectIdentifier(adLoader)] else { return }
@@ -82,9 +96,23 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
 
     private func removeLoader(for placement: Int) {
         if let loader = adLoaders.removeValue(forKey: placement) {
+            loader.delegate = nil
             loaderPlacements.removeValue(forKey: ObjectIdentifier(loader))
         }
         loadingPlacements.remove(placement)
+    }
+
+    private func removeStalePlacements(keeping placements: Set<Int>) {
+        let staleNativeAds = nativeAds.filter { !placements.contains($0.key) }
+        staleNativeAds.values.forEach { $0.delegate = nil }
+        if !staleNativeAds.isEmpty {
+            nativeAds = nativeAds.filter { placements.contains($0.key) }
+        }
+
+        let staleLoaders = adLoaders.keys.filter { !placements.contains($0) }
+        for placement in staleLoaders {
+            removeLoader(for: placement)
+        }
     }
 
     private func removeLoadingPlacement(_ placement: Int, generation: Int) {
@@ -101,9 +129,8 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
             requestGeneration += 1
             nativeAds.values.forEach { $0.delegate = nil }
             nativeAds.removeAll()
-            adLoaders.removeAll()
-            loaderPlacements.removeAll()
-            loadingPlacements.removeAll()
+            let placements = Array(adLoaders.keys)
+            placements.forEach(removeLoader(for:))
             return
         }
 

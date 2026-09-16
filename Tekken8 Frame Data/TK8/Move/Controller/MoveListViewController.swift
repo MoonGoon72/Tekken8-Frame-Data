@@ -79,6 +79,7 @@ final class MoveListViewController: BaseViewController {
         super.viewWillDisappear(animated)
         isScreenVisible = false
         searchAnalyticsTracker.cancel()
+        nativeAdLoader?.reset()
     }
     
     override func setupDelegation() {
@@ -298,7 +299,9 @@ private extension MoveListViewController {
             self.searchAnalyticsTracker.resultsApplied(count: moves.count, for: attemptID)
             self.logInitialDisplayIfNeeded()
         }
-        nativeAdLoader?.load(placements: Self.nativeAdPlacements(moveCount: moves.count), from: self)
+        if isScreenVisible {
+            nativeAdLoader?.load(placements: Self.nativeAdPlacements(moveCount: moves.count), from: self)
+        }
     }
 
     func logInitialDisplayIfNeeded() {

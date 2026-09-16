@@ -23,7 +23,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 isDebugBuild: isDebugBuild,
                 launchArguments: ProcessInfo.processInfo.arguments
             )
-            if collectAnalytics || BannerAdConfiguration.current.usesLocalTestAds {
+            if collectAnalytics {
                 FirebaseApp.configure()
                 Analytics.setAnalyticsCollectionEnabled(collectAnalytics)
             }

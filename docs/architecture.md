@@ -148,7 +148,7 @@ SceneDelegate
 
 ### 2. 광고 표시와 원격 중단
 
-`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터 목록·기술 목록·메모 목록·설정 ViewController에 `BannerAdHost`를 주입한다. Host는 기존 화면 view를 감싸 적응형 하단 배너만 배치하며, 광고가 실제로 로드되기 전·로드 실패·원격 중단 시에는 높이 0으로 접어 콘텐츠 영역을 남기지 않는다. 메모 작성 화면에는 Host를 주입하지 않는다. 검색 키보드가 보이거나 메모 목록이 편집 상태이면 Host가 광고를 즉시 제거하고, 화면 이탈·백그라운드·폭 변경 뒤 늦게 도착한 SDK 콜백도 무시한다. 기술표는 하단 배너 대신 `NativeMoveAdLoader`가 위치별로 독립된 네이티브 광고를 요청하고, 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 같은 경로를 사용한다. 위치별 요청이 실패하면 해당 카드와 빈 공간을 모두 남기지 않는다.
+`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터 목록·기술 목록·메모 목록·설정 ViewController에 `BannerAdHost`를 주입한다. Host는 기존 화면 view를 감싸 적응형 하단 배너만 배치하며, 광고가 실제로 로드되기 전·로드 실패·원격 중단 시에는 높이 0으로 접어 콘텐츠 영역을 남기지 않는다. 메모 작성 화면에는 Host를 주입하지 않는다. 검색 키보드가 보이거나 메모 목록이 편집 상태이면 Host가 광고를 즉시 제거하고, 화면 이탈·백그라운드·폭 변경 뒤 늦게 도착한 SDK 콜백도 무시한다. 기술표는 하단 배너 대신 `NativeMoveAdLoader`가 위치별로 독립된 네이티브 광고를 요청하고, 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 더 이상 필요한 위치가 아닌 광고와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 같은 경로를 사용한다. 위치별 요청이 실패하면 해당 카드와 빈 공간을 모두 남기지 않는다.
 
 `BannerAdService`는 Firebase Remote Config의 `admob_banner_enabled`가 `true`일 때만 UMP 동의 정보를 갱신하고, `canRequestAds`가 true가 된 뒤 Google Mobile Ads SDK를 시작한다. 설정 화면은 UMP가 요구할 때만 `광고 개인정보 설정` 항목을 표시한다. 앱이 foreground가 될 때 Remote Config를 다시 가져오고 real-time update를 구독한다. 응답 실패나 앱 ID·광고 단위 ID 미설정 시에는 광고를 끈 상태로 유지한다. Debug는 실제 App ID 설정 여부와 관계없이 Google 샘플 광고 단위를 사용하고 Remote Config·운영 UMP 설정과 독립적으로 테스트 광고를 요청한다. Release는 유효한 실제 ID가 제공되기 전에는 광고를 요청하지 않는다.
 

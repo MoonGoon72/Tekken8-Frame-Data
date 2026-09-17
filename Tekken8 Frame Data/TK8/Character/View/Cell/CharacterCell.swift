@@ -5,7 +5,6 @@
 //  Created by 문영균 on 3/28/25.
 //
 
-import Combine
 import Foundation
 import SwiftUI
 
@@ -19,8 +18,7 @@ struct CharacterCell: View, ReuseIdentifiable {
             return (character.nameEN, nil)
         }
     }
-    let characterImagePublisher: AnyPublisher<[String : UIImage], Never>
-    @State var characterImages: [String: UIImage]
+    let image: UIImage?
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -46,9 +44,6 @@ struct CharacterCell: View, ReuseIdentifiable {
                 .foregroundStyle(.white.opacity(0.3))
                 .padding(.trailing, 4)
         }
-        .onReceive(characterImagePublisher) { images in
-            characterImages = images
-        }
         .padding(6)
         .background(
             RoundedRectangle(cornerRadius: 14)
@@ -62,9 +57,7 @@ struct CharacterCell: View, ReuseIdentifiable {
 
     @ViewBuilder
     private var characterImage: some View {
-        let img = characterImages[character.nameEN]
-
-        Image(uiImage: img ?? UIImage(named: "mokujin")!)
+        Image(uiImage: image ?? UIImage(named: "mokujin")!)
             .resizable()
             .scaledToFill()
             .frame(
@@ -89,7 +82,6 @@ private enum Constants {
 #Preview {
     CharacterCell(
         character: Character(id: 1, nameEN: "Nina Williams", nameKR: "니나 윌리엄스", imageURL: "https://i.ibb.co/GXN7B5k/nina.png"),
-        characterImagePublisher: Empty().eraseToAnyPublisher(),
-        characterImages: [:],
+        image: nil
     )
 }

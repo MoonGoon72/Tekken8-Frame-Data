@@ -13,6 +13,16 @@ final class DIContainer {
     private let userDefaultsManager: UserDefaultsManageable
     private let preference: CharacterLayoutPreference
     private let analytics: AnalyticsClient
+    @MainActor private lazy var ads = BannerAdService()
+
+    @MainActor private func withBanner<T: BaseViewController>(_ controller: T, placement: BannerPlacement) -> T {
+        controller.bannerAdHost = BannerAdHost(service: ads, placement: placement, analytics: analytics)
+        return controller
+    }
+
+    @MainActor func makeSettingViewController() -> SettingViewController {
+        withBanner(SettingViewController(analytics: analytics, ads: ads), placement: .settings)
+    }
 
     init(analytics: AnalyticsClient? = nil) {
         coreDataManager = CoreDataManager()
@@ -26,30 +36,34 @@ final class DIContainer {
     @MainActor func makeCharacterListViewController() -> CharacterListViewController {
         let repository = DefaultCharacterRepository(manager: supabaseManager, coreData: coreDataManager)
         let viewModel = CharacterListViewModel(characterRepository: repository)
-        return CharacterListViewController(
+        return withBanner(CharacterListViewController(
             characterListViewModel: viewModel,
             container: self,
             preference: preference,
             analytics: analytics
-        )
+        ), placement: .characterList)
     }
     
     @MainActor func makeMoveListViewController(character: Character) -> MoveListViewController {
         let repository = DefaultMoveRepository(manager: supabaseManager, coreData: coreDataManager)
         let viewModel = MoveListViewModel(moveRepository: repository)
-        return MoveListViewController(
+        let controller = MoveListViewController(
             character: character,
             moveListViewModel: viewModel,
             container: self,
-            analytics: analytics
+            analytics: analytics,
+            nativeAdService: ads
         )
+        // A configured native unit replaces the move-list banner. Debug uses the
+        // Google sample unit; Release becomes eligible only with valid real IDs.
+        return ads.configuration.usesNativeMoveAds ? controller : withBanner(controller, placement: .moveList)
     }
 
     @MainActor func makeMemoListViewController(characterListViewModel: any CharacterSelectable) -> MemoListViewController {
         let repository = DefaultMemoRepository(coreDataManager: coreDataManager)
         let viewModel = MemoViewModel(memoRepository: repository)
 
-        return MemoListViewController(
+        return withBanner(MemoListViewController(
             viewModel: viewModel,
             characterListViewModel: characterListViewModel,
             analytics: analytics
@@ -59,7 +73,7 @@ final class DIContainer {
                     characterListViewModel: characterListViewModel,
                     memo: memo
                 )
-            }
+            }, placement: .memoList)
     }
 
     @MainActor func makeMemoComposeViewController(

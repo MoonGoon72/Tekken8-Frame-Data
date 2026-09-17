@@ -8,6 +8,7 @@
 import UIKit
 
 final class MoveListView: BaseView {
+    private var headerlessSectionIndexes = Set<Int>()
     
     // MARK: Subviews
     
@@ -18,19 +19,7 @@ final class MoveListView: BaseView {
         let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(100))
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
         
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-        
-        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(44))
-        let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: headerSize,
-            elementKind: UICollectionView.elementKindSectionHeader,
-            alignment: .top
-        )
-        section.boundarySupplementaryItems = [sectionHeader]
-        let layout = UICollectionViewCompositionalLayout(section: section)
-
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
         
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: MoveCell.reuseIdentifier)
         return collectionView
@@ -61,9 +50,37 @@ final class MoveListView: BaseView {
     func setCollectionViewDelegate(_ delegate: UICollectionViewDelegate) {
         moveCollectionView.delegate = delegate
     }
+
+    func setHeaderlessSectionIndexes(_ indexes: Set<Int>) {
+        headerlessSectionIndexes = indexes
+        moveCollectionView.setCollectionViewLayout(makeLayout(), animated: false)
+    }
 }
 
 private extension MoveListView {
+    func makeLayout() -> UICollectionViewCompositionalLayout {
+        UICollectionViewCompositionalLayout { [weak self] index, _ in
+            let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(100))
+            let item = NSCollectionLayoutItem(layoutSize: itemSize)
+            let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(100))
+            let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+            let section = NSCollectionLayoutSection(group: group)
+
+            if self?.headerlessSectionIndexes.contains(index) == true {
+                section.contentInsets = .zero
+            } else {
+                let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(44))
+                let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
+                    layoutSize: headerSize,
+                    elementKind: UICollectionView.elementKindSectionHeader,
+                    alignment: .top
+                )
+                section.boundarySupplementaryItems = [sectionHeader]
+            }
+            return section
+        }
+    }
+
     func setupCollectionViewLayouts() {
         moveCollectionView.translatesAutoresizingMaskIntoConstraints = false
         

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AD8700000000000000000001 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = AD8700000000000000000002 /* FirebaseRemoteConfig */; };
 		E48DD6EE2D78738A000308CC /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6ED2D78738A000308CC /* PostgREST */; };
 		E48DD6F02D78738A000308CC /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6EF2D78738A000308CC /* Storage */; };
 		E48DD6F32D787391000308CC /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6F22D787391000308CC /* Supabase */; };
@@ -94,6 +95,7 @@
 				E4E2D9FC2E670CBB003DCB4F /* FirebaseAnalyticsIdentitySupport in Frameworks */,
 				E48DD6EE2D78738A000308CC /* PostgREST in Frameworks */,
 				E4E2D9F82E670CBB003DCB4F /* FirebaseAnalytics in Frameworks */,
+				AD8700000000000000000001 /* FirebaseRemoteConfig in Frameworks */,
 				E48DD6F32D787391000308CC /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -160,6 +162,7 @@
 				E48DD6F22D787391000308CC /* Supabase */,
 				E4D6BF502E6582480091C030 /* GoogleMobileAds */,
 				E4E2D9F72E670CBB003DCB4F /* FirebaseAnalytics */,
+				AD8700000000000000000002 /* FirebaseRemoteConfig */,
 				E4E2D9F92E670CBB003DCB4F /* FirebaseAnalyticsCore */,
 				E4E2D9FB2E670CBB003DCB4F /* FirebaseAnalyticsIdentitySupport */,
 			);
@@ -415,6 +418,9 @@
 		E4024B412D3F399F007C855C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ADMOB_APP_ID = "ca-app-pub-3866042653915701~9914634913";
+				ADMOB_BANNER_AD_UNIT_ID = "ca-app-pub-3866042653915701/3419960087";
+				ADMOB_NATIVE_AD_UNIT_ID = "ca-app-pub-3866042653915701/4686004711";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
@@ -480,6 +486,9 @@
 		E4024B422D3F399F007C855C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ADMOB_APP_ID = "ca-app-pub-3866042653915701~9914634913";
+				ADMOB_BANNER_AD_UNIT_ID = "ca-app-pub-3866042653915701/3419960087";
+				ADMOB_NATIVE_AD_UNIT_ID = "ca-app-pub-3866042653915701/4686004711";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
@@ -690,6 +699,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AD8700000000000000000002 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4E2D9F62E670CBB003DCB4F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
+		};
 		E48DD6ED2D78738A000308CC /* PostgREST */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */;

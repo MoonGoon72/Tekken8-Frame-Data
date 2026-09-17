@@ -20,7 +20,7 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `move_filter` | `FilterView.onAppear` |
 | `onboarding` | `OnboardingViewController.viewDidAppear` |
 
-운영 빌드는 수집을 켠다. `DEBUG` 빌드는 기본적으로 수집을 끄고, 실행 인자 `-FIRAnalyticsDebugEnabled`가 있을 때만 수집한다. DebugView 검증은 이 인자를 붙인 빌드에서 수행하며, 일반 Debug 실행 이벤트가 운영 집계에 섞이지 않도록 한다. 일반 Debug 및 테스트 호스트에서는 Firebase를 초기화하지 않고 NoOp 클라이언트를 사용한다. Info.plist의 초기 수집값은 NO이며, 허용된 실행에서만 초기화 후 수집을 켠다. 온보딩이 캐릭터 목록을 덮는 동안 메모 버튼 노출을 기록하지 않고, 닫힌 뒤 화면명과 노출을 복원한다.
+운영 빌드는 수집을 켠다. `DEBUG` 빌드는 기본적으로 수집을 끄고, 실행 인자 `-FIRAnalyticsDebugEnabled`가 있을 때만 수집한다. DebugView 검증은 이 인자를 붙인 빌드에서 수행하며, 일반 Debug 실행 이벤트가 운영 집계에 섞이지 않도록 한다. Debug는 Google 테스트 광고를 위해 Firebase를 초기화하지만 Analytics 수집은 계속 끈다. 테스트 호스트는 광고 요청과 Analytics 모두 하지 않는다. Info.plist의 초기 수집값은 NO이며, 허용된 실행에서만 활성화한다. 온보딩이 캐릭터 목록을 덮는 동안 메모 버튼 노출을 기록하지 않고, 닫힌 뒤 화면명과 노출을 복원한다.
 
 ## 이벤트 계약
 
@@ -41,8 +41,14 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `memo_save_succeeded` | 메모 create/update의 영속 저장 성공 직후 | memo_mode=`create`\|`edit` |
 | `memo_save_failed` | 메모 create/update가 실패한 뒤 | `memo_mode`, `failure_code=repository_error` |
 | `memo_save_skipped` | 빈 메모 또는 변경 없는 편집을 저장하지 않고 종료할 때 | `memo_mode`, reason=`empty_content`\|`no_changes` |
+| `banner_ad_impression` | SDK가 화면에 표시된 배너의 impression을 실제 기록할 때 | `ad_placement`, `ad_format=banner` |
+| `banner_ad_load_failed` | SDK가 현재 화면의 배너 요청 실패를 알릴 때 | `ad_placement`, `ad_error_code` |
+| `native_ad_impression` | SDK가 기술표 네이티브 카드의 impression을 실제 기록할 때 | `ad_placement=move_list`, `ad_format=native` |
+| `native_ad_load_failed` | SDK가 기술표 네이티브 카드 요청 실패를 알릴 때 | `ad_placement=move_list`, `ad_error_code` |
 
 `character_id`는 사용자 입력이 아닌 Supabase 캐릭터의 영문 이름을 소문자로 정규화한 안정 식별자다. `search_scope` 값은 `character_list`, `move_list`, `memo_list` 중 하나다.
+
+`ad_placement`는 `character_list`, `move_list`, `memo_list`, `settings` 중 하나다. 광고 이벤트에는 광고 내용, 클릭 대상, 사용자 식별자, SDK 오류 문구를 전송하지 않는다. impression 이벤트는 SDK의 실제 callback에서만 기록하므로 화면 진입이나 광고 요청 수로 대체하지 않는다.
 
 ## 중복 제거 및 경계
 
@@ -86,8 +92,8 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 
 Firebase Console의 Analytics > Custom Definitions에서 실제 보고서에 사용할 항목만 등록한다. `screen_view`의 Firebase 기본 화면 매개변수는 별도 등록 대상이 아니다.
 
-- 맞춤 측정기준: `search_scope`, `character_id`, `memo_mode`, `failure_code`, `reason`
-- 맞춤 측정항목: `query_length`, `result_count`, `move_count`, `active_filter_count`, `section_count`, `attribute_count`, `previous_active_filter_count`
+- 맞춤 측정기준: `search_scope`, `character_id`, `memo_mode`, `failure_code`, `reason`, `ad_placement`, `ad_format`
+- 맞춤 측정항목: `query_length`, `result_count`, `move_count`, `active_filter_count`, `section_count`, `attribute_count`, `previous_active_filter_count`, `ad_error_code`
 - `startup_range_active`, `guard_range_active`는 SDK에 정수 0/1로 전송하며 보고서에서 비교하려면 이벤트 범위 맞춤 측정기준으로 등록한다.
 
 등록 전후에 이벤트 이름·매개변수 철자와 범위를 이 문서 및 코드의 생성자와 함께 검토한다. BigQuery export와 대시보드는 1차 계측에 포함하지 않으며, 실제 데이터가 누적된 뒤 후속 작업으로 구성한다.
@@ -109,5 +115,13 @@ Firebase Console의 Analytics > Custom Definitions에서 실제 보고서에 사
 3. Firebase Console > Analytics > DebugView에서 화면명과 이벤트 매개변수를 확인한다. 검색어 원문·메모 내용이 보이면 즉시 계측 계약 위반으로 수정한다.
 4. 빠른 검색 입력, 검색 취소, 화면 재진입에서 중복 이벤트가 계약대로 줄어드는지 확인한다.
 5. 확인 후 일반 Debug 실행에서는 해당 인자를 제거한다. 운영 데이터의 집계 검증은 배포 후 Analytics Events 보고서에서 별도로 한다.
+
+## 광고 실험 운영
+
+1. AdMob에 iOS 앱을 등록하고 실제 앱 ID와 banner/native ad unit ID를 Release build setting `ADMOB_APP_ID`, `ADMOB_BANNER_AD_UNIT_ID`, `ADMOB_NATIVE_AD_UNIT_ID`에 설정한다. 현재 두 광고 단위 ID는 설정돼 있고 앱 ID가 아직 없으므로, 값을 비워 두거나 Google 샘플 ID를 쓰는 동안 Release는 광고를 요청하지 않는다.
+2. AdMob Privacy & messaging에서 필요한 UMP 메시지를 게시하고, Firebase Remote Config에 boolean `admob_banner_enabled`를 만든다. 배포 전 기본값은 `false`로 둔다.
+3. Debug에서 Google 테스트 배너가 캐릭터·메모·설정 목록에만 보이고, 기술표에는 네 번째 기술 뒤부터 20개 간격의 네이티브 테스트 카드가 보이는지 확인한다. 위치별 광고 요청이 실패하면 해당 카드의 공간이 사라져야 한다. Release 기술표는 실제 App ID와 네이티브 광고 단위 ID가 유효할 때 같은 네이티브 카드 경로를 사용한다. Debug는 실제 App ID가 설정돼 있어도 Google 샘플 광고 단위를 사용하며 Remote Config와 운영 UMP 설정을 거치지 않는다.
+4. 직접 사용해도 괜찮은 경우에만 Remote Config 값을 `true`로 변경해 배포된 앱에서 광고를 시작한다. 문제가 있으면 값을 `false`로 바꾼다. 앱은 foreground 재진입 또는 real-time config update 이후 광고와 공간을 제거한다.
+5. 배포 전후로 같은 앱 버전 범위를 비교해 `banner_ad_impression`과 화면 방문·기술 목록 도달률을 보조 신호로 확인한다. 재방문 감소는 GA4의 retention 보고서에서 별도로 확인하며, 광고 이벤트만으로 광고가 원인이라고 단정하지 않는다.
 
 공식 참고: [Firebase 이벤트 기록](https://firebase.google.com/docs/analytics/ios/events), [화면 추적](https://firebase.google.com/docs/analytics/screenviews), [DebugView](https://firebase.google.com/docs/analytics/debugview), [GA4 퍼널 탐색](https://support.google.com/analytics/answer/9327974)

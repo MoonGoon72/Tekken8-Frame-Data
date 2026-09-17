@@ -1,0 +1,19 @@
+name: Request CodeRabbit review
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [ready_for_review]
+
+permissions:
+  issues: write
+
+jobs:
+  request-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request full review
+        run: gh pr comment "$PR_URL" --body '@coderabbitai full review'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}

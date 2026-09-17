@@ -22,6 +22,7 @@ final class CharacterListViewController: BaseViewController {
     private let searchAnalyticsTracker: SearchAnalyticsTracker
     private var hasLoadedCharacters = false
     private var shouldLogMemoEntryImpression = true
+    private var pendingImageKeys = Set<String>()
 
     private let preference: CharacterLayoutPreference
     private var currentLayoutMode: CharacterCollectionViewMode
@@ -88,6 +89,7 @@ final class CharacterListViewController: BaseViewController {
 
     private func recordVisibleScreen() {
         guard presentedViewController == nil else { return }
+        bannerAdHost?.appear()
         analytics.log(.screenViewed(.characterList))
         if shouldLogMemoEntryImpression {
             analytics.log(.memoEntryImpression())
@@ -136,7 +138,7 @@ final class CharacterListViewController: BaseViewController {
     }
     
     @objc private func settingsButtonTapped() {
-        let settingsViewController = SettingViewController(analytics: analytics)
+        let settingsViewController = container.makeSettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
 
@@ -190,6 +192,12 @@ final class CharacterListViewController: BaseViewController {
             .filteredCharactersPublisher
             .sink { [weak self] filteredCharacters in
                 self?.updateSnapshot(for: filteredCharacters)
+            }
+            .store(in: &subscriptionSet)
+
+        characterListViewModel.characterImagesPublisher
+            .sink { [weak self] images in
+                self?.reconfigureCharacters(with: images)
             }
             .store(in: &subscriptionSet)
     }
@@ -262,16 +270,14 @@ private extension CharacterListViewController {
                 cell.contentConfiguration = UIHostingConfiguration {
                     CharacterCell(
                         character: itemIdentifier,
-                        characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
-                        characterImages: self.characterListViewModel.characterImages
+                        image: self.characterListViewModel.image(for: itemIdentifier.nameEN)
                     )
                 }
             case .grid:
                 cell.contentConfiguration = UIHostingConfiguration {
                     CharacterGridCell(
                         character: itemIdentifier,
-                        characterImagePublisher: self.characterListViewModel.characterImagesPublisher,
-                        characterImages: self.characterListViewModel.characterImages
+                        image: self.characterListViewModel.image(for: itemIdentifier.nameEN)
                     )
                 }
             }
@@ -291,8 +297,20 @@ private extension CharacterListViewController {
         
         let attemptID = searchAnalyticsTracker.attemptID
         dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
-            self?.searchAnalyticsTracker.resultsApplied(count: characters.count, for: attemptID)
+            guard let self else { return }
+            self.searchAnalyticsTracker.resultsApplied(count: characters.count, for: attemptID)
+            self.reconfigureCharacters(with: self.characterListViewModel.characterImages)
         }
+    }
+
+    func reconfigureCharacters(with images: [String: UIImage]) {
+        pendingImageKeys.formUnion(images.keys)
+        guard !pendingImageKeys.isEmpty, var snapshot = dataSource?.snapshot() else { return }
+        let items = snapshot.itemIdentifiers.filter { pendingImageKeys.contains($0.nameEN) }
+        guard !items.isEmpty else { return }
+        pendingImageKeys.subtract(items.map(\.nameEN))
+        snapshot.reconfigureItems(items)
+        dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }
 

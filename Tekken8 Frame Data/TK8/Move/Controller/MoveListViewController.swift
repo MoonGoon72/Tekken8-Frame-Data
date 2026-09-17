@@ -10,8 +10,8 @@ import SwiftUI
 import UIKit
 
 final class MoveListViewController: BaseViewController {
-    private typealias Snapshot = NSDiffableDataSourceSnapshot<String, LocalizedMove>
-    private typealias MoveDataSource = UICollectionViewDiffableDataSource<String, LocalizedMove>
+    private typealias Snapshot = NSDiffableDataSourceSnapshot<MoveListSection, MoveListItem>
+    private typealias MoveDataSource = UICollectionViewDiffableDataSource<MoveListSection, MoveListItem>
     
     private let moveListView: MoveListView
     private let moveListViewModel: MoveListViewModel
@@ -22,6 +22,7 @@ final class MoveListViewController: BaseViewController {
     private var fetchStateCancellable: AnyCancellable?
     private let analytics: AnalyticsClient
     private let searchAnalyticsTracker: SearchAnalyticsTracker
+    private let nativeAdLoader: NativeMoveAdLoader?
     private var hasLoadedInitialData = false
     private var isScreenVisible = false
     private var appliedMoveCount = 0
@@ -32,7 +33,8 @@ final class MoveListViewController: BaseViewController {
         character: Character,
         moveListViewModel viewModel: MoveListViewModel,
         container: DIContainer,
-        analytics: AnalyticsClient
+        analytics: AnalyticsClient,
+        nativeAdService: (any BannerAdServing)? = nil
     ) {
         moveListView = MoveListView()
         moveListViewModel = viewModel
@@ -40,6 +42,11 @@ final class MoveListViewController: BaseViewController {
         searchController = UISearchController(searchResultsController: nil)
         self.character = character
         self.analytics = analytics
+        if let nativeAdService, nativeAdService.configuration.usesNativeMoveAds {
+            nativeAdLoader = NativeMoveAdLoader(service: nativeAdService, analytics: analytics)
+        } else {
+            nativeAdLoader = nil
+        }
         searchAnalyticsTracker = SearchAnalyticsTracker(
             scope: .moveList,
             analytics: analytics,
@@ -65,12 +72,14 @@ final class MoveListViewController: BaseViewController {
         analytics.log(.screenViewed(.moveList))
         isScreenVisible = true
         logInitialDisplayIfNeeded()
+        nativeAdLoader?.load(placements: Self.nativeAdPlacements(moveCount: moveListViewModel.filtered.count), from: self)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         isScreenVisible = false
         searchAnalyticsTracker.cancel()
+        nativeAdLoader?.reset()
     }
     
     override func setupDelegation() {
@@ -99,7 +108,7 @@ final class MoveListViewController: BaseViewController {
     }
 
     @objc private func settingsButtonTapped() {
-        let settingsViewController = SettingViewController(analytics: analytics)
+        let settingsViewController = container.makeSettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
     }
 
@@ -123,6 +132,11 @@ final class MoveListViewController: BaseViewController {
             .sink { [weak self] filteredMoves in
                 self?.applySnapshot(for: filteredMoves)
             }
+
+        nativeAdLoader?.onAdsChanged = { [weak self] in
+            guard let self else { return }
+            self.applySnapshot(for: self.moveListViewModel.filtered)
+        }
 
         fetchStateCancellable = moveListViewModel
             .$fetchState
@@ -192,16 +206,25 @@ private extension MoveListViewController {
     func setupDiffableDataSource() {
         // Cell 등록
         dataSource = MoveDataSource(collectionView: moveListView.moveCollectionView) { collectionView, indexPath, itemIdentifier in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MoveCell.reuseIdentifier, for: indexPath)
-            cell.contentConfiguration = UIHostingConfiguration {
-                MoveCell(move: itemIdentifier)
+            switch itemIdentifier {
+            case .move(let move):
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MoveCell.reuseIdentifier, for: indexPath)
+                cell.contentConfiguration = UIHostingConfiguration {
+                    MoveCell(move: move)
+                }
+                return cell
+            case .nativeAd(let placement):
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: NativeMoveAdCardCell.reuseIdentifier, for: indexPath) as! NativeMoveAdCardCell
+                if let ad = self.nativeAdLoader?.nativeAd(for: placement) {
+                    cell.configure(with: ad)
+                }
+                return cell
             }
-            return cell
         }
         // 헤더용 SupplementaryRegisteration 정의
         let headerRegisteration = UICollectionView.SupplementaryRegistration<MoveSectionHeaderView>(
             elementKind: UICollectionView.elementKindSectionHeader) { headerView, elementKind, indexPath in
-                let sectionTitle = self.dataSource?.snapshot().sectionIdentifiers[indexPath.section] ?? ""
+                guard case .moves(let sectionTitle)? = self.dataSource?.snapshot().sectionIdentifiers[indexPath.section] else { return }
                 headerView.titleLabel.text = sectionTitle
             }
         // CollectionView에 SupplimentaryRegistration 등록
@@ -210,6 +233,7 @@ private extension MoveListViewController {
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: MoveSectionHeaderView.reuseIdentifier
         )
+        moveListView.moveCollectionView.register(NativeMoveAdCardCell.self, forCellWithReuseIdentifier: NativeMoveAdCardCell.reuseIdentifier)
         // DiffableDataSource에 provider로 연결
         dataSource?.supplementaryViewProvider = { collectionView, kind, indexPath in
             collectionView.dequeueConfiguredReusableSupplementary(
@@ -221,22 +245,62 @@ private extension MoveListViewController {
     
     func applySnapshot(for moves: [LocalizedMove]) {
         var snapshot = Snapshot()
-        
         let orderSections = orderedSections(from: moves)
-        snapshot.appendSections(orderSections)
-        
+        let availableNativeAdPlacements = Set(Self.nativeAdPlacements(moveCount: moves.count).filter {
+            nativeAdLoader?.nativeAd(for: $0) != nil
+        })
+        var displayedMoveCount = 0
+
         for section in orderSections {
             let items = moves
                 .filter { $0.section == section }
                 .sorted { $0.id < $1.id }
-            snapshot.appendItems(items, toSection: section)
+                .map(MoveListItem.move)
+
+            let sectionEndCount = displayedMoveCount + items.count
+            let placements = availableNativeAdPlacements.filter {
+                displayedMoveCount < $0 && $0 <= sectionEndCount
+            }.sorted()
+            if placements.isEmpty {
+                snapshot.appendSections([.moves(section)])
+                snapshot.appendItems(items, toSection: .moves(section))
+            } else {
+                snapshot.appendSections([.moves(section)])
+                var itemOffset = 0
+                var destinationSection = MoveListSection.moves(section)
+                for placement in placements {
+                    let itemCount = placement - displayedMoveCount - itemOffset
+                    snapshot.appendItems(Array(items[itemOffset..<(itemOffset + itemCount)]), toSection: destinationSection)
+                    snapshot.appendSections([.nativeAd(placement)])
+                    snapshot.appendItems([.nativeAd(placement)], toSection: .nativeAd(placement))
+                    itemOffset += itemCount
+                    if itemOffset < items.count {
+                        destinationSection = .continuation(section, placement)
+                        snapshot.appendSections([destinationSection])
+                    }
+                }
+                if itemOffset < items.count {
+                    snapshot.appendItems(Array(items.dropFirst(itemOffset)), toSection: destinationSection)
+                }
+            }
+            displayedMoveCount += items.count
         }
+        let headerlessIndexes = Set(snapshot.sectionIdentifiers.enumerated().compactMap { index, section in
+            switch section {
+            case .nativeAd, .continuation: index
+            case .moves: nil
+            }
+        })
+        moveListView.setHeaderlessSectionIndexes(headerlessIndexes)
         let attemptID = searchAnalyticsTracker.attemptID
         dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
             guard let self else { return }
             self.appliedMoveCount = moves.count
             self.searchAnalyticsTracker.resultsApplied(count: moves.count, for: attemptID)
             self.logInitialDisplayIfNeeded()
+        }
+        if isScreenVisible {
+            nativeAdLoader?.load(placements: Self.nativeAdPlacements(moveCount: moves.count), from: self)
         }
     }
 
@@ -287,6 +351,13 @@ private extension MoveListViewController {
     }
 }
 
+extension MoveListViewController {
+    static func nativeAdPlacements(moveCount: Int) -> [Int] {
+        guard moveCount >= 4 else { return [] }
+        return Array(stride(from: 4, through: moveCount, by: 20))
+    }
+}
+
 // MARK: - UICollectionViewDelegate Conformance
 // TODO: 추후 특정 기술에 대한 액션을 추가한다면 필요할지도?
 extension MoveListViewController: UICollectionViewDelegate {
@@ -298,5 +369,16 @@ extension MoveListViewController: UICollectionViewDelegate {
 private extension MoveListViewController {
     enum Texts {
         static let placeholder = "Search"
+    }
+
+    enum MoveListSection: Hashable {
+        case moves(String)
+        case nativeAd(Int)
+        case continuation(String, Int)
+    }
+
+    enum MoveListItem: Hashable {
+        case move(LocalizedMove)
+        case nativeAd(Int)
     }
 }

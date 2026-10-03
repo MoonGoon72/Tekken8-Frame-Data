@@ -2,7 +2,7 @@
 
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
-- 기준일: 2026-09-11
+- 기준일: 2026-10-04
 - 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme)
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
@@ -83,9 +83,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   ├── SupabaseAPITests/            # Supabase adapter 경계 테스트
 │   ├── ci_scripts/                  # Xcode Cloud build 전 설정 생성 스크립트
 │   └── TK8.xcodeproj/               # 타깃, scheme, build setting, SPM 설정
-├── scripts/                         # 프레임 데이터 CSV 변환·검증·Supabase import
-│   └── data/moves/                  # 캐릭터별 원천 CSV와 manifest
-├── docs/                            # 아키텍처와 데이터 운영 문서
+├── docs/                            # 앱 아키텍처와 제품 문서
 └── .github/workflows/               # 빌드 CI와 Supabase wake-up 작업
 ```
 
@@ -104,14 +102,14 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | Repository/Persistant | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
 | Version | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
 | Utility | `ImageCacheManager`, `AnalyticsClient`, `SearchAnalyticsTracker`, `BannerAdService`, `BannerAdHost`, base view/controller, extensions | 이미지 메모리/디스크 캐시, Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거, Remote Config·UMP 기반 광고 허용 판정, 공통 UI 생명주기, command parsing·localization 보조 |
-| Data tooling | `import_moves_to_supabase.py`, apply shell scripts | 캐릭터별 CSV 검증, `sort_order` 계산, `(character_name, move_key)` 기준 Supabase upsert |
+| Data tooling (별도 비공개 저장소) | `Tekken8-Data-Ops`의 `dashboard/`, `scripts/`, `supabase/` | Mac·Windows의 로컬 브라우저에서 비공개 Git 작업본의 CSV·R2 목록·확정 매핑을 다룬다. DB 쓰기 전 원격 차이와 입력 파일을 미리 확인한다. 작업 후 commit·push해야 소스 변경이 원격에 보존된다 |
 
 ## 저장 데이터의 소유권
 
 | 데이터 | 원본/외부 저장소 | 로컬 저장소 | 갱신 기준 |
 |---|---|---|---|
 | 캐릭터 | Supabase `character` | Core Data `CharacterEntity` | 캐시가 비었을 때 fetch; 버전 무효화 후 재fetch |
-| 기술 | Supabase `move` | Core Data `MoveEntity` | 캐릭터별 캐시가 비었을 때 fetch; `sort_order` 순서 유지 |
+| 기술 | 편집 원본: 비공개 `Tekken8-Data-Ops`의 캐릭터별 CSV; 앱 제공본: Supabase `move` | Core Data `MoveEntity` | 캐릭터별 캐시가 비었을 때 fetch; `sort_order` 순서 유지 |
 | 프레임 데이터 버전 | Supabase `frame_data_version` | UserDefaults `Version` | 앱 시작 시 서버 값이 더 크면 캐릭터/기술 캐시 삭제 |
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
 | 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
@@ -185,7 +183,7 @@ SceneDelegate
 ### 8. 프레임 데이터 운영 흐름
 
 ```text
-scripts/data/moves/<character>.csv
+비공개 Tekken8-Data-Ops/scripts/data/moves/<character>.csv
               |
               v
 import_moves_to_supabase.py (기본 dry-run/검증)
@@ -203,7 +201,9 @@ frame_data_version 증가
 앱 시작 시 버전 비교 -> Core Data Character/Move 캐시 삭제 -> 재fetch
 ```
 
-세부 실행 절차와 안전장치는 `docs/move-import-runbook.md`를 따른다. `character` row와 이미지 asset/Storage 항목은 move CSV import가 자동 생성하지 않으므로 신규 캐릭터 추가 시 별도로 준비해야 한다.
+비공개 `Tekken8-Data-Ops`의 `dashboard/server.py`는 Mac·Windows의 `127.0.0.1`에서만 열리는 로컬 운영 도구다. 브라우저에는 비밀키를 보내지 않고, 각 컴퓨터의 Git 무시 `.env.local` 자격증명을 서버 프로세스에서만 사용한다. 기술 CSV는 검증 후 원본 파일을 교체하고 백업하며, `move` 반영 전에 원격 행과 비교한다. 영상은 R2 전체 key 목록을 읽은 뒤 확정 JSON을 만들고, `move_video` 반영 전에 원격 연결과 비교한다. 기술표가 바뀐 경우에만 `frame_data_version.version_number`를 올린다. 앱의 Repository·캐시·영상 재생 경계는 이 도구로 변경되지 않는다.
+
+세부 실행 절차와 안전장치는 비공개 [데이터 운영 저장소](https://github.com/MoonGoon72/Tekken8-Data-Ops)의 `docs/`를 따른다. `character` row와 이미지 asset/Storage 항목은 move CSV import가 자동 생성하지 않으므로 신규 캐릭터 추가 시 별도로 준비해야 한다.
 
 ## 테스트와 검증 경계
 
@@ -212,6 +212,7 @@ frame_data_version 증가
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
 - Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다. Firebase Analytics 초기화에 필요한 `TK8/GoogleService-Info.plist`는 `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_BASE64` secret environment variable을 post-clone 단계에서 Base64 복원한다. 복원 파일은 plist 문법과 `BUNDLE_ID=com.moongoon.TK8`을 검증하고 권한 `600`으로 원자적으로 교체한다. 따라서 Firebase configuration은 Git에 추적하지 않는다.
 - Core Data 관련 테스트는 in-memory persistent store를 사용한다.
+- 데이터 운영 저장소의 `scripts/tests/test_build_move_video_candidates.py`는 exact-match 후보 생성, 중복·미발견·소실 object 보고, 수동 confirmed/rejected 보존과 dry-run 무변경을 검증한다. 후보 생성기는 원격 DB나 R2에 연결하지 않는다.
 - Analytics 콘솔의 실제 사용자 수·전환율·DebugView 수집 상태와 AdMob 수익·실제 재방문 지표는 로컬 테스트 범위에 포함하지 않는다. 앱 DebugView 점검 절차와 맞춤 정의 대상은 `docs/analytics-measurement.md`에 기록한다.
 
 ## 구조 변경 시 동기화 대상

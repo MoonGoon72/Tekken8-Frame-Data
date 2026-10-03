@@ -3,6 +3,8 @@ import FirebaseCore
 import FirebaseRemoteConfig
 import GoogleMobileAds
 import UIKit
+import UnityAdapter
+import UnityAds
 import UserMessagingPlatform
 
 @MainActor
@@ -33,9 +35,9 @@ final class BannerAdService: BannerAdServing {
     init(configuration: BannerAdConfiguration = .current) {
         self.configuration = configuration
         guard configuration.hasAnyAdUnitID else { return }
-        // Test ads must be independently verifiable even when the production Remote
-        // Config key is still false. This mode can only select Google's sample IDs.
-        if configuration.usesLocalTestAds {
+        // Local validation stays independent of the production Remote Config switch.
+        // Mediation validation requires a separate unit and still goes through UMP.
+        if configuration.usesLocalTestAds || configuration.usesMediationTestAds {
             enabled = true
         } else if FirebaseApp.app() != nil {
             let remote = RemoteConfig.remoteConfig()
@@ -93,10 +95,11 @@ final class BannerAdService: BannerAdServing {
         let task = Task { @MainActor [weak self, weak controller] () -> Bool in
             guard let self, let controller else { return false }
             if self.configuration.usesLocalTestAds {
-                // Debug always selects Google's sample ad units. Keep that local
+                // General Debug selects Google's sample ad units. Keep that local
                 // verification path independent of production UMP configuration.
                 if !self.didStartSDK {
                     self.didStartSDK = true
+                    self.configureUnityAds()
                     await MobileAds.shared.start()
                 }
                 self.didCheckConsent = true
@@ -104,16 +107,22 @@ final class BannerAdService: BannerAdServing {
                 return self.enabled
             }
             do {
-                try await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
+                try await ConsentInformation.shared.requestConsentInfoUpdate(with: consentParameters())
                 guard self.enabled, controller.viewIfLoaded?.window != nil,
                       self.configuration.usesLocalTestAds || controller.presentedViewController == nil else { return false }
                 try await ConsentForm.loadAndPresentIfRequired(from: controller)
             } catch {
                 // UMP can still authorize requests using a valid prior consent choice.
+                #if DEBUG
+                if self.configuration.usesMediationTestAds {
+                    print("[Ads validation] UMP: \(error.localizedDescription)")
+                }
+                #endif
             }
             self.didCheckConsent = true
             if self.enabled && ConsentInformation.shared.canRequestAds && !self.didStartSDK {
                 self.didStartSDK = true
+                self.configureUnityAds()
                 await MobileAds.shared.start()
             }
             self.updateConsentState()
@@ -132,8 +141,66 @@ final class BannerAdService: BannerAdServing {
         try await ConsentForm.presentPrivacyOptionsForm(from: controller)
     }
 
+    private func configureUnityAds() {
+        // canRequestAds authorizes an ad request, not personalized advertising.
+        // Until Unity-specific regional consent is verified, keep its ads contextual.
+        let privacy = UADSMetaData()
+        privacy.set("privacy.consent", value: false)
+        privacy.commit()
+        GADMediationAdapterUnity.testMode = configuration.usesLocalTestAds || configuration.usesMediationTestAds
+        #if DEBUG
+        if configuration.usesMediationTestAds {
+            MobileAds.shared.requestConfiguration.testDeviceIdentifiers = debugDeviceIDs("TK8_ADMOB_TEST_DEVICE_IDS")
+        }
+        #endif
+    }
+
+    private func consentParameters() -> RequestParameters {
+        let parameters = RequestParameters()
+        #if DEBUG
+        if configuration.usesMediationTestAds {
+            let debug = DebugSettings()
+            debug.testDeviceIdentifiers = debugDeviceIDs("TK8_UMP_TEST_DEVICE_IDS")
+            if ProcessInfo.processInfo.arguments.contains("-TK8UMPForceEEA") {
+                debug.geography = .EEA
+            }
+            parameters.debugSettings = debug
+            if ProcessInfo.processInfo.arguments.contains("-TK8UMPResetConsent") {
+                ConsentInformation.shared.reset()
+            }
+        }
+        #endif
+        return parameters
+    }
+
+    #if DEBUG
+    private func debugDeviceIDs(_ key: String) -> [String] {
+        (ProcessInfo.processInfo.environment[key] ?? "").split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+
+    func presentAdInspector(from controller: UIViewController) async throws {
+        guard configuration.usesMediationTestAds, didStartSDK else {
+            throw NSError(domain: "TK8AdsValidation", code: 1)
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            MobileAds.shared.presentAdInspector(from: controller) { error in
+                if let error { continuation.resume(throwing: error) }
+                else { continuation.resume() }
+            }
+        }
+    }
+    #endif
+
     private func updateConsentState() {
         privacyOptionsRequired = ConsentInformation.shared.privacyOptionsRequirementStatus == .required
         consentAllowsAds = ConsentInformation.shared.canRequestAds
+        #if DEBUG && !targetEnvironment(simulator)
+        // A real AdMob unit must not request Google inventory on an unregistered phone.
+        if configuration.usesMediationTestAds && debugDeviceIDs("TK8_ADMOB_TEST_DEVICE_IDS").isEmpty {
+            consentAllowsAds = false
+            print("[Ads validation] Register the AdMob test device ID before requesting this validation unit.")
+        }
+        #endif
     }
 }

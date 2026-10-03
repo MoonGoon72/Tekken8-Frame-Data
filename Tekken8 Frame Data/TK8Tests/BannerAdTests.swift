@@ -75,6 +75,39 @@ final class BannerAdConfigurationTests: XCTestCase {
         XCTAssertFalse(policy.canLoad)
     }
 
+    func testMediationValidationUsesSeparateBannerAndDisablesNativeAndSampleBypass() {
+        var configuration = makeConfiguration(debug: true, testing: false)
+        configuration.mediationTestRequested = true
+        configuration.mediationTestBannerID = "ca-app-pub-1234567890123456/9876543210"
+        XCTAssertTrue(configuration.usesMediationTestAds)
+        XCTAssertEqual(configuration.adUnitID, configuration.mediationTestBannerID)
+        XCTAssertNil(configuration.nativeAdUnitID)
+        XCTAssertFalse(configuration.usesLocalTestAds)
+    }
+
+    func testMediationValidationFailsClosedForMissingProductionSampleAndForeignPublisherIDs() {
+        var configuration = makeConfiguration(debug: true, testing: false)
+        configuration.mediationTestRequested = true
+        for id in ["", "$(TEST_ID)", configuration.bannerID, BannerAdConfiguration.sampleBannerID,
+                   "ca-app-pub-9999999999999999/9876543210"] {
+            configuration.mediationTestBannerID = id
+            XCTAssertFalse(configuration.usesMediationTestAds)
+            XCTAssertNil(configuration.adUnitID)
+            XCTAssertNil(configuration.nativeAdUnitID)
+        }
+    }
+
+    func testReleaseAndXCTestCannotEnableMediationValidation() {
+        for (debug, testing) in [(false, false), (true, true)] {
+            var configuration = makeConfiguration(debug: debug, testing: testing)
+            configuration.mediationTestRequested = true
+            configuration.mediationTestBannerID = "ca-app-pub-1234567890123456/9876543210"
+            XCTAssertFalse(configuration.usesMediationTestAds)
+            if testing { XCTAssertNil(configuration.adUnitID) }
+            else { XCTAssertEqual(configuration.adUnitID, configuration.bannerID) }
+        }
+    }
+
     func testAdEventContractContainsOnlyPlacementAndNumericFailure() {
         XCTAssertEqual(TK8AnalyticsEvent.bannerImpression(placement: .moveList),
                        TK8AnalyticsEvent(name: "banner_ad_impression", parameters: [

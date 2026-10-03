@@ -20,7 +20,7 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `move_filter` | `FilterView.onAppear` |
 | `onboarding` | `OnboardingViewController.viewDidAppear` |
 
-운영 빌드는 수집을 켠다. `DEBUG` 빌드는 기본적으로 수집을 끄고, 실행 인자 `-FIRAnalyticsDebugEnabled`가 있을 때만 수집한다. DebugView 검증은 이 인자를 붙인 빌드에서 수행하며, 일반 Debug 실행 이벤트가 운영 집계에 섞이지 않도록 한다. Debug는 Google 테스트 광고를 위해 Firebase를 초기화하지만 Analytics 수집은 계속 끈다. 테스트 호스트는 광고 요청과 Analytics 모두 하지 않는다. Info.plist의 초기 수집값은 NO이며, 허용된 실행에서만 활성화한다. 온보딩이 캐릭터 목록을 덮는 동안 메모 버튼 노출을 기록하지 않고, 닫힌 뒤 화면명과 노출을 복원한다.
+운영 빌드는 수집을 켠다. `DEBUG` 빌드는 기본적으로 수집을 끄고, 실행 인자 `-FIRAnalyticsDebugEnabled`가 있을 때만 수집한다. DebugView 검증은 이 인자를 붙인 빌드에서 수행하며, 일반 Debug 실행 이벤트가 운영 집계에 섞이지 않도록 한다. 일반 Debug는 Firebase 초기화를 건너뛰며 Google 테스트 광고는 Remote Config·운영 UMP와 독립적으로 요청한다. 별도 `TK8 Unity Mediation Test` Debug scheme도 Firebase 분석을 초기화하지 않지만, 미디에이션 검증에는 실제 UMP 동의 경로와 별도 광고 단위를 사용한다(세부 절차는 `ads-mediation.md`). 테스트 호스트는 광고 요청과 Analytics 모두 하지 않는다. Info.plist의 초기 수집값은 NO이며, 허용된 실행에서만 활성화한다. 온보딩이 캐릭터 목록을 덮는 동안 메모 버튼 노출을 기록하지 않고, 닫힌 뒤 화면명과 노출을 복원한다.
 
 ## 이벤트 계약
 
@@ -118,7 +118,7 @@ Firebase Console의 Analytics > Custom Definitions에서 실제 보고서에 사
 
 ## 광고 실험 운영
 
-1. AdMob에 iOS 앱을 등록하고 실제 앱 ID와 banner/native ad unit ID를 Release build setting `ADMOB_APP_ID`, `ADMOB_BANNER_AD_UNIT_ID`, `ADMOB_NATIVE_AD_UNIT_ID`에 설정한다. 현재 두 광고 단위 ID는 설정돼 있고 앱 ID가 아직 없으므로, 값을 비워 두거나 Google 샘플 ID를 쓰는 동안 Release는 광고를 요청하지 않는다.
+1. AdMob에 iOS 앱을 등록하고 실제 앱 ID와 banner/native ad unit ID를 Release build setting `ADMOB_APP_ID`, `ADMOB_BANNER_AD_UNIT_ID`, `ADMOB_NATIVE_AD_UNIT_ID`에 설정한다. 현재 실제 앱 ID와 두 광고 단위 ID가 설정되어 있다. 값을 비워 두거나 Google 샘플 ID를 쓰는 동안 Release는 광고를 요청하지 않는다.
 2. AdMob Privacy & messaging에서 필요한 UMP 메시지를 게시하고, Firebase Remote Config에 boolean `admob_banner_enabled`를 만든다. 배포 전 기본값은 `false`로 둔다.
 3. Debug에서 Google 테스트 배너가 캐릭터·메모·설정 목록에만 보이고, 기술표에는 네 번째 기술 뒤부터 20개 간격의 네이티브 테스트 카드가 보이는지 확인한다. 위치별 광고 요청이 실패하면 해당 카드의 공간이 사라져야 한다. Release 기술표는 실제 App ID와 네이티브 광고 단위 ID가 유효할 때 같은 네이티브 카드 경로를 사용한다. Debug는 실제 App ID가 설정돼 있어도 Google 샘플 광고 단위를 사용하며 Remote Config와 운영 UMP 설정을 거치지 않는다.
 4. 직접 사용해도 괜찮은 경우에만 Remote Config 값을 `true`로 변경해 배포된 앱에서 광고를 시작한다. 문제가 있으면 값을 `false`로 바꾼다. 앱은 foreground 재진입 또는 real-time config update 이후 광고와 공간을 제거한다.

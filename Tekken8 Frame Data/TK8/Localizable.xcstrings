@@ -1,6 +1,20 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Ad Inspector (test)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ad Inspector (test)" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "광고 검사기 (테스트)" } }
+      }
+    },
+    "Complete ad consent and register this test device before opening Ad Inspector.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Complete ad consent and register this test device before opening Ad Inspector." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "광고 동의를 완료하고 테스트 기기를 등록한 뒤 광고 검사기를 열어 주세요." } }
+      }
+    },
     "Advertisement": {
       "extractionState": "manual",
       "localizations": {

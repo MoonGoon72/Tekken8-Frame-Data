@@ -3,7 +3,7 @@
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
 - 기준일: 2026-10-04
-- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme)
+- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test` shared scheme
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
 
@@ -52,7 +52,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 분석 | Firebase Analytics + Firebase Remote Config |
 | 광고 | Google Mobile Ads의 적응형 하단 배너와 기술표의 네이티브 카드. UMP가 광고 요청을 허용한 뒤 요청하고 Remote Config로 표시를 중단할 수 있음 |
 | 테스트 | XCTest, in-memory Core Data, Supabase 경계 테스트 |
-| 의존성 관리 | Swift Package Manager; 직접 의존성은 `supabase-swift`, `firebase-ios-sdk`, Google Mobile Ads package |
+| 의존성 관리 | Swift Package Manager; 직접 의존성은 `supabase-swift`, `firebase-ios-sdk`, Google Mobile Ads package, Google의 Unity Ads mediation adapter(SPM 내부 Unity Ads SDK 포함) |
 | CI | GitHub Actions에서 SPM resolve 후 iOS Simulator용 clean build, Xcode Cloud에서 `main` 변경 시 Archive 및 TestFlight 전달 |
 
 패키지의 정확한 해상 버전은 `TK8.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`가 기준이다.
@@ -149,6 +149,11 @@ SceneDelegate
 `DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터 목록·기술 목록·메모 목록·설정 ViewController에 `BannerAdHost`를 주입한다. Host는 기존 화면 view를 감싸 적응형 하단 배너만 배치하며, 광고가 실제로 로드되기 전·로드 실패·원격 중단 시에는 높이 0으로 접어 콘텐츠 영역을 남기지 않는다. 메모 작성 화면에는 Host를 주입하지 않는다. 검색 키보드가 보이거나 메모 목록이 편집 상태이면 Host가 광고를 즉시 제거하고, 화면 이탈·백그라운드·폭 변경 뒤 늦게 도착한 SDK 콜백도 무시한다. 기술표는 하단 배너 대신 `NativeMoveAdLoader`가 위치별로 독립된 네이티브 광고를 요청하고, 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 더 이상 필요한 위치가 아닌 광고와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 같은 경로를 사용한다. 위치별 요청이 실패하면 해당 카드와 빈 공간을 모두 남기지 않는다.
 
 `BannerAdService`는 Firebase Remote Config의 `admob_banner_enabled`가 `true`일 때만 UMP 동의 정보를 갱신하고, `canRequestAds`가 true가 된 뒤 Google Mobile Ads SDK를 시작한다. 설정 화면은 UMP가 요구할 때만 `광고 개인정보 설정` 항목을 표시한다. 앱이 foreground가 될 때 Remote Config를 다시 가져오고 real-time update를 구독한다. 응답 실패나 앱 ID·광고 단위 ID 미설정 시에는 광고를 끈 상태로 유지한다. Debug는 실제 App ID 설정 여부와 관계없이 Google 샘플 광고 단위를 사용하고 Remote Config·운영 UMP 설정과 독립적으로 테스트 광고를 요청한다. Release는 유효한 실제 ID가 제공되기 전에는 광고를 요청하지 않는다.
+
+Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디에이션 SDK는 사용하지 않는다. 앱 타깃에 공식 `UnityAdapterTarget` product를 연결하며 Google Mobile Ads 13.9 이상과 Unity adapter 4.20.1.0(SPM tag `4.20.100`), Unity Ads 4.20.1을 사용한다. 두 SDK는 `BannerAdService`가 Google SDK를 시작하기 직전에 Unity metadata를 설정하고, UMP가 허용한 기존 시작 경로에서만 초기화한다. `canRequestAds`를 개인 맞춤 광고 동의로 해석하지 않으며, 초기 도입은 Unity `privacy.consent=false`를 명시해 비개인화 광고를 사용한다. 일반 Debug 샘플 광고 및 명시적인 미디에이션 검증 경로에서 Unity adapter test mode를 켠다. 정적 어댑터의 Objective-C category를 포함하도록 앱 Debug/Release에 `$(inherited) -ObjC` 링크 설정을 유지한다. Unity Game ID와 배너 Placement ID는 AdMob 매핑에 두고 앱에 추가하지 않는다. 네이티브는 현재 Google 로더/뷰 경계를 유지한다. Unity의 공식 SKAdNetwork 목록은 앱 Info.plist에 병합한다. 계정 계약·매핑·app-ads.txt·UMP 파트너 등록·실제 Unity 테스트 광고와 배포 확인 전에는 운영 배너 그룹을 활성화하지 않는다. 상세 운영 절차와 미검증 범위는 [광고 미디에이션 설정](ads-mediation.md)에 기록한다.
+
+`TK8 Unity Mediation Test`는 Debug 전용 `-TK8UnityMediationTest`와 `TK8_UNITY_TEST_BANNER_ID`로 별도 배너만 요청한다. 운영 배너·Google 샘플·다른 publisher ID·미설정 값은 검증 모드에서 거절하고 네이티브 요청은 끈다. Remote Config와 Firebase 초기화는 일반 Debug처럼 건너뛰지만 UMP는 우회하지 않는다. UMP 테스트 기기 ID/강제 EEA/선택 초기화, AdMob 테스트 기기 등록, Unity testMode와 설정의 광고 검사기 진입점을 제공한다. 실기기의 AdMob 테스트 기기 ID 환경변수가 없으면 배너 요청을 막는다. 기기 ID는 공유 scheme을 복제한 Shared OFF 개인용 `TK8 Unity Device Test (local)`의 Run 환경변수에서만 입력하고 공유 파일에는 저장하지 않는다. 개인용 scheme은 git-ignore된 `xcuserdata`에 있으며 UMP 선택 초기화는 최초 검증 뒤 끈다. Release는 검증 인자·환경변수를 읽지 않는다.
+
 
 ### 3. 분석 이벤트
 

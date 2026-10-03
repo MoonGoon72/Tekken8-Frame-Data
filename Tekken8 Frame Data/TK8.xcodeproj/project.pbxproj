@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AD8700000000000000000001 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = AD8700000000000000000002 /* FirebaseRemoteConfig */; };
+		AD8700000000000000000011 /* UnityAdapterTarget in Frameworks */ = {isa = PBXBuildFile; productRef = AD8700000000000000000012 /* UnityAdapterTarget */; };
 		E48DD6EE2D78738A000308CC /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6ED2D78738A000308CC /* PostgREST */; };
 		E48DD6F02D78738A000308CC /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6EF2D78738A000308CC /* Storage */; };
 		E48DD6F32D787391000308CC /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E48DD6F22D787391000308CC /* Supabase */; };
@@ -90,6 +91,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E4D6BF512E6582480091C030 /* GoogleMobileAds in Frameworks */,
+				AD8700000000000000000011 /* UnityAdapterTarget in Frameworks */,
 				E4E2D9FA2E670CBB003DCB4F /* FirebaseAnalyticsCore in Frameworks */,
 				E48DD6F02D78738A000308CC /* Storage in Frameworks */,
 				E4E2D9FC2E670CBB003DCB4F /* FirebaseAnalyticsIdentitySupport in Frameworks */,
@@ -161,6 +163,7 @@
 				E48DD6EF2D78738A000308CC /* Storage */,
 				E48DD6F22D787391000308CC /* Supabase */,
 				E4D6BF502E6582480091C030 /* GoogleMobileAds */,
+				AD8700000000000000000012 /* UnityAdapterTarget */,
 				E4E2D9F72E670CBB003DCB4F /* FirebaseAnalytics */,
 				AD8700000000000000000002 /* FirebaseRemoteConfig */,
 				E4E2D9F92E670CBB003DCB4F /* FirebaseAnalyticsCore */,
@@ -249,6 +252,7 @@
 			mainGroup = E4024B222D3F399E007C855C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				AD8700000000000000000013 /* XCRemoteSwiftPackageReference "googleads-mobile-ios-mediation-unity" */,
 				E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E4D6BF4F2E6582480091C030 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 				E4E2D9F62E670CBB003DCB4F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
@@ -357,6 +361,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.1.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -401,6 +409,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.1.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.moongoon.TK8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -672,6 +684,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AD8700000000000000000013 /* XCRemoteSwiftPackageReference "googleads-mobile-ios-mediation-unity" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/googleads-mobile-ios-mediation-unity.git";
+			requirement = {
+				kind = exactVersion;
+				version = 4.20.100;
+			};
+		};
 		E48DD6EC2D78738A000308CC /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -685,7 +705,7 @@
 			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 12.9.0;
+				minimumVersion = 13.9.0;
 			};
 		};
 		E4E2D9F62E670CBB003DCB4F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
@@ -703,6 +723,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4E2D9F62E670CBB003DCB4F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseRemoteConfig;
+		};
+		AD8700000000000000000012 /* UnityAdapterTarget */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD8700000000000000000013 /* XCRemoteSwiftPackageReference "googleads-mobile-ios-mediation-unity" */;
+			productName = UnityAdapterTarget;
 		};
 		E48DD6ED2D78738A000308CC /* PostgREST */ = {
 			isa = XCSwiftPackageProductDependency;

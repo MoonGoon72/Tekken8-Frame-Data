@@ -31,9 +31,24 @@ struct BannerAdConfiguration {
     let bannerID: String
     let nativeID: String
     let localTestEnabled: Bool
+    var mediationTestRequested = false
+    var mediationTestBannerID = ""
+
+    var usesMediationTestAds: Bool {
+        isDebug && !isTesting && mediationTestRequested
+            && Self.isValidID(appID, separator: "~")
+            && !appID.contains("3940256099942544")
+            && Self.isValidID(mediationTestBannerID, separator: "/")
+            && mediationTestBannerID.components(separatedBy: "/").first == appID.components(separatedBy: "~").first
+            && mediationTestBannerID != bannerID
+            && !mediationTestBannerID.contains("3940256099942544")
+    }
 
     var adUnitID: String? {
         guard !isTesting else { return nil }
+        if isDebug && mediationTestRequested {
+            return usesMediationTestAds ? mediationTestBannerID : nil
+        }
         if isDebug { return Self.sampleBannerID }
         guard Self.isValidID(appID, separator: "~"),
               Self.isValidID(bannerID, separator: "/"),
@@ -44,6 +59,7 @@ struct BannerAdConfiguration {
 
     var nativeAdUnitID: String? {
         guard !isTesting else { return nil }
+        if isDebug && mediationTestRequested { return nil }
         if isDebug { return Self.sampleNativeID }
         guard Self.isValidID(appID, separator: "~"),
               Self.isValidID(nativeID, separator: "/"),
@@ -53,8 +69,8 @@ struct BannerAdConfiguration {
     }
 
     var hasAnyAdUnitID: Bool { adUnitID != nil || nativeAdUnitID != nil }
-    var usesLocalTestAds: Bool { isDebug && localTestEnabled && !isTesting }
-    /// Debug uses Google's sample unit; Release requires the app's real IDs.
+    var usesLocalTestAds: Bool { isDebug && localTestEnabled && !isTesting && !mediationTestRequested }
+    /// General Debug uses Google's sample unit; mediation validation disables native ads.
     var usesNativeMoveAds: Bool { !isTesting && nativeAdUnitID != nil }
 
     private static func isValidID(_ value: String, separator: String) -> Bool {
@@ -64,8 +80,12 @@ struct BannerAdConfiguration {
     static var current: Self {
         #if DEBUG
         let isDebug = true
+        let mediationTestRequested = ProcessInfo.processInfo.arguments.contains("-TK8UnityMediationTest")
+        let mediationTestBannerID = ProcessInfo.processInfo.environment["TK8_UNITY_TEST_BANNER_ID"] ?? ""
         #else
         let isDebug = false
+        let mediationTestRequested = false
+        let mediationTestBannerID = ""
         #endif
         return Self(
             isDebug: isDebug,
@@ -73,9 +93,11 @@ struct BannerAdConfiguration {
             appID: Bundle.main.object(forInfoDictionaryKey: "GADApplicationIdentifier") as? String ?? "",
             bannerID: Bundle.main.object(forInfoDictionaryKey: "AdMobBannerAdUnitID") as? String ?? "",
             nativeID: Bundle.main.object(forInfoDictionaryKey: "AdMobNativeAdUnitID") as? String ?? "",
-            // Debug builds must always render Google's test creative so the banner
-            // layout can be inspected without enabling production monetization.
-            localTestEnabled: isDebug
+            // General Debug uses Google sample ads; explicit mediation validation
+            // selects its separate unit and goes through UMP instead.
+            localTestEnabled: isDebug,
+            mediationTestRequested: mediationTestRequested,
+            mediationTestBannerID: mediationTestBannerID
         )
     }
 }

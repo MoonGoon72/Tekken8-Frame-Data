@@ -6,6 +6,9 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
     private var settingsItems: [SettingItem] {
         var items: [SettingItem] = [.appVersion, .tekkenVersion, .reportIssue]
         if ads?.privacyOptionsRequired == true { items.append(.adPrivacy) }
+        #if DEBUG
+        if ads?.configuration.usesMediationTestAds == true { items.append(.adInspector) }
+        #endif
         return items
     }
     private let ads: BannerAdService?
@@ -131,6 +134,20 @@ extension SettingViewController: UITableViewDelegate {
         let item = settingsItems[indexPath.row]
         
         switch item {
+        #if DEBUG
+        case .adInspector:
+            Task {
+                do {
+                    try await ads?.presentAdInspector(from: self)
+                } catch {
+                    let alert = UIAlertController(title: "Ad Inspector (test)".localized(),
+                                                  message: "Complete ad consent and register this test device before opening Ad Inspector.".localized(),
+                                                  preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
+                    present(alert, animated: true)
+                }
+            }
+        #endif
         case .reportIssue:
             sendReportMail()
         case .adPrivacy:
@@ -157,9 +174,16 @@ private extension SettingViewController {
         case tekkenVersion
         case reportIssue
         case adPrivacy
+        #if DEBUG
+        case adInspector
+        #endif
         
         var title: String {
             switch self {
+            #if DEBUG
+            case .adInspector:
+                "Ad Inspector (test)".localized()
+            #endif
             case .appVersion:
                 "Version Info".localized()
             case .tekkenVersion:
@@ -184,6 +208,10 @@ private extension SettingViewController {
         
         var showsDisclosureIndicator: Bool {
             switch self {
+            #if DEBUG
+            case .adInspector:
+                true
+            #endif
             case .reportIssue, .adPrivacy:
                 true
             default:

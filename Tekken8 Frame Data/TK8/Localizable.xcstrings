@@ -1297,6 +1297,48 @@
           }
         }
       }
+    },
+    "move_video_available": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Video available" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영상 재생 가능" } }
+      }
+    },
+    "move_video_cell_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Double-tap to expand move details and play the video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "두 번 탭하여 기술 상세 정보와 영상을 엽니다" } }
+      }
+    },
+    "move_video_close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Close" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "닫기" } }
+      }
+    },
+    "move_video_loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영상 불러오는 중" } }
+      }
+    },
+    "move_video_retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Retry" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다시 시도" } }
+      }
+    },
+    "move_video_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Video could not be played. Check your connection and try again." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영상을 재생할 수 없습니다. 연결을 확인한 뒤 다시 시도해 주세요." } }
+      }
     }
   },
   "version": "1.0"

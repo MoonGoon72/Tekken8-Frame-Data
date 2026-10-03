@@ -36,7 +36,7 @@ final class MemoListView: BaseView {
         )
         section.boundarySupplementaryItems = [header]
         let layout = UICollectionViewCompositionalLayout(section: section)
-        let collectionView = UICollectionView(frame: .infinite, collectionViewLayout: layout)
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.register(
             MemoCollectionViewCell.self,
             forCellWithReuseIdentifier: MemoCollectionViewCell.reuseIdentifier

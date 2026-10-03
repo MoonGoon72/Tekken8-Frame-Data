@@ -25,11 +25,15 @@ UIKit ViewController ------> SwiftUI Cell / Filter
           |
     Repository Protocol
           |
-          +-------------------+--------------------+
-          |                   |                    |
-          v                   v                    v
-  Supabase/PostgREST      Core Data           UserDefaults
-                          (cache + memo)      (version + preference)
+          +-------------------+--------------------+--------------------+
+          |                   |                    |                    |
+          v                   v                    v                    v
+  Supabase/PostgREST      Core Data           UserDefaults       Video metadata
+                          (cache + memo)      (version +          repository
+                                               preference)              |
+                                                                  |
+                                                                  v
+                                                            move_video
 ```
 
 `SceneDelegate`가 `DIContainer`를 소유하고 루트 화면을 조립한다. 화면 전환은 `UINavigationController`와 각 ViewController가 담당하며, ViewModel은 Repository protocol에 의존한다. Repository 구현체가 Supabase와 로컬 저장소를 선택하고 DTO를 통해 원격/영속 모델을 앱 도메인 모델로 변환한다.
@@ -43,7 +47,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 상태/바인딩 | Combine의 `@Published`, `AnyPublisher`, `sink` |
 | 비동기 | Swift Concurrency의 `async/await`, `Task`, `TaskGroup` |
 | 아키텍처 | MVVM, Repository Pattern, protocol 기반 의존성 역전, `DIContainer` 수동 조립 |
-| 원격 데이터 | Supabase Swift SDK, PostgREST (`character`, `move`, 버전 테이블) |
+| 원격 데이터 | Supabase Swift SDK, PostgREST (`character`, `move`, 버전 테이블; `move_video` adapter와 원격 schema 적용) |
 | 원격 파일 | `character.image_url`에 저장된 공개 캐릭터 이미지 URL (현재 Google Drive 호스팅) |
 | 로컬 데이터 | Core Data (`CharacterEntity`, `MoveEntity`, `MemoEntity`) |
 | 설정 저장 | UserDefaults 및 `UserDefaultsManageable` |
@@ -79,7 +83,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   │   ├── Assets.xcassets/         # 캐릭터·커맨드·색상·앱 아이콘 에셋
 │   │   ├── Localizable.xcstrings     # UI 현지화 문자열
 │   │   └── Tekken8FrameData.xcdatamodeld/
-│   ├── TK8Tests/                    # 도메인/번역/필터/메모 단위 테스트
+│   ├── TK8Tests/                    # 도메인/번역/필터/영상/메모 단위 테스트
 │   ├── SupabaseAPITests/            # Supabase adapter 경계 테스트
 │   ├── ci_scripts/                  # Xcode Cloud build 전 설정 생성 스크립트
 │   └── TK8.xcodeproj/               # 타깃, scheme, build setting, SPM 설정
@@ -95,10 +99,10 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 |---|---|---|
 | App/DI | `AppDelegate`, `SceneDelegate`, `DIContainer` | Firebase 초기화·수집 정책, 창/루트 navigation 구성, manager·repository·view model·view controller·analytics·광고 서비스 조립 |
 | Character | `CharacterListViewController`, `CharacterListViewModel` | 캐릭터 조회/검색/정렬, list/grid 전환, 이미지 로딩, 기술·메모·설정 화면 진입 |
-| Move | `MoveListViewController`, `MoveListViewModel`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, diffable snapshot 구성 |
+| Move | `MoveListViewController`, `MoveListViewModel`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, diffable snapshot 구성, 독립적인 영상 metadata 상태 관리 |
 | Memo | `MemoListViewController`, `MemoComposeViewController`, `MemoViewModel` | 로컬 메모 CRUD, pin/검색, 캐릭터 연결, `.tk8memos` 백업 import/export |
-| Repository/Data | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Core Data entity와 domain model 매핑 |
-| Repository/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회 |
+| Repository/Data | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `VideoReference`로 변환 |
+| Repository/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
 | Repository/Persistant | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
 | Version | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
 | Utility | `ImageCacheManager`, `AnalyticsClient`, `SearchAnalyticsTracker`, `BannerAdService`, `BannerAdHost`, base view/controller, extensions | 이미지 메모리/디스크 캐시, Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거, Remote Config·UMP 기반 광고 허용 판정, 공통 UI 생명주기, command parsing·localization 보조 |
@@ -177,15 +181,21 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 5. 키워드, 섹션, 속성, 발동/가드 프레임 조건을 적용하고 섹션 및 `sortOrder` 기준으로 정렬한다.
 6. UIKit collection view가 SwiftUI `MoveCell`을 `UIHostingConfiguration`으로 렌더링한다.
 
-### 6. 캐릭터 이미지
+### 6. 기술 보조 영상
+
+`DefaultMoveVideoRepository`는 `MoveVideoRemoteDataSource`를 통해 활성 `move_video` 행을 조회하고 연결된 `move.id`를 키로 `MoveVideoReference`를 만든다. 영상 파일은 Cloudflare R2에 두며 Supabase는 기술 고정키와 `object_key`의 관계 metadata만 제공한다. 공개 배포는 `MOVE_VIDEO_BASE_URL`로 HTTPS URL을 구성하고, 비공개 배포는 사용 시 URL provider가 서명 URL을 요청한다. metadata와 영상 파일은 Core Data/UserDefaults에 저장하지 않는다.
+
+`MoveListViewModel`은 프레임 조회와 별도의 영상 metadata 상태를 관리한다. 실패가 기존 기술표 조회를 막지 않으며, 화면 방문 초기화 후 늦은 응답은 request ID로 무시한다. 이 단계에서는 Repository와 ViewModel을 구현하고 실제 화면·DI 연결은 후속 변경에서 수행한다.
+
+### 7. 캐릭터 이미지
 
 `CharacterListViewModel`은 먼저 Asset Catalog에서 캐릭터 영문 이름과 같은 이미지를 찾는다. 로컬 에셋이 없으면 `Character.imageURL`의 HTTP(S) URL을 `ImageCacheManager`에 요청한다. 캐시는 `NSCache`, Caches 디렉터리, 네트워크 순으로 조회된다. 이미지 URL의 호스팅 제공자는 `character` 데이터가 소유하므로 앱 코드는 Supabase Storage 경로를 조합하지 않는다.
 
-### 7. 메모와 백업
+### 8. 메모와 백업
 
 메모는 원격 서버를 사용하지 않는다. `MemoViewModel`이 `DefaultMemoRepository`를 통해 `MemoEntity`를 직접 CRUD하며 최신 수정일 순으로 읽는다. export는 전체 메모를 앱 전용 JSON 문서(`.tk8memos`)로 인코딩하고, import는 UUID가 같은 메모 중 가져온 `updatedAt`이 더 최신인 항목만 갱신한다.
 
-### 8. 프레임 데이터 운영 흐름
+### 9. 프레임 데이터 운영 흐름
 
 ```text
 비공개 Tekken8-Data-Ops/scripts/data/moves/<character>.csv
@@ -212,7 +222,7 @@ frame_data_version 증가
 
 ## 테스트와 검증 경계
 
-- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
+- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
 - `SupabaseAPITests`: `Character.swift`, `Move.swift`, `SupabaseManageable.swift`, 버전 모델을 테스트 target의 파일 동기화 예외로 직접 포함하고 mock을 사용해 Supabase adapter 경계를 검증한다. 앱 모듈 import에 의존하지 않아 앱의 Firebase/기타 패키지 의존성이 경계 테스트에 전파되지 않는다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
 - Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다. Firebase Analytics 초기화에 필요한 `TK8/GoogleService-Info.plist`는 `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_BASE64` secret environment variable을 post-clone 단계에서 Base64 복원한다. 복원 파일은 plist 문법과 `BUNDLE_ID=com.moongoon.TK8`을 검증하고 권한 `600`으로 원자적으로 교체한다. 따라서 Firebase configuration은 Git에 추적하지 않는다.

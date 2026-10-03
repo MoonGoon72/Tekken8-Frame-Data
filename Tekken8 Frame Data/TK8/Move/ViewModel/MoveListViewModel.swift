@@ -23,10 +23,19 @@ enum MoveListFetchState: Equatable {
     case failed
 }
 
+enum MoveVideoMetadataState: Equatable {
+    case idle
+    case loading
+    case loaded
+    case failed
+}
+
 @MainActor
 final class MoveListViewModel {
     @Published private(set) var filtered: [LocalizedMove] = []
     @Published private(set) var fetchState: MoveListFetchState = .idle
+    @Published private(set) var moveVideoReferences: [Int64: MoveVideoReference] = [:]
+    @Published private(set) var moveVideoMetadataState: MoveVideoMetadataState = .idle
     @Published var filterCondition: FilterCondition = FilterCondition()
     
     private var cancellables = Set<AnyCancellable>()
@@ -35,7 +44,10 @@ final class MoveListViewModel {
     private(set) var overallSections: [String] = []
 
     private let repository: MoveRepository
+    private let moveVideoRepository: MoveVideoRepository?
     private let translator = TranslatorEngine()
+    private var moveVideoRequestID = UUID()
+    private var moveVideoCharacterName: String?
     
     private var lang: TranslatorEngine.Lang = (Bundle.main.preferredLocalizations.first == "ko" ? .ko : .en)
     private var preferredSections: [String] {
@@ -47,8 +59,9 @@ final class MoveListViewModel {
         }
     }
     
-    init(moveRepository repository: MoveRepository) {
+    init(moveRepository repository: MoveRepository, moveVideoRepository: MoveVideoRepository? = nil) {
         self.repository = repository
+        self.moveVideoRepository = moveVideoRepository
         $filterCondition.sink { condition in
             self.filter(by: condition)
         }
@@ -75,6 +88,46 @@ final class MoveListViewModel {
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }
         }
+    }
+
+    func loadMoveVideos(characterName name: String) async {
+        guard moveVideoMetadataState == .idle,
+              let moveVideoRepository else { return }
+
+        guard moveVideoRepository.isConfigured else {
+            moveVideoMetadataState = .failed
+            return
+        }
+
+        let requestID = UUID()
+        moveVideoRequestID = requestID
+        moveVideoCharacterName = name
+        moveVideoMetadataState = .loading
+
+        do {
+            let references = try await moveVideoRepository.fetchVideos(characterName: name)
+            guard moveVideoRequestID == requestID,
+                  moveVideoCharacterName == name else { return }
+            moveVideoReferences = references
+            moveVideoMetadataState = .loaded
+        } catch {
+            guard moveVideoRequestID == requestID,
+                  moveVideoCharacterName == name else { return }
+            moveVideoReferences = [:]
+            moveVideoMetadataState = .failed
+            NSLog("❌ Error fetching \(name)'s move videos: \(error)")
+        }
+    }
+
+    func resetMoveVideoMetadataForNextVisit() {
+        moveVideoRequestID = UUID()
+        moveVideoCharacterName = nil
+        moveVideoReferences = [:]
+        moveVideoMetadataState = .idle
+    }
+
+    func moveVideo(for moveID: Int64) -> MoveVideoReference? {
+        moveVideoReferences[moveID]
     }
 
     func updateKeyword(by keyword: String) {

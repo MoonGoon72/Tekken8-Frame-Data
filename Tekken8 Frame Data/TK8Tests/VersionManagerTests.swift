@@ -113,6 +113,7 @@ private final class VersionSupabaseStub: SupabaseManageable {
 
     func fetchCharacter() async throws -> [Character] { [] }
     func fetchMoves(characterName: String) async throws -> [Move] { [] }
+    func fetchMoveVideos(characterName: String) async throws -> [MoveVideoRemoteRecord] { [] }
 }
 
 private final class RecordingCoreDataManager: CoreDataManageable {

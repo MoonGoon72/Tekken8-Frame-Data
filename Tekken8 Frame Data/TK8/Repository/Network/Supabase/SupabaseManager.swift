@@ -56,6 +56,28 @@ final class SupabaseManager: SupabaseManageable {
             .value
         return moves
     }
+
+    func fetchMoveVideos(characterName name: String) async throws -> [MoveVideoRemoteRecord] {
+        let videos: [MoveVideoRemoteRecord] = try await client
+            .from("move_video")
+            .select("character_name,move_key,object_key,video_revision,enabled,move!inner(id)")
+            .eq("character_name", value: name)
+            .eq("enabled", value: true)
+            .execute()
+            .value
+        return videos
+    }
+
+    func fetchMoveVideoPlaybackURL(objectKey: String) async throws -> URL {
+        struct Request: Encodable { let objectKey: String }
+        struct Response: Decodable { let url: URL }
+
+        let response: Response = try await client.functions.invoke(
+            "move-video-url",
+            options: .init(body: Request(objectKey: objectKey))
+        )
+        return response.url
+    }
     
     func fetchFrameDataVersion() async throws -> Int {
         let version: [FrameDataVersion] = try await client

@@ -187,6 +187,8 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 `MoveListViewModel`은 프레임 조회와 별도의 영상 metadata 상태를 관리한다. 실패가 기존 기술표 조회를 막지 않으며, 화면 방문 초기화 후 늦은 응답은 request ID로 무시한다. 이 단계에서는 Repository와 ViewModel을 구현하고 실제 화면·DI 연결은 후속 변경에서 수행한다.
 
+`MoveVideoPlaybackSession`은 URL provider 뒤에서 요청한 URL로 `AVQueuePlayer`와 `AVPlayerLooper`를 구성해 무음 반복 재생한다. URL 요청 취소·재시도·비활성화 중 늦은 응답을 처리하고, player 상태·영상 원본 비율을 화면에 전달할 수 있다. stop은 URL task·KVO·notification·looper·player를 정리한다. 앱 비활성화는 일시정지하고 자동 재생을 막는다. 실제 AVKit 컨트롤과 상세 화면 생명주기 연결은 후속 변경에서 수행한다.
+
 ### 7. 캐릭터 이미지
 
 `CharacterListViewModel`은 먼저 Asset Catalog에서 캐릭터 영문 이름과 같은 이미지를 찾는다. 로컬 에셋이 없으면 `Character.imageURL`의 HTTP(S) URL을 `ImageCacheManager`에 요청한다. 캐시는 `NSCache`, Caches 디렉터리, 네트워크 순으로 조회된다. 이미지 URL의 호스팅 제공자는 `character` 데이터가 소유하므로 앱 코드는 Supabase Storage 경로를 조합하지 않는다.
@@ -222,7 +224,7 @@ frame_data_version 증가
 
 ## 테스트와 검증 경계
 
-- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
+- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
 - `SupabaseAPITests`: `Character.swift`, `Move.swift`, `SupabaseManageable.swift`, 버전 모델을 테스트 target의 파일 동기화 예외로 직접 포함하고 mock을 사용해 Supabase adapter 경계를 검증한다. 앱 모듈 import에 의존하지 않아 앱의 Firebase/기타 패키지 의존성이 경계 테스트에 전파되지 않는다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
 - Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다. Firebase Analytics 초기화에 필요한 `TK8/GoogleService-Info.plist`는 `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_BASE64` secret environment variable을 post-clone 단계에서 Base64 복원한다. 복원 파일은 plist 문법과 `BUNDLE_ID=com.moongoon.TK8`을 검증하고 권한 `600`으로 원자적으로 교체한다. 따라서 Firebase configuration은 Git에 추적하지 않는다.

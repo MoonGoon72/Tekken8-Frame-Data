@@ -3,6 +3,7 @@ import Foundation
 enum BannerPlacement: String, CaseIterable {
     case characterList = "character_list"
     case moveList = "move_list"
+    case moveVideoDetail = "move_video_detail"
     case memoList = "memo_list"
     case settings
 }

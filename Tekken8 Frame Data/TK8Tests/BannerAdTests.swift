@@ -109,6 +109,12 @@ final class BannerAdConfigurationTests: XCTestCase {
     }
 
     func testAdEventContractContainsOnlyPlacementAndNumericFailure() {
+        XCTAssertEqual(TK8AnalyticsEvent.bannerImpression(placement: .moveVideoDetail),
+                       TK8AnalyticsEvent(name: "banner_ad_impression", parameters: [
+                        "ad_placement": .string("move_video_detail"), "ad_format": .string("banner")]))
+        XCTAssertEqual(TK8AnalyticsEvent.bannerLoadFailed(placement: .moveVideoDetail, code: 2),
+                       TK8AnalyticsEvent(name: "banner_ad_load_failed", parameters: [
+                        "ad_placement": .string("move_video_detail"), "ad_error_code": .integer(2)]))
         XCTAssertEqual(TK8AnalyticsEvent.bannerImpression(placement: .moveList),
                        TK8AnalyticsEvent(name: "banner_ad_impression", parameters: [
                         "ad_placement": .string("move_list"), "ad_format": .string("banner")]))
@@ -199,6 +205,27 @@ final class BannerAdHostTests: XCTestCase {
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(content.frame.height, controller.view.bounds.height)
         XCTAssertEqual(analytics.events, [.bannerLoadFailed(placement: .moveList, code: 2)])
+    }
+
+    func testContentSpacingIsReservedOnlyForLoadedBanner() {
+        host.disappear()
+        host = BannerAdHost(service: service, placement: .moveVideoDetail, analytics: analytics, contentSpacing: 12,
+                            loadAd: { [weak self] in self?.requests.append($0) }, isApplicationActive: { true })
+        controller = UIViewController()
+        content = controller.view
+        host.install(in: controller)
+        controller.view.frame = CGRect(x: 0, y: 0, width: 375, height: 667)
+        controller.view.layoutIfNeeded()
+        host.appear()
+        let banner = requests.last!
+        XCTAssertEqual(content.frame.height, 667)
+        host.bannerViewDidReceiveAd(banner)
+        controller.view.layoutIfNeeded()
+        let bannerFrame = banner.convert(banner.bounds, to: controller.view)
+        XCTAssertEqual(bannerFrame.minY - content.frame.maxY, 12, accuracy: 1)
+        host.disappear()
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height, 667)
     }
 
     func testLeavingScreenRejectsLateImpressionAndLoad() {

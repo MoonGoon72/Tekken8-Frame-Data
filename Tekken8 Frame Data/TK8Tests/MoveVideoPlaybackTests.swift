@@ -119,7 +119,12 @@ final class MoveVideoPlaybackTests: XCTestCase {
         session.stop()
     }
 
-
+    func test_edgeSwipeCancelAndFinishIntent() {
+        XCTAssertFalse(MoveVideoCardTransition.shouldFinish(progress: 0.2, velocity: 100))
+        XCTAssertFalse(MoveVideoCardTransition.shouldFinish(progress: 0.6, velocity: -100))
+        XCTAssertTrue(MoveVideoCardTransition.shouldFinish(progress: 0.4, velocity: 0))
+        XCTAssertTrue(MoveVideoCardTransition.shouldFinish(progress: 0.1, velocity: 900))
+    }
 
     private func makeSession(_ provider: MoveVideoPlaybackURLProviding) -> MoveVideoPlaybackSession {
         MoveVideoPlaybackSession(reference: MoveVideoReference(moveID: 1, objectKey: "test.mp4", revision: nil, playbackURL: nil), provider: provider)

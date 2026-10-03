@@ -16,15 +16,21 @@ final class MoveListViewController: BaseViewController {
     private let moveListView: MoveListView
     private let moveListViewModel: MoveListViewModel
     private let container: DIContainer
+    private let moveVideoPlaybackURLProvider: MoveVideoPlaybackURLProviding
     private let searchController: UISearchController
     private var filteredCancellable: AnyCancellable?
     private var dataSource: MoveDataSource?
     private var fetchStateCancellable: AnyCancellable?
+    private var moveVideoReferencesCancellable: AnyCancellable?
     private let analytics: AnalyticsClient
     private let searchAnalyticsTracker: SearchAnalyticsTracker
     private let nativeAdLoader: NativeMoveAdLoader?
     private var hasLoadedInitialData = false
     private var isScreenVisible = false
+    private var isPresentingVideoPlayer = false
+    private var videoCardTransition: MoveVideoCardTransition?
+    private var pendingDetailMoves: [LocalizedMove]?
+    private var detailReturnOffset: CGPoint?
     private var appliedMoveCount = 0
     
     private let character: Character
@@ -34,6 +40,7 @@ final class MoveListViewController: BaseViewController {
         moveListViewModel viewModel: MoveListViewModel,
         container: DIContainer,
         analytics: AnalyticsClient,
+        moveVideoPlaybackURLProvider: MoveVideoPlaybackURLProviding,
         nativeAdService: (any BannerAdServing)? = nil
     ) {
         moveListView = MoveListView()
@@ -42,6 +49,7 @@ final class MoveListViewController: BaseViewController {
         searchController = UISearchController(searchResultsController: nil)
         self.character = character
         self.analytics = analytics
+        self.moveVideoPlaybackURLProvider = moveVideoPlaybackURLProvider
         if let nativeAdService, nativeAdService.configuration.usesNativeMoveAds {
             nativeAdLoader = NativeMoveAdLoader(service: nativeAdService, analytics: analytics)
         } else {
@@ -71,6 +79,9 @@ final class MoveListViewController: BaseViewController {
         super.viewDidAppear(animated)
         analytics.log(.screenViewed(.moveList))
         isScreenVisible = true
+        if !isPresentingVideoPlayer {
+            Task { await moveListViewModel.loadMoveVideos(characterName: character.nameEN) }
+        }
         logInitialDisplayIfNeeded()
         nativeAdLoader?.load(placements: Self.nativeAdPlacements(moveCount: moveListViewModel.filtered.count), from: self)
     }
@@ -79,7 +90,12 @@ final class MoveListViewController: BaseViewController {
         super.viewWillDisappear(animated)
         isScreenVisible = false
         searchAnalyticsTracker.cancel()
-        nativeAdLoader?.reset()
+        if !isPresentingVideoPlayer {
+            nativeAdLoader?.reset()
+        }
+        if !isPresentingVideoPlayer {
+            moveListViewModel.resetMoveVideoMetadataForNextVisit()
+        }
     }
     
     override func setupDelegation() {
@@ -149,6 +165,13 @@ final class MoveListViewController: BaseViewController {
                     failureCode: .repositoryError
                 ))
             }
+
+        moveVideoReferencesCancellable = moveListViewModel
+            .$moveVideoReferences
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.reconfigureMoveVideoIndicators()
+            }
     }
     
     private func fetchMoves() {
@@ -210,7 +233,7 @@ private extension MoveListViewController {
             case .move(let move):
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MoveCell.reuseIdentifier, for: indexPath)
                 cell.contentConfiguration = UIHostingConfiguration {
-                    MoveCell(move: move)
+                    MoveCell(move: move, hasVideo: self.moveListViewModel.moveVideo(for: move.id) != nil)
                 }
                 return cell
             case .nativeAd(let placement):
@@ -244,6 +267,10 @@ private extension MoveListViewController {
     }
     
     func applySnapshot(for moves: [LocalizedMove]) {
+        guard !isPresentingVideoPlayer else {
+            pendingDetailMoves = moves
+            return
+        }
         var snapshot = Snapshot()
         let orderSections = orderedSections(from: moves)
         let availableNativeAdPlacements = Set(Self.nativeAdPlacements(moveCount: moves.count).filter {
@@ -295,6 +322,11 @@ private extension MoveListViewController {
         let attemptID = searchAnalyticsTracker.attemptID
         dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
             guard let self else { return }
+            if let offset = self.detailReturnOffset {
+                self.moveListView.moveCollectionView.layoutIfNeeded()
+                self.moveListView.moveCollectionView.setContentOffset(offset, animated: false)
+                self.detailReturnOffset = nil
+            }
             self.appliedMoveCount = moves.count
             self.searchAnalyticsTracker.resultsApplied(count: moves.count, for: attemptID)
             self.logInitialDisplayIfNeeded()
@@ -312,6 +344,17 @@ private extension MoveListViewController {
                 moveCount: appliedMoveCount
             ))
         }
+    }
+
+    func reconfigureMoveVideoIndicators() {
+        guard var snapshot = dataSource?.snapshot() else { return }
+        let moveItems = snapshot.itemIdentifiers.filter {
+            if case .move = $0 { return true }
+            return false
+        }
+        guard !moveItems.isEmpty else { return }
+        snapshot.reconfigureItems(moveItems)
+        dataSource?.apply(snapshot, animatingDifferences: false)
     }
     
     // 첫 등장 순서를 유지하면서 정렬
@@ -359,10 +402,50 @@ extension MoveListViewController {
 }
 
 // MARK: - UICollectionViewDelegate Conformance
-// TODO: 추후 특정 기술에 대한 액션을 추가한다면 필요할지도?
 extension MoveListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
+        guard !isPresentingVideoPlayer,
+              let item = dataSource?.itemIdentifier(for: indexPath),
+              case .move(let move) = item,
+              let video = moveListViewModel.moveVideo(for: move.id) else { return }
+
+        collectionView.deselectItem(at: indexPath, animated: false)
+        isPresentingVideoPlayer = true
+        let navigationBackGesture = navigationController?.interactivePopGestureRecognizer
+        let navigationBackWasEnabled = navigationBackGesture?.isEnabled ?? false
+        navigationBackGesture?.isEnabled = false
+        let originalOffset = collectionView.contentOffset
+        let playerViewController = container.makeMoveVideoPlayerViewController(
+            move: move,
+            reference: video,
+            playbackURLProvider: moveVideoPlaybackURLProvider
+        )
+        let transition = MoveVideoCardTransition(sourceView: { [weak self] in
+            guard let self, let dataSource = self.dataSource,
+                  let item = dataSource.snapshot().itemIdentifiers.first(where: {
+                      if case .move(let current) = $0 { return current.id == move.id }
+                      return false
+                  }), let path = dataSource.indexPath(for: item) else { return nil }
+            return collectionView.cellForItem(at: path)?.contentView
+        })
+        transition.didDismiss = { [weak self, weak playerViewController] in
+            navigationBackGesture?.isEnabled = navigationBackWasEnabled
+            playerViewController?.didFinishDismissal()
+            guard let self else { return }
+            self.isPresentingVideoPlayer = false
+            self.videoCardTransition = nil
+            if let pending = self.pendingDetailMoves {
+                self.pendingDetailMoves = nil
+                self.detailReturnOffset = originalOffset
+                self.applySnapshot(for: pending)
+            }
+            UIAccessibility.post(notification: .screenChanged, argument: collectionView.cellForItem(at: indexPath))
+        }
+        videoCardTransition = transition
+        playerViewController.cardTransition = transition
+        playerViewController.transitioningDelegate = transition
+        playerViewController.modalPresentationStyle = .custom
+        present(playerViewController, animated: true)
     }
 }
 

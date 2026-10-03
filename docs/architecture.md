@@ -36,6 +36,8 @@ UIKit ViewController ------> SwiftUI Cell / Filter
                                                             move_video
 ```
 
+기술 보조 영상은 Supabase의 연결 metadata 조회와 별도로 전송된다. `move_video`는 원격에 적용됐고 37개 캐릭터의 활성 연결 3,508건이 있다(2026-09-30 대조). 이 metadata mapping은 기술 고정키와 Cloudflare R2 `object_key`만 연결하고 영상 파일은 **Cloudflare R2 Object Storage**에 둔다. 현재 개발용 공개 `r2.dev` URL을 통해 `AVPlayer → R2`로 직접 재생하며, 운영용 커스텀 도메인은 아직 연결하지 않았다. 비공개 R2 운영에서는 URL 발급 함수가 R2 서명 URL만 반환하며 영상 바이트는 R2에서 받는다. 세부 공개/비공개 선택과 시범 운영 조건은 비공개 [Tekken8-Data-Ops 설계 문서](https://github.com/MoonGoon72/Tekken8-Data-Ops/blob/main/docs/move-video-design.md)를 따른다.
+
 `SceneDelegate`가 `DIContainer`를 소유하고 루트 화면을 조립한다. 화면 전환은 `UINavigationController`와 각 ViewController가 담당하며, ViewModel은 Repository protocol에 의존한다. Repository 구현체가 Supabase와 로컬 저장소를 선택하고 DTO를 통해 원격/영속 모델을 앱 도메인 모델로 변환한다.
 
 ## 기술 스택
@@ -99,7 +101,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 |---|---|---|
 | App/DI | `AppDelegate`, `SceneDelegate`, `DIContainer` | Firebase 초기화·수집 정책, 창/루트 navigation 구성, manager·repository·view model·view controller·analytics·광고 서비스 조립 |
 | Character | `CharacterListViewController`, `CharacterListViewModel` | 캐릭터 조회/검색/정렬, list/grid 전환, 이미지 로딩, 기술·메모·설정 화면 진입 |
-| Move | `MoveListViewController`, `MoveListViewModel`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, diffable snapshot 구성, 독립적인 영상 metadata 상태 관리 |
+| Move | `MoveListViewController`, `MoveListViewModel`, `MoveVideoPlayerViewController`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, 영상 metadata 갱신, 선택 셀에서 확대되는 상세 카드·상호작용 전환, 화면 범위 반복 재생 |
 | Memo | `MemoListViewController`, `MemoComposeViewController`, `MemoViewModel` | 로컬 메모 CRUD, pin/검색, 캐릭터 연결, `.tk8memos` 백업 import/export |
 | Repository/Data | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `VideoReference`로 변환 |
 | Repository/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
@@ -114,6 +116,8 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 |---|---|---|---|
 | 캐릭터 | Supabase `character` | Core Data `CharacterEntity` | 캐시가 비었을 때 fetch; 버전 무효화 후 재fetch |
 | 기술 | 편집 원본: 비공개 `Tekken8-Data-Ops`의 캐릭터별 CSV; 앱 제공본: Supabase `move` | Core Data `MoveEntity` | 캐릭터별 캐시가 비었을 때 fetch; `sort_order` 순서 유지 |
+| 기술 보조 영상 연결 | 검토 원본: 비공개 `Tekken8-Data-Ops`의 JSON; 앱 제공본: Supabase `move_video`의 `character_name`, `move_key`, R2 `object_key`, revision, enabled 상태 (2026-09-30 적용 3,508건) | 기술 화면 방문 중의 메모리 `[move.id: VideoReference]`만 사용. 영상 파일과 metadata를 Core Data/UserDefaults에 저장하지 않음 | 각 캐릭터 화면에서 별도 조회; 활성 연결 행을 탭할 때만 Cloudflare R2 HTTPS media URL 및 AVPlayer 생성 |
+| 기술 보조 영상 파일 | Cloudflare R2 Object Storage | 앱 자체 영상 파일 캐시 없음 | 공개 커스텀 도메인 연결 시 R2가 앱에 직접 전송. 비공개로 운영하면 탭 시 R2 서명 URL을 발급받아 R2에서 전송 |
 | 프레임 데이터 버전 | Supabase `frame_data_version` | UserDefaults `Version` | 앱 시작 시 서버 값이 더 크면 캐릭터/기술 캐시 삭제 |
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
 | 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
@@ -150,7 +154,7 @@ SceneDelegate
 
 ### 2. 광고 표시와 원격 중단
 
-`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터 목록·기술 목록·메모 목록·설정 ViewController에 `BannerAdHost`를 주입한다. Host는 기존 화면 view를 감싸 적응형 하단 배너만 배치하며, 광고가 실제로 로드되기 전·로드 실패·원격 중단 시에는 높이 0으로 접어 콘텐츠 영역을 남기지 않는다. 메모 작성 화면에는 Host를 주입하지 않는다. 검색 키보드가 보이거나 메모 목록이 편집 상태이면 Host가 광고를 즉시 제거하고, 화면 이탈·백그라운드·폭 변경 뒤 늦게 도착한 SDK 콜백도 무시한다. 기술표는 하단 배너 대신 `NativeMoveAdLoader`가 위치별로 독립된 네이티브 광고를 요청하고, 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 더 이상 필요한 위치가 아닌 광고와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 같은 경로를 사용한다. 위치별 요청이 실패하면 해당 카드와 빈 공간을 모두 남기지 않는다.
+`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터 목록·기술 목록·메모 목록·설정 ViewController에 `BannerAdHost`를 주입하고, 기술 영상 상세도 factory에서 동일 서비스의 Host를 별도로 주입한다. Host는 기존 화면 view를 감싸 적응형 하단 배너만 배치하며, 광고가 실제로 로드되기 전·로드 실패·원격 중단 시에는 높이 0으로 접어 콘텐츠 영역을 남기지 않는다. 영상 상세는 스크롤 밖 하단 safe area에 배너를 고정하고 콘텐츠와 12pt를 띄운다. 배너 로드 실패·비활성화 시 이 간격도 제거한다. 상세의 전체 화면 영상 전환과 닫기는 Host를 중단하며, 취소되거나 상세로 복귀하면 다시 요청한다. 상세는 UIViewController를 유지하고 배너 생명주기를 직접 연결한다. 메모 작성 화면에는 Host를 주입하지 않는다. 검색 키보드가 보이거나 메모 목록이 편집 상태이면 Host가 광고를 즉시 제거하고, 화면 이탈·백그라운드·폭 변경 뒤 늦게 도착한 SDK 콜백도 무시한다. 기술표는 하단 배너 대신 `NativeMoveAdLoader`가 위치별로 독립된 네이티브 광고를 요청하고, 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 더 이상 필요한 위치가 아닌 광고와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 같은 경로를 사용한다. 위치별 요청이 실패하면 해당 카드와 빈 공간을 모두 남기지 않는다.
 
 `BannerAdService`는 Firebase Remote Config의 `admob_banner_enabled`가 `true`일 때만 UMP 동의 정보를 갱신하고, `canRequestAds`가 true가 된 뒤 Google Mobile Ads SDK를 시작한다. 설정 화면은 UMP가 요구할 때만 `광고 개인정보 설정` 항목을 표시한다. 앱이 foreground가 될 때 Remote Config를 다시 가져오고 real-time update를 구독한다. 응답 실패나 앱 ID·광고 단위 ID 미설정 시에는 광고를 끈 상태로 유지한다. Debug는 실제 App ID 설정 여부와 관계없이 Google 샘플 광고 단위를 사용하고 Remote Config·운영 UMP 설정과 독립적으로 테스트 광고를 요청한다. Release는 유효한 실제 ID가 제공되기 전에는 광고를 요청하지 않는다.
 
@@ -183,11 +187,17 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 6. 기술 보조 영상
 
-`DefaultMoveVideoRepository`는 `MoveVideoRemoteDataSource`를 통해 활성 `move_video` 행을 조회하고 연결된 `move.id`를 키로 `MoveVideoReference`를 만든다. 영상 파일은 Cloudflare R2에 두며 Supabase는 기술 고정키와 `object_key`의 관계 metadata만 제공한다. 공개 배포는 `MOVE_VIDEO_BASE_URL`로 HTTPS URL을 구성하고, 비공개 배포는 사용 시 URL provider가 서명 URL을 요청한다. metadata와 영상 파일은 Core Data/UserDefaults에 저장하지 않는다.
+`DIContainer`가 프레임용 `DefaultMoveRepository`와 별도로 `DefaultMoveVideoRepository`를 조립한다. `MoveListViewModel`은 캐릭터 기술 화면이 나타날 때 `move_video`의 해당 캐릭터 활성 행을 요청하고, Supabase가 반환한 관계의 `move.id`로 메모리 연결을 만든다. metadata 오류는 기술 목록의 fetch 상태와 분리되어 있어 기존 기술표와 Core Data 흐름을 막지 않는다. 캐릭터 기술 목록을 떠나면 연결을 초기화한다. 영상 상세 카드는 UIKit custom presentation으로 목록 view를 뒤에 유지하며 같은 화면 방문으로 취급한다. 상세가 열려 있는 동안 목록 snapshot 갱신은 보류하고, 닫은 뒤 보류된 갱신을 적용하면서 원래 스크롤 offset을 복원한다. 원격 `public.move_video`에는 활성 연결 3,508건이 있다. 2026-09-28의 3,287건은 익명 역할의 읽기를 확인했고, 2026-09-30 추가 연결은 원격 전체 조회·로컬 매핑·R2 목록 일치와 Alisa·Armor King·Bob·Steve의 앱 공개 키 관계 조회를 확인했다. 최초 Steve Heat Burst의 실제 앱 재생은 사용자가 확인했으며, 다른 캐릭터의 앱 재생은 검증하지 않았다.
 
-`MoveListViewModel`은 프레임 조회와 별도의 영상 metadata 상태를 관리한다. 실패가 기존 기술표 조회를 막지 않으며, 화면 방문 초기화 후 늦은 응답은 request ID로 무시한다. 이 단계에서는 Repository와 ViewModel을 구현하고 실제 화면·DI 연결은 후속 변경에서 수행한다.
+재생 아이콘은 metadata 완료 뒤 활성 연결이 있는 기술 행에만 표시한다. UIKit collection-view 선택 하나가 상세 확대와 재생을 시작하며, 광고 셀과 미연결 행은 동작하지 않는다. `MoveVideoPlayerViewController`는 `LocalizedMove` 전체를 받아 SwiftUI `MoveSummaryView`·`DescriptionView`를 기존 셀과 공유하고, 기술 정보 → 영상 → 설명 순서로 UIKit scroll view 안에 배치한다. 상세 내용만 세로 스크롤하며 X는 safe area 우측 상단에 고정한다. 영상 높이는 현재 `AVPlayerItem.presentationSize`의 원본 비율을 반영한다.
 
-`MoveVideoPlaybackSession`은 URL provider 뒤에서 요청한 URL로 `AVQueuePlayer`와 `AVPlayerLooper`를 구성해 무음 반복 재생한다. URL 요청 취소·재시도·비활성화 중 늦은 응답을 처리하고, player 상태·영상 원본 비율을 화면에 전달할 수 있다. stop은 URL task·KVO·notification·looper·player를 정리한다. 앱 비활성화는 일시정지하고 자동 재생을 막는다. 실제 AVKit 컨트롤과 상세 화면 생명주기 연결은 후속 변경에서 수행한다.
+`MoveVideoCardTransition`은 선택 셀의 현재 위치를 조회해 고정 크기 상세 콘텐츠의 mask 영역을 확대/축소하고 원래 크기 셀 snapshot과 교차 fade하며, 왼쪽 화면 20pt 안에서 시작하는 오른쪽 수평 `UIPanGestureRecognizer`를 `UIPercentDrivenInteractiveTransition`에 연결한다. 상세 scroll view는 이 제스처가 실패한 뒤 스크롤을 인식하며, 목록 navigation의 interactive pop은 상세 동안 중단하고 닫힌 뒤 이전 상태로 복원한다. 영상 영역에서 시작하거나 세로/왼쪽으로 이동하는 드래그는 상세 닫기를 시작하지 않는다. 취소 시 상세와 재생을 유지하고 완료된 닫기에서만 재생 자원을 정리한다. Reduce Motion에서는 이동/스케일 대신 짧은 fade를 사용한다. iOS 17.0부터 같은 전환을 사용하며 UIKit 화면/SwiftUI 구성 요소 경계를 유지한다.
+
+화면 범위의 `MoveVideoPlaybackSession`은 URL provider protocol 뒤의 공개/서명 URL을 탭 이후에만 요청한다. `AVQueuePlayer`와 `AVPlayerLooper`로 무음 반복 재생하며 AVKit의 재생·진행 바·전체 화면 컨트롤을 제공한다. 영상 전체 화면은 같은 player를 사용해 상세 복귀 시 재생 위치와 반복을 유지한다. 상세 닫기는 진행 중 URL task와 KVO/notification/looper/player를 정리하고, 새로 열면 새 session을 만든다. 앱 비활성화/잠금은 일시정지하며 복귀 후 자동 재개하지 않는다. URL 조회 중 비활성화된 경우에도 늦은 응답은 재생을 자동 시작하지 않으며, 닫기/재시도 뒤 오래된 응답은 request ID와 cancellation으로 거른다. 실패 시 상세 영상 영역에 오류·재시도를 표시한다.
+
+영상 바이트의 원본과 전송처는 Cloudflare R2 Object Storage다. Supabase `move_video`는 기술표의 안정키와 R2 `object_key`를 잇는 매핑 metadata만 담당하며, Supabase Storage에는 영상이 없다. 앱의 `MOVE_VIDEO_BASE_URL`에는 개발용 공개 `r2.dev` 주소가 설정됐고 사용자가 최초 Heat Burst 재생을 확인했다. 비공개 경로의 `move-video-url`은 R2 signed URL 발급을 위한 로컬 초안이며 원격에 배포되지 않았다.
+
+`supabase/migrations/20260928065601_create_move_video.sql`은 2026-09-28 원격 적용한 schema와 같은 버전으로 보관한다. 이 테이블은 영상을 저장하지 않는다. `supabase/functions/move-video-url`은 R2 자격증명을 함수 secret으로만 사용하고 활성 mapping에 한해 Cloudflare R2 signed URL을 만드는 로컬 초안이다. 원격 Edge Function은 배포되지 않았으며, 원격 secret 설정 상태는 확인하지 않았다. 사용자가 개발용 공개 주소를 앱에 설정해 최초 영상을 재생했지만, 추가 59건과 운영용 도메인의 재생은 아직 확인하지 않았다.
 
 ### 7. 캐릭터 이미지
 
@@ -224,7 +234,7 @@ frame_data_version 증가
 
 ## 테스트와 검증 경계
 
-- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
+- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지·상세 작은 화면/Dynamic Type 레이아웃, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
 - `SupabaseAPITests`: `Character.swift`, `Move.swift`, `SupabaseManageable.swift`, 버전 모델을 테스트 target의 파일 동기화 예외로 직접 포함하고 mock을 사용해 Supabase adapter 경계를 검증한다. 앱 모듈 import에 의존하지 않아 앱의 Firebase/기타 패키지 의존성이 경계 테스트에 전파되지 않는다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
 - Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다. Firebase Analytics 초기화에 필요한 `TK8/GoogleService-Info.plist`는 `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_BASE64` secret environment variable을 post-clone 단계에서 Base64 복원한다. 복원 파일은 plist 문법과 `BUNDLE_ID=com.moongoon.TK8`을 검증하고 권한 `600`으로 원자적으로 교체한다. 따라서 Firebase configuration은 Git에 추적하지 않는다.

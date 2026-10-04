@@ -136,6 +136,8 @@ final class MoveListViewController: BaseViewController {
             analytics: analytics
         )
         let filterViewController = UIHostingController(rootView: filterView)
+        filterViewController.navigationItem.title = "Filter".localized()
+        filterViewController.navigationItem.largeTitleDisplayMode = .never
         navigationController?.modalPresentationStyle = .popover
         navigationController?.pushViewController(filterViewController, animated: true)
     }

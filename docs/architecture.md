@@ -36,7 +36,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
                                                             move_video
 ```
 
-기술 보조 영상은 Supabase의 연결 metadata 조회와 별도로 전송된다. `move_video`는 원격에 적용됐고 37개 캐릭터의 활성 연결 3,508건이 있다(2026-09-30 대조). 이 metadata mapping은 기술 고정키와 Cloudflare R2 `object_key`만 연결하고 영상 파일은 **Cloudflare R2 Object Storage**에 둔다. 현재 개발용 공개 `r2.dev` URL을 통해 `AVPlayer → R2`로 직접 재생하며, 운영용 커스텀 도메인은 아직 연결하지 않았다. 비공개 R2 운영에서는 URL 발급 함수가 R2 서명 URL만 반환하며 영상 바이트는 R2에서 받는다. 세부 공개/비공개 선택과 시범 운영 조건은 비공개 [Tekken8-Data-Ops 설계 문서](https://github.com/MoonGoon72/Tekken8-Data-Ops/blob/main/docs/move-video-design.md)를 따른다.
+기술 보조 영상은 Supabase의 연결 metadata 조회와 별도로 전송된다. `move_video`는 원격에 적용됐고 37개 캐릭터의 활성 연결 3,508건이 있다(2026-09-30 대조). 이 metadata mapping은 기술 고정키와 Cloudflare R2 `object_key`만 연결하고 영상 파일은 **Cloudflare R2 Object Storage**에 둔다. 앱의 `MOVE_VIDEO_BASE_URL`은 영상용 커스텀 도메인 `https://video.tk8moves.bid`로 설정하며 `AVPlayer → R2`로 직접 재생한다. 2026-10-04 Steve Heat Burst 객체의 HTTPS 응답을 확인했다. 비공개 R2 운영에서는 URL 발급 함수가 R2 서명 URL만 반환하며 영상 바이트는 R2에서 받는다. 세부 공개/비공개 선택과 시범 운영 조건은 비공개 [Tekken8-Data-Ops 설계 문서](https://github.com/MoonGoon72/Tekken8-Data-Ops/blob/main/docs/move-video-design.md)를 따른다.
 
 `SceneDelegate`가 `DIContainer`를 소유하고 루트 화면을 조립한다. 화면 전환은 `UINavigationController`와 각 ViewController가 담당하며, ViewModel은 Repository protocol에 의존한다. Repository 구현체가 Supabase와 로컬 저장소를 선택하고 DTO를 통해 원격/영속 모델을 앱 도메인 모델로 변환한다.
 
@@ -195,9 +195,9 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 화면 범위의 `MoveVideoPlaybackSession`은 URL provider protocol 뒤의 공개/서명 URL을 탭 이후에만 요청한다. `AVQueuePlayer`와 `AVPlayerLooper`로 무음 반복 재생하며 AVKit의 재생·진행 바·전체 화면 컨트롤을 제공한다. 영상 전체 화면은 같은 player를 사용해 상세 복귀 시 재생 위치와 반복을 유지한다. 상세 닫기는 진행 중 URL task와 KVO/notification/looper/player를 정리하고, 새로 열면 새 session을 만든다. 앱 비활성화/잠금은 일시정지하며 복귀 후 자동 재개하지 않는다. URL 조회 중 비활성화된 경우에도 늦은 응답은 재생을 자동 시작하지 않으며, 닫기/재시도 뒤 오래된 응답은 request ID와 cancellation으로 거른다. 실패 시 상세 영상 영역에 오류·재시도를 표시한다.
 
-영상 바이트의 원본과 전송처는 Cloudflare R2 Object Storage다. Supabase `move_video`는 기술표의 안정키와 R2 `object_key`를 잇는 매핑 metadata만 담당하며, Supabase Storage에는 영상이 없다. 앱의 `MOVE_VIDEO_BASE_URL`에는 개발용 공개 `r2.dev` 주소가 설정됐고 사용자가 최초 Heat Burst 재생을 확인했다. 비공개 경로의 `move-video-url`은 R2 signed URL 발급을 위한 로컬 초안이며 원격에 배포되지 않았다.
+영상 바이트의 원본과 전송처는 Cloudflare R2 Object Storage다. Supabase `move_video`는 기술표의 안정키와 R2 `object_key`를 잇는 매핑 metadata만 담당하며, Supabase Storage에는 영상이 없다. 앱의 `MOVE_VIDEO_BASE_URL`에는 공개 커스텀 도메인 `https://video.tk8moves.bid`가 설정된다. `move_video.object_key`는 유지하며 URL builder가 기본 주소와 객체 경로를 결합한다. 기존 개발용 `r2.dev` 주소로 최초 Heat Burst 재생을 사용자가 확인했으며, 2026-10-04 커스텀 도메인의 샘플 HTTPS 응답도 확인했다. 비공개 경로의 `move-video-url`은 R2 signed URL 발급을 위한 로컬 초안이며 원격에 배포되지 않았다.
 
-`supabase/migrations/20260928065601_create_move_video.sql`은 2026-09-28 원격 적용한 schema와 같은 버전으로 보관한다. 이 테이블은 영상을 저장하지 않는다. `supabase/functions/move-video-url`은 R2 자격증명을 함수 secret으로만 사용하고 활성 mapping에 한해 Cloudflare R2 signed URL을 만드는 로컬 초안이다. 원격 Edge Function은 배포되지 않았으며, 원격 secret 설정 상태는 확인하지 않았다. 사용자가 개발용 공개 주소를 앱에 설정해 최초 영상을 재생했지만, 추가 59건과 운영용 도메인의 재생은 아직 확인하지 않았다.
+`supabase/migrations/20260928065601_create_move_video.sql`은 2026-09-28 원격 적용한 schema와 같은 버전으로 보관한다. 이 테이블은 영상을 저장하지 않는다. `supabase/functions/move-video-url`은 R2 자격증명을 함수 secret으로만 사용하고 활성 mapping에 한해 Cloudflare R2 signed URL을 만드는 로컬 초안이다. 원격 Edge Function은 배포되지 않았으며, 원격 secret 설정 상태는 확인하지 않았다. 사용자가 개발용 공개 주소로 최초 영상을 재생했다. 2026-10-04 iOS 26.5 Simulator에서 커스텀 도메인을 사용하는 Steve Heat Burst 영상의 실제 재생과 진행 바를 확인했다. 실기기, 전체 연결 영상의 전수 재생과 운영 배포는 별도 검증 대상이다.
 
 ### 7. 캐릭터 이미지
 

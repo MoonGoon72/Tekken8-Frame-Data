@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>MOVE_VIDEO_BASE_URL</key>
-	<string>https://pub-a5b70be7858c40aa94ec668d01e54d94.r2.dev</string>
+	<string>https://video.tk8moves.bid</string>
 	<key>GADApplicationIdentifier</key>
 	<string>$(ADMOB_APP_ID)</string>
 	<key>AdMobBannerAdUnitID</key>

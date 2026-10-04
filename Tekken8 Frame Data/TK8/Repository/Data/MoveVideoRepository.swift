@@ -151,24 +151,35 @@ struct DefaultMoveVideoRepository: MoveVideoRepository {
     func fetchVideos(characterName: String) async throws -> [Int64: MoveVideoReference] {
         let rows = try await dataSource.fetchMoveVideos(characterName: characterName)
         var references: [Int64: MoveVideoReference] = [:]
+        var seenMoveIDs = Set<Int64>()
+        var rejectedMoveIDs = Set<Int64>()
 
         for row in rows where row.enabled {
             guard let moveID = row.move?.id else {
-                throw MoveVideoRepositoryError.missingMoveRelationship(row.moveKey)
+                NSLog("Skipping move video without a move relationship: %@", row.moveKey)
+                continue
             }
-            guard references[moveID] == nil else {
-                throw MoveVideoRepositoryError.duplicateMoveID(moveID)
+            guard !rejectedMoveIDs.contains(moveID) else { continue }
+            guard seenMoveIDs.insert(moveID).inserted else {
+                references.removeValue(forKey: moveID)
+                rejectedMoveIDs.insert(moveID)
+                NSLog("Skipping duplicate move-video mapping for move id %@", String(moveID))
+                continue
             }
-            try urlBuilder.validateObjectKey(row.objectKey)
-            let playbackURL = urlBuilder.isConfigured
-                ? try urlBuilder.playbackURL(for: row.objectKey)
-                : nil
-            references[moveID] = MoveVideoReference(
-                moveID: moveID,
-                objectKey: row.objectKey,
-                revision: row.videoRevision,
-                playbackURL: playbackURL
-            )
+            do {
+                try urlBuilder.validateObjectKey(row.objectKey)
+                let playbackURL = urlBuilder.isConfigured
+                    ? try urlBuilder.playbackURL(for: row.objectKey)
+                    : nil
+                references[moveID] = MoveVideoReference(
+                    moveID: moveID,
+                    objectKey: row.objectKey,
+                    revision: row.videoRevision,
+                    playbackURL: playbackURL
+                )
+            } catch {
+                NSLog("Skipping invalid move-video mapping for %@: %@", row.moveKey, error.localizedDescription)
+            }
         }
         return references
     }

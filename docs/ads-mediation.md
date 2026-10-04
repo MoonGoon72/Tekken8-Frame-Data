@@ -69,7 +69,7 @@
 - 테스트 그룹: `TK8 iOS Unity Banner Test` (`5051561136`), 사용중. 위 단위 한 개만 포함하며 Google·Unity 소스가 준비됨이다. 운영 그룹은 일시중지 상태다.
 - 테스트 매핑: `TK8 iOS Unity Banner Test Mapping`, 기존 Game `800387680` / Placement `BP_Banner_iOS`.
 - Xcode에서 `TK8 Unity Mediation Test`를 선택한다. 실제 App ID를 유지하며 Run 환경변수 `TK8_UNITY_TEST_BANNER_ID`에는 위 별도 단위를 사용한다. 일반 앱 scheme에는 검증 설정을 추가하지 않는다.
-- 실기기 최초 실행은 광고를 요청하지 않은 상태로 UMP/AdMob 로그의 테스트 기기 해시를 확인한다. 로컬 Run 설정의 `TK8_UMP_TEST_DEVICE_IDS`와 `TK8_ADMOB_TEST_DEVICE_IDS`에 각 SDK의 실제 해시를 입력하고 활성화한다. 서로 같은 값이라고 가정하지 않는다. 공유 scheme에는 기기 식별자를 넣지 않는다. Unity 콘솔 Testing에서도 해당 실기기를 등록하고 실제 override 설정을 확인한다.
+- 실기기 최초 등록은 일반 `Tekken8 Frame Data` Debug scheme으로 Google 샘플 광고를 먼저 요청하고 AdMob 로그의 테스트 기기 해시를 확인한다. 이 해시를 공유 검증 scheme에서 복제한 개인용 scheme의 `TK8_ADMOB_TEST_DEVICE_IDS`에 등록한 뒤 검증용 scheme으로 실행한다. UMP 로그에서 별도의 테스트 기기 해시를 확인하고 로컬 Run 설정의 `TK8_UMP_TEST_DEVICE_IDS`에도 입력해 두 환경변수를 활성화한다. 서로 같은 값이라고 가정하지 않는다. 공유 scheme에는 기기 식별자를 넣지 않는다. 개인용 scheme 생성 절차는 아래 실기기 안내를 따른다. Unity 콘솔 Testing에서도 해당 실기기를 등록하고 실제 override 설정을 확인한다.
 - `-TK8UMPForceEEA`는 검증에서만 강제 지역을 사용한다. `-TK8UMPResetConsent`는 기본 꺼져 있고 새 선택 시나리오를 시작할 때만 일시적으로 켠다. 동의/거절/변경을 각각 확인할 때 초기화하며 실서비스에 사용하지 않는다.
 - 앱 설정의 `Ad Inspector (test)` → Single ad source test → Unity Ads Bidding을 선택하고 재시작한다. 광고 요청 응답과 Unity 테스트 creative의 실제 노출이 함께 성공해야 완료다. 배너 fill이 AdMob Network이면 Unity 성공으로 계산하지 않는다.
 - XcodeBuildMCP의 build_run_sim 실행은 scheme 환경변수 전달을 확인해야 한다. 이번에는 `launch_app_sim`의 명시적 env로 검증 모드를 실행했다.

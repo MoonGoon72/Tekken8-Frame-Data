@@ -44,6 +44,7 @@ final class MoveVideoRepositoryTests: XCTestCase {
     func test_defaultRepositoryMapsOnlyEnabledRowsThroughMoveID() async throws {
         let source = StubMoveVideoRemoteDataSource(records: [
             remoteRecord(moveID: 42, moveKey: "steve-001", objectKey: "Steve/Confirmed.mp4", enabled: true),
+            remoteRecord(moveID: 42, moveKey: "steve-disabled", objectKey: "Steve/Disabled.mp4", enabled: false),
             remoteRecord(moveID: 43, moveKey: "steve-002", objectKey: "Steve/Unconfirmed.mp4", enabled: false)
         ])
         let repository = DefaultMoveVideoRepository(
@@ -74,20 +75,95 @@ final class MoveVideoRepositoryTests: XCTestCase {
         XCTAssertNil(references[42]?.playbackURL)
     }
 
-    func test_defaultRepositoryRejectsTraversalObjectKeyWithoutPublicBaseURL() async {
+    func test_defaultRepositorySkipsTraversalObjectKeyWithoutPublicBaseURL() async throws {
         let source = StubMoveVideoRemoteDataSource(records: [
-            remoteRecord(moveID: 42, moveKey: "steve-001", objectKey: "Steve/../private.mp4", enabled: true)
+            remoteRecord(moveID: 42, moveKey: "steve-001", objectKey: "Steve/../private.mp4", enabled: true),
+            remoteRecord(moveID: 43, moveKey: "steve-002", objectKey: "Steve/Valid.mp4", enabled: true)
         ])
         let repository = DefaultMoveVideoRepository(
             dataSource: source,
             urlBuilder: ConfiguredMoveVideoURLBuilder(baseURL: nil)
         )
 
+        let references = try await repository.fetchVideos(characterName: "Steve")
+
+        XCTAssertEqual(Set(references.keys), [43])
+        XCTAssertEqual(references[43]?.objectKey, "Steve/Valid.mp4")
+        XCTAssertNil(references[43]?.playbackURL)
+    }
+
+    func test_defaultRepositoryKeepsValidRowsAroundInvalidMetadata() async throws {
+        let source = StubMoveVideoRemoteDataSource(records: [
+            remoteRecord(moveID: 40, moveKey: "steve-000", objectKey: "Steve/Before.mp4", enabled: true),
+            MoveVideoRemoteRecord(
+                characterName: "Steve", moveKey: "steve-orphan", objectKey: "Steve/Orphan.mp4",
+                videoRevision: nil, enabled: true, move: nil
+            ),
+            remoteRecord(moveID: 42, moveKey: "steve-001", objectKey: "Steve/../Invalid.mp4", enabled: true),
+            remoteRecord(moveID: 43, moveKey: "steve-002", objectKey: "Steve/After.mp4", enabled: true)
+        ])
+        let repository = DefaultMoveVideoRepository(
+            dataSource: source,
+            urlBuilder: ConfiguredMoveVideoURLBuilder(baseURL: URL(string: "https://media.example")!)
+        )
+
+        let references = try await repository.fetchVideos(characterName: "Steve")
+
+        XCTAssertEqual(Set(references.keys), [40, 43])
+        XCTAssertEqual(references[40]?.playbackURL?.absoluteString, "https://media.example/Steve/Before.mp4")
+        XCTAssertEqual(references[43]?.playbackURL?.absoluteString, "https://media.example/Steve/After.mp4")
+    }
+
+    func test_defaultRepositorySkipsPlaybackURLFailureAndKeepsOtherRows() async throws {
+        let source = StubMoveVideoRemoteDataSource(records: [
+            remoteRecord(moveID: 42, moveKey: "steve-001", objectKey: "Steve/Unavailable.mp4", enabled: true),
+            remoteRecord(moveID: 43, moveKey: "steve-002", objectKey: "Steve/Valid.mp4", enabled: true)
+        ])
+        let repository = DefaultMoveVideoRepository(dataSource: source, urlBuilder: SelectivelyFailingURLBuilder())
+
+        let references = try await repository.fetchVideos(characterName: "Steve")
+
+        XCTAssertEqual(Set(references.keys), [43])
+        XCTAssertEqual(references[43]?.playbackURL?.absoluteString, "https://media.example/Steve/Valid.mp4")
+    }
+
+    func test_defaultRepositoryRejectsEveryDuplicateRegardlessOfRowValidityOrOrder() async throws {
+        let duplicates = [
+            remoteRecord(moveID: 42, moveKey: "steve-duplicate-1", objectKey: "Steve/First.mp4", enabled: true),
+            remoteRecord(moveID: 42, moveKey: "steve-duplicate-2", objectKey: "Steve/../Invalid.mp4", enabled: true),
+            remoteRecord(moveID: 42, moveKey: "steve-duplicate-3", objectKey: "Steve/Third.mp4", enabled: true)
+        ]
+        for offset in duplicates.indices {
+            let ordered = Array(duplicates[offset...] + duplicates[..<offset])
+            let source = StubMoveVideoRemoteDataSource(records: [
+                remoteRecord(moveID: 40, moveKey: "steve-000", objectKey: "Steve/Before.mp4", enabled: true)
+            ] + ordered + [
+                remoteRecord(moveID: 43, moveKey: "steve-002", objectKey: "Steve/After.mp4", enabled: true)
+            ])
+            let repository = DefaultMoveVideoRepository(
+                dataSource: source,
+                urlBuilder: ConfiguredMoveVideoURLBuilder(baseURL: URL(string: "https://media.example")!)
+            )
+
+            let references = try await repository.fetchVideos(characterName: "Steve")
+
+            XCTAssertEqual(Set(references.keys), [40, 43], "Duplicate row order at offset \(offset)")
+            XCTAssertEqual(references[40]?.objectKey, "Steve/Before.mp4")
+            XCTAssertEqual(references[43]?.objectKey, "Steve/After.mp4")
+        }
+    }
+
+    func test_defaultRepositoryStillPropagatesRemoteFetchFailure() async {
+        let repository = DefaultMoveVideoRepository(
+            dataSource: FailingMoveVideoRemoteDataSource(),
+            urlBuilder: ConfiguredMoveVideoURLBuilder(baseURL: nil)
+        )
+
         do {
             _ = try await repository.fetchVideos(characterName: "Steve")
-            XCTFail("Expected an invalid object key error")
+            XCTFail("Expected the remote fetch failure")
         } catch {
-            XCTAssertEqual(error as? MoveVideoRepositoryError, .invalidObjectKey("Steve/../private.mp4"))
+            XCTAssertTrue(error is StubError)
         }
     }
 
@@ -206,6 +282,26 @@ private struct StubMoveVideoRemoteDataSource: MoveVideoRemoteDataSource {
 
     func fetchMoveVideos(characterName: String) async throws -> [MoveVideoRemoteRecord] {
         records
+    }
+}
+
+private struct FailingMoveVideoRemoteDataSource: MoveVideoRemoteDataSource {
+    func fetchMoveVideos(characterName: String) async throws -> [MoveVideoRemoteRecord] {
+        throw StubError.failed
+    }
+}
+
+private struct SelectivelyFailingURLBuilder: MoveVideoURLBuilding {
+    private let builder = ConfiguredMoveVideoURLBuilder(baseURL: URL(string: "https://media.example")!)
+    var isConfigured: Bool { true }
+
+    func validateObjectKey(_ objectKey: String) throws {
+        try builder.validateObjectKey(objectKey)
+    }
+
+    func playbackURL(for objectKey: String) throws -> URL {
+        if objectKey == "Steve/Unavailable.mp4" { throw MoveVideoRepositoryError.invalidPlaybackBaseURL }
+        return try builder.playbackURL(for: objectKey)
     }
 }
 

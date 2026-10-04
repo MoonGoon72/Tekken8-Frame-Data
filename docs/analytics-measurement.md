@@ -20,6 +20,8 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `move_filter` | `FilterView.onAppear` |
 | `onboarding` | `OnboardingViewController.viewDidAppear` |
 
+온보딩은 같은 modal 인스턴스에서 첫 `viewDidAppear`에만 화면을 기록한다. 반복 appearance나 취소된 시트 드래그는 새 안내 화면으로 집계하지 않으며, 실제 종료 후 하위 캐릭터 목록 화면과 메모 버튼 노출을 한 번 복원한다.
+
 운영 빌드는 수집을 켠다. `DEBUG` 빌드는 기본적으로 수집을 끄고, 실행 인자 `-FIRAnalyticsDebugEnabled`가 있을 때만 수집한다. DebugView 검증은 이 인자를 붙인 빌드에서 수행하며, 일반 Debug 실행 이벤트가 운영 집계에 섞이지 않도록 한다. 일반 Debug는 Firebase 초기화를 건너뛰며 Google 테스트 광고는 Remote Config·운영 UMP와 독립적으로 요청한다. 별도 `TK8 Unity Mediation Test` Debug scheme도 Firebase 분석을 초기화하지 않지만, 미디에이션 검증에는 실제 UMP 동의 경로와 별도 광고 단위를 사용한다(세부 절차는 `ads-mediation.md`). 테스트 호스트는 광고 요청과 Analytics 모두 하지 않는다. Info.plist의 초기 수집값은 NO이며, 허용된 실행에서만 활성화한다. 온보딩이 캐릭터 목록을 덮는 동안 메모 버튼 노출을 기록하지 않고, 닫힌 뒤 화면명과 노출을 복원한다.
 
 ## 이벤트 계약

@@ -23,6 +23,8 @@ final class CharacterListViewController: BaseViewController {
     private var hasLoadedCharacters = false
     private var shouldLogMemoEntryImpression = true
     private var pendingImageKeys = Set<String>()
+    private let onboardingDefaults: UserDefaults
+    private var isPresentingOnboarding = false
 
     private let preference: CharacterLayoutPreference
     private var currentLayoutMode: CharacterCollectionViewMode
@@ -37,7 +39,8 @@ final class CharacterListViewController: BaseViewController {
         characterListViewModel viewModel: any CharacterFetchable & CharacterSelectable,
         container: DIContainer,
         preference: CharacterLayoutPreference,
-        analytics: AnalyticsClient
+        analytics: AnalyticsClient,
+        onboardingDefaults: UserDefaults = .standard
     ) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
@@ -47,6 +50,7 @@ final class CharacterListViewController: BaseViewController {
         currentLayoutMode = preference.fetchLayoutMode()
         characterCollectionView.applyViewMode(currentLayoutMode)
         self.analytics = analytics
+        self.onboardingDefaults = onboardingDefaults
         searchAnalyticsTracker = SearchAnalyticsTracker(
             scope: .characterList,
             analytics: analytics
@@ -67,28 +71,37 @@ final class CharacterListViewController: BaseViewController {
         fetchCharacters()
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        if OnboardingManager.shouldShowOnboarding {
-            let onboardingVC = OnboardingManager.makeOnboardingVC(analytics: analytics)
-            onboardingVC.onDismiss = { [weak self] in self?.recordVisibleScreen() }
-            present(onboardingVC, animated: true)
-            OnboardingManager.markAsShown()
-        }
-    }
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         shouldLogMemoEntryImpression = true
     }
 
     override func viewDidAppear(_ animated: Bool) {
+        // Present only after attachment to a window, and before BaseViewController
+        // starts advertising/consent presentation on the underlying screen.
+        presentOnboardingIfNeeded()
         super.viewDidAppear(animated)
         recordVisibleScreen()
     }
 
+    private func presentOnboardingIfNeeded() {
+        guard !isPresentingOnboarding, presentedViewController == nil,
+              viewIfLoaded?.window != nil,
+              navigationController?.topViewController === self,
+              OnboardingManager.shouldShowOnboarding(defaults: onboardingDefaults) else { return }
+        isPresentingOnboarding = true
+        let onboarding = OnboardingManager.makeOnboardingVC(analytics: analytics, defaults: onboardingDefaults)
+        onboarding.onDismiss = { [weak self] in
+            guard let self else { return }
+            OnboardingManager.markAsShown(defaults: self.onboardingDefaults)
+            self.isPresentingOnboarding = false
+            self.recordVisibleScreen()
+        }
+        present(onboarding, animated: true)
+    }
+
     private func recordVisibleScreen() {
-        guard presentedViewController == nil else { return }
+        guard !isPresentingOnboarding, presentedViewController == nil else { return }
         bannerAdHost?.appear()
         analytics.log(.screenViewed(.characterList))
         if shouldLogMemoEntryImpression {

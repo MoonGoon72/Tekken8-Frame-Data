@@ -1,6 +1,142 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Move videos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move videos"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기술 영상"
+          }
+        }
+      }
+    },
+    "Tap a move with the play icon in the move list to see its details and watch how it works.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a move with the play icon in the move list to see its details and watch how it works."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기술 목록에서 재생 아이콘이 있는 기술을 눌러보세요. 상세 정보와 영상으로 어떤 기술인지 확인할 수 있어요."
+          }
+        }
+      }
+    },
+    "Find moves by frame": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find moves by frame"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프레임으로 기술 찾기"
+          }
+        }
+      }
+    },
+    "Type a startup or guard frame value. Search for an exact value, a minimum, a maximum, or a range.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type a startup or guard frame value. Search for an exact value, a minimum, a maximum, or a range."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "발동·가드 프레임을 직접 입력해보세요. 정확한 값, 이상, 이하, 범위로 원하는 기술을 찾을 수 있어요."
+          }
+        }
+      }
+    },
+    "Got it": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "확인했어요"
+          }
+        }
+      }
+    },
+    "Get to know TK8": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get to know TK8"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TK8 사용 안내"
+          }
+        }
+      }
+    },
+    "What's new in TK8": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's new in TK8"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TK8의 새 기능"
+          }
+        }
+      }
+    },
+    "Explore moves and find the frames you need.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore moves and find the frames you need."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기술을 영상으로 확인하고, 원하는 프레임을 찾아보세요."
+          }
+        }
+      }
+    },
     "Any": {
       "extractionState": "manual",
       "localizations": {

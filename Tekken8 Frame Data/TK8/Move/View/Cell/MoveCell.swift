@@ -9,31 +9,11 @@ import SwiftUI
 
 struct MoveCell: View, ReuseIdentifiable {
     let move: LocalizedMove
+    var hasVideo = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 기술명 + 커맨드
-            HStack {
-                Text(move.skillNamePrimary)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 3)
-                if let attribute = move.attribute, attribute != "" {
-                    AttributeView(attributes: attribute)
-                }
-                Spacer()
-                if let sub = move.skillNameSecondary, !sub.isEmpty {
-                    Text(sub)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.4))
-                }
-            }
-
-            CommandView(command: move.command)
-            
-            JudgmentView(judgment: move.judgment ?? "-")
-
-            SpecView(move: move)
+            MoveSummaryView(move: move, hasVideo: hasVideo)
 
             if let description = move.description, !description.isEmpty {
                 DescriptionView(description: description)
@@ -48,12 +28,58 @@ struct MoveCell: View, ReuseIdentifiable {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(.white.opacity(0.12), lineWidth: 0.5)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(hasVideo ? "move_video_available".localized() : "")
+        .accessibilityHint(hasVideo ? "move_video_cell_hint".localized() : "")
+        .accessibilityAddTraits(hasVideo ? .isButton : [])
+    }
+}
 
-        .onTapGesture {
-            #if DEBUG
-            print(move.command)
-            print(move.description ?? "")
-            #endif
+/// Shared technical information; the detail keeps the same command/attribute rendering.
+struct MoveSummaryView: View {
+    let move: LocalizedMove
+    var hasVideo = false
+    var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: expanded ? 12 : 8) {
+            if expanded {
+                Text(move.skillNamePrimary)
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let secondary = move.skillNameSecondary, !secondary.isEmpty {
+                    Text(secondary).font(.subheadline).foregroundStyle(.white.opacity(0.6))
+                }
+                if let attribute = move.attribute, !attribute.isEmpty {
+                    FlowLayout(spacing: 4) { AttributeView(attributes: attribute) }
+                }
+            } else {
+                HStack {
+                    Text(move.skillNamePrimary)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 3)
+                    if let attribute = move.attribute, attribute != "" {
+                        AttributeView(attributes: attribute)
+                    }
+                    Spacer(minLength: 8)
+                    if let sub = move.skillNameSecondary, !sub.isEmpty {
+                        Text(sub)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    if hasVideo {
+                        Image(systemName: "play.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+            CommandView(command: move.command, expanded: expanded)
+            JudgmentView(judgment: move.judgment ?? "-")
+            SpecView(move: move, expanded: expanded)
         }
     }
 }
@@ -87,7 +113,7 @@ struct JudgmentView: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
+        FlowLayout(spacing: 6) {
             ForEach(Array(judgments.enumerated()), id: \.0) { _, j in
                 JudgeBadge(text: j)
             }
@@ -132,18 +158,32 @@ struct JudgeBadge: View {
 
 struct SpecView: View {
     let move: LocalizedMove
+    var expanded = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
     var body: some View {
-        HStack(spacing: 0) {
-            specItem(label: Constants.Texts.damage, value: move.damage)
-            specDivider
-            specItem(label: Constants.Texts.startup, value: move.startupFrame)
-            specDivider
-            specItem(label: Constants.Texts.guard, value: move.guardFrame)
-            specDivider
-            specItem(label: Constants.Texts.hit, value: move.hitFrame)
-            specDivider
-            specItem(label: Constants.Texts.counter, value: move.counterFrame)
+        Group {
+            if expanded {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 180 : 110), alignment: .leading)], alignment: .leading, spacing: 8) {
+                    specItem(label: Constants.Texts.damage, value: move.damage)
+                    specItem(label: Constants.Texts.startup, value: move.startupFrame)
+                    specItem(label: Constants.Texts.guard, value: move.guardFrame)
+                    specItem(label: Constants.Texts.hit, value: move.hitFrame)
+                    specItem(label: Constants.Texts.counter, value: move.counterFrame)
+                }
+            } else {
+                HStack(spacing: 0) {
+                    specItem(label: Constants.Texts.damage, value: move.damage)
+                    specDivider
+                    specItem(label: Constants.Texts.startup, value: move.startupFrame)
+                    specDivider
+                    specItem(label: Constants.Texts.guard, value: move.guardFrame)
+                    specDivider
+                    specItem(label: Constants.Texts.hit, value: move.hitFrame)
+                    specDivider
+                    specItem(label: Constants.Texts.counter, value: move.counterFrame)
+                }
+            }
         }
         .background(
             RoundedRectangle(cornerRadius: 10)
@@ -158,10 +198,11 @@ struct SpecView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 11))
+                .font(expanded ? .caption : .system(size: 11))
                 .foregroundStyle(.white.opacity(0.35))
             Text(value ?? "-")
-                .font(.system(size: 14, weight: .semibold))
+                .font(expanded ? .body.weight(.semibold) : .system(size: 14, weight: .semibold))
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(colorize ? frameColor(value) : .white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -190,10 +231,22 @@ struct CommandView: View {
     private let command: String
     private let tokens: [String]
     private let isDescription: Bool
+    private let expanded: Bool
+    @ScaledMetric(relativeTo: .body) private var scaledCommandSize = 30.0
+    @ScaledMetric(relativeTo: .subheadline) private var scaledDescriptionSize = 24.0
+
+    private var commandColor: Color {
+        expanded ? (isDescription ? .white.opacity(0.65) : .white) : .primary
+    }
+
+    private var iconSize: CGFloat {
+        expanded ? (isDescription ? scaledDescriptionSize : scaledCommandSize) : (isDescription ? 24 : 30)
+    }
     
-    init(command: String, isDescription: Bool = false) {
+    init(command: String, isDescription: Bool = false, expanded: Bool = false) {
         self.command = command
         self.isDescription = isDescription
+        self.expanded = expanded
         tokens = command.tokenizeCommands()
     }
     
@@ -202,7 +255,8 @@ struct CommandView: View {
         let onlyText = tokens.count == 1 && !cmdSet.contains(tokens.first ?? "")
         if onlyText {
             Text(tokens[0])
-                .font(isDescription ? .subheadline : .system(size: 16))
+                .font(isDescription ? .subheadline : (expanded ? .body : .system(size: 16)))
+                .foregroundStyle(commandColor)
                 .multilineTextAlignment(.leading)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
@@ -214,12 +268,12 @@ struct CommandView: View {
                         Image(token.contains("_") ? token + "hold" : token)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: isDescription ? 24 : 30, height: isDescription ? 24 : 30)
+                            .frame(width: iconSize, height: iconSize)
                             .fixedSize()
                     } else {
                         Text(token)
-                            .font(isDescription ? .subheadline : .system(size: 16))
-                            .foregroundStyle(.primary)
+                            .font(isDescription ? .subheadline : (expanded ? .body : .system(size: 16)))
+                            .foregroundStyle(commandColor)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -233,12 +287,13 @@ struct CommandView: View {
 
 struct DescriptionView: View {
     let description: String
+    var expanded = false
     
     var body: some View {
         Divider()
             .background(.white.opacity(0.08))
-        ForEach(descriptionSplitter(description), id: \.self) { command in
-            CommandView(command: command, isDescription: true)
+        ForEach(Array(descriptionSplitter(description).enumerated()), id: \.offset) { _, command in
+            CommandView(command: command, isDescription: true, expanded: expanded)
                 .foregroundStyle(.white.opacity(0.55))
         }
     }

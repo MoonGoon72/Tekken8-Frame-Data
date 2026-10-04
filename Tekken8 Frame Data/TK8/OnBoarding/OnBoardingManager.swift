@@ -8,45 +8,52 @@ import UIKit
 
 enum OnboardingManager {
     private static let shownVersionKey = "onboarding_shown_version"
-    private static let currentVersion = 2
+    // Increment only when the announcement content changes, independently of app patch versions.
+    private static let currentVersion = 3
 
-    static var shouldShowOnboarding: Bool {
-        let shownVersion = UserDefaults.standard.integer(forKey: shownVersionKey)
+    static func shouldShowOnboarding(defaults: UserDefaults = .standard) -> Bool {
+        let shownVersion = defaults.integer(forKey: shownVersionKey)
         return shownVersion < currentVersion
     }
 
-    static func markAsShown() {
-        UserDefaults.standard.set(currentVersion, forKey: shownVersionKey)
+    static func markAsShown(defaults: UserDefaults = .standard) {
+        let previousVersion = defaults.integer(forKey: shownVersionKey)
+        defaults.set(max(previousVersion, currentVersion), forKey: shownVersionKey)
     }
 
-    static func makeOnboardingVC(analytics: AnalyticsClient) -> OnboardingViewController {
+    static func makeOnboardingVC(analytics: AnalyticsClient, defaults: UserDefaults = .standard) -> OnboardingViewController {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        let features: [OnboardingFeature] = [
+        let isFirstLaunch = defaults.integer(forKey: shownVersionKey) == 0
+        var features: [OnboardingFeature] = [
             OnboardingFeature(
-                icon: "list.bullet.rectangle",
-                iconColor: UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1),
-                title: "Frame Data".localized(),
-                description: "Tap a character to view the activation, guard, hit, and counter frames for all their moves.".localized()
-            ),
-            OnboardingFeature(
-                icon: "note.text",
-                iconColor: UIColor(red: 0.98, green: 0.78, blue: 0.46, alpha: 1),
-                title: "MEMOS".localized(),
-                description: "You can create and edit notes for each character. Pin important notes to keep them at the top.".localized()
-            ),
-            OnboardingFeature(
-                icon: "hand.tap",
-                iconColor: UIColor(red: 0.52, green: 0.72, blue: 0.92, alpha: 1),
-                title: "Long press".localized(),
-                description: "When you press and hold a note cell, a menu with options such as Pin, Delete will appear.".localized()
+                icon: "play.rectangle",
+                iconColor: .tkRed,
+                title: "Move videos".localized(),
+                description: "Tap a move with the play icon in the move list to see its details and watch how it works.".localized()
             ),
             OnboardingFeature(
                 icon: "line.3.horizontal.decrease.circle",
-                iconColor: UIColor(red: 0.52, green: 0.72, blue: 0.92, alpha: 1),
-                title: "Filtering".localized(),
-                description: "You can filter moves by applying filtering conditions.".localized()
+                iconColor: .tkRed,
+                title: "Find moves by frame".localized(),
+                description: "Type a startup or guard frame value. Search for an exact value, a minimum, a maximum, or a range.".localized()
             )
         ]
-        return OnboardingViewController(features: features, version: "v\(version)", analytics: analytics)
+        if isFirstLaunch {
+            features += [
+                OnboardingFeature(
+                    icon: "list.bullet.rectangle",
+                    iconColor: .tkRed,
+                    title: "Frame Data".localized(),
+                    description: "Tap a character to view the activation, guard, hit, and counter frames for all their moves.".localized()
+                ),
+                OnboardingFeature(
+                    icon: "note.text",
+                    iconColor: .tkRed,
+                    title: "MEMOS".localized(),
+                    description: "You can create and edit notes for each character. Pin important notes to keep them at the top.".localized()
+                )
+            ]
+        }
+        return OnboardingViewController(features: features, version: "v\(version)", isFirstLaunch: isFirstLaunch, analytics: analytics)
     }
 }

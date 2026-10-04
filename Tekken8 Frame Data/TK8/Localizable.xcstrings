@@ -1,6 +1,428 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Move videos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move videos"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기술 영상"
+          }
+        }
+      }
+    },
+    "Tap a move with the play icon in the move list to see its details and watch how it works.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a move with the play icon in the move list to see its details and watch how it works."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기술 목록에서 재생 아이콘이 있는 기술을 눌러보세요. 상세 정보와 영상으로 어떤 기술인지 확인할 수 있어요."
+          }
+        }
+      }
+    },
+    "Find moves by frame": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find moves by frame"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프레임으로 기술 찾기"
+          }
+        }
+      }
+    },
+    "Type a startup or guard frame value. Search for an exact value, a minimum, a maximum, or a range.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type a startup or guard frame value. Search for an exact value, a minimum, a maximum, or a range."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "발동·가드 프레임을 직접 입력해보세요. 정확한 값, 이상, 이하, 범위로 원하는 기술을 찾을 수 있어요."
+          }
+        }
+      }
+    },
+    "Got it": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "확인했어요"
+          }
+        }
+      }
+    },
+    "Get to know TK8": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get to know TK8"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TK8 사용 안내"
+          }
+        }
+      }
+    },
+    "What's new in TK8": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's new in TK8"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TK8의 새 기능"
+          }
+        }
+      }
+    },
+    "Explore moves and find the frames you need.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore moves and find the frames you need."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기술을 영상으로 확인하고, 원하는 프레임을 찾아보세요."
+          }
+        }
+      }
+    },
+    "Any": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체"
+          }
+        }
+      }
+    },
+    "Exactly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exactly"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정확히"
+          }
+        }
+      }
+    },
+    "At least": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이상"
+          }
+        }
+      }
+    },
+    "At most": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At most"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이하"
+          }
+        }
+      }
+    },
+    "Range": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Range"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "범위"
+          }
+        }
+      }
+    },
+    "Minimum": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최솟값"
+          }
+        }
+      }
+    },
+    "Maximum": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최댓값"
+          }
+        }
+      }
+    },
+    "Quick picks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick picks"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "빠른 선택"
+          }
+        }
+      }
+    },
+    "Change sign": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change sign"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부호 변경"
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료"
+          }
+        }
+      }
+    },
+    "Close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "닫기"
+          }
+        }
+      }
+    },
+    "Choose a condition, then enter frames.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a condition, then enter frames."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "조건을 선택하고 프레임을 직접 입력하세요."
+          }
+        }
+      }
+    },
+    "Moves with variable frames match when any value meets your condition.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moves with variable frames match when any value meets your condition."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프레임이 여러 값이거나 범위인 기술은 조건에 맞는 값이 하나라도 있으면 표시됩니다."
+          }
+        }
+      }
+    },
+    "Enter a whole number.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a whole number."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정수를 입력해 주세요."
+          }
+        }
+      }
+    },
+    "Startup frames must be zero or greater.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startup frames must be zero or greater."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "발동 프레임은 0 이상이어야 합니다."
+          }
+        }
+      }
+    },
+    "Minimum must not exceed maximum.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum must not exceed maximum."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최솟값은 최댓값보다 클 수 없습니다."
+          }
+        }
+      }
+    },
+    "Ad Inspector (test)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ad Inspector (test)" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "광고 검사기 (테스트)" } }
+      }
+    },
+    "Complete ad consent and register this test device before opening Ad Inspector.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Complete ad consent and register this test device before opening Ad Inspector." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "광고 동의를 완료하고 테스트 기기를 등록한 뒤 광고 검사기를 열어 주세요." } }
+      }
+    },
     "Advertisement": {
       "extractionState": "manual",
       "localizations": {
@@ -1282,6 +1704,48 @@
             "value": "설정"
           }
         }
+      }
+    },
+    "move_video_available": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Video available" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영상 재생 가능" } }
+      }
+    },
+    "move_video_cell_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Double-tap to expand move details and play the video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "두 번 탭하여 기술 상세 정보와 영상을 엽니다" } }
+      }
+    },
+    "move_video_close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Close" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "닫기" } }
+      }
+    },
+    "move_video_loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading video" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영상 불러오는 중" } }
+      }
+    },
+    "move_video_retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Retry" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다시 시도" } }
+      }
+    },
+    "move_video_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Video could not be played. Check your connection and try again." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "영상을 재생할 수 없습니다. 연결을 확인한 뒤 다시 시도해 주세요." } }
       }
     }
   },

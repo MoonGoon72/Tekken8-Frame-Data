@@ -211,4 +211,97 @@ final class MoveListFilteringTests: XCTestCase {
         XCTAssertTrue(MoveFrameRangeMatcher.matches("10, 21", in: 21...21))
         XCTAssertFalse(MoveFrameRangeMatcher.matches("10, 21", in: 15...18))
     }
+
+    func test_exact_frame_input_matches_only_the_requested_value_including_variable_frames() {
+        var input = FrameFilterInput(allowsNegative: false)
+        input.select(.exact, first: 15)
+
+        XCTAssertEqual(input.selectedRange, 15...15)
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("15", in: input.selectedRange))
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("14~16", in: input.selectedRange))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("16", in: input.selectedRange))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("10, 20", in: input.selectedRange))
+    }
+
+    func test_one_sided_input_includes_threshold_and_values_beyond_old_slider_limits() {
+        var startup = FrameFilterInput(allowsNegative: false)
+        startup.select(.atLeast, first: 21)
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("21", in: startup.selectedRange))
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("60", in: startup.selectedRange))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("20", in: startup.selectedRange))
+
+        var guardInput = FrameFilterInput(allowsNegative: true)
+        guardInput.select(.atMost, first: -15)
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("-15", in: guardInput.selectedRange))
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("-60", in: guardInput.selectedRange))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("-14", in: guardInput.selectedRange))
+        guardInput.select(.atLeast, first: 0)
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("+45", in: guardInput.selectedRange))
+    }
+
+    func test_manual_range_has_inclusive_endpoints_without_clamping() {
+        var input = FrameFilterInput(allowsNegative: false)
+        input.select(.range, first: 45, second: 60)
+        XCTAssertEqual(input.selectedRange, 45...60)
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("45", in: input.selectedRange))
+        XCTAssertTrue(MoveFrameRangeMatcher.matches("60", in: input.selectedRange))
+        XCTAssertFalse(MoveFrameRangeMatcher.matches("61", in: input.selectedRange))
+    }
+
+    func test_invalid_input_never_creates_a_range_or_enables_apply() {
+        for text in ["", "-", "+", "15.5", "abc", "999999999999999999999999999"] {
+            var state = FilterState()
+            state.startup.mode = .exact
+            state.startup.firstText = text
+            XCTAssertFalse(state.isValid, text)
+            XCTAssertNil(state.startup.selectedRange, text)
+        }
+        var input = FrameFilterInput(allowsNegative: false)
+        input.select(.range, first: 20, second: 10)
+        XCTAssertNotNil(input.validationMessage)
+        XCTAssertNil(input.selectedRange)
+        input.select(.exact, first: -1)
+        XCTAssertNotNil(input.validationMessage)
+        input.select(.range, first: 0, second: -1)
+        XCTAssertNotNil(input.validationMessage)
+    }
+
+    func test_signed_guard_input_supports_paste_and_sign_toggle() {
+        var input = FrameFilterInput(allowsNegative: true)
+        input.mode = .exact
+        input.firstText = " +5 "
+        XCTAssertEqual(input.selectedRange, 5...5)
+        input.firstText = "−15"
+        XCTAssertEqual(input.selectedRange, -15...(-15))
+        XCTAssertEqual(FrameFilterInput.togglingSign(of: "-15"), "15")
+        XCTAssertEqual(FrameFilterInput.togglingSign(of: "+15"), "-15")
+        XCTAssertEqual(FrameFilterInput.togglingSign(of: ""), "-")
+    }
+
+    func test_reopening_preserves_exact_one_sided_and_custom_ranges() {
+        for range in [15...15, 21...Int.max, Int.min...(-15), -60...45, 45...60] {
+            let input = FrameFilterInput(selectedRange: range, allowsNegative: true)
+            XCTAssertEqual(input.selectedRange, range)
+            XCTAssertNil(input.validationMessage)
+        }
+        XCTAssertEqual(FrameFilterInput(selectedRange: 15...15, allowsNegative: false).mode, .exact)
+        XCTAssertEqual(FrameFilterInput(selectedRange: 21...Int.max, allowsNegative: false).mode, .atLeast)
+        XCTAssertEqual(FrameFilterInput(selectedRange: Int.min...(-15), allowsNegative: true).mode, .atMost)
+    }
+
+    func test_any_and_reset_clear_frame_conditions_and_active_count() {
+        var state = FilterState()
+        state.startup.select(.exact, first: 15)
+        state.guardFrame.select(.atMost, first: -10)
+        XCTAssertEqual(state.activeCount, 2)
+        state.startup.mode = .any
+        state.startup.firstText = "invalid draft"
+        XCTAssertNil(state.startup.selectedRange)
+        XCTAssertTrue(state.isValid)
+        XCTAssertEqual(state.activeCount, 1)
+        state.reset()
+        XCTAssertEqual(state.activeCount, 0)
+        XCTAssertNil(state.startup.selectedRange)
+        XCTAssertNil(state.guardFrame.selectedRange)
+    }
 }

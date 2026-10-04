@@ -1,5 +1,5 @@
 {
-  "originHash" : "d0d50c57c06a2fdc55445f6ae9e6e46245d1190246a7902ae8c8da2e818d0d0e",
+  "originHash" : "dc0c8b79dff562e09a5681246d85cedec335e8610cc30658c6c51610e515d1b3",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -35,6 +35,15 @@
       "state" : {
         "revision" : "a2d0f1f1666de591eb1a811f40b1706f5c63a2ed",
         "version" : "2.3.0"
+      }
+    },
+    {
+      "identity" : "googleads-mobile-ios-mediation-unity",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/googleads/googleads-mobile-ios-mediation-unity.git",
+      "state" : {
+        "revision" : "e7d16cc0820c89154969844801a71b1172b368fa",
+        "version" : "4.20.100"
       }
     },
     {
@@ -177,8 +186,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
       "state" : {
-        "revision" : "2c121260b1cc690134bdac36cefd330f48cda3f5",
-        "version" : "12.9.0"
+        "revision" : "d1fa1f5c1dfe3b43d56c73f4de388ad3316618bc",
+        "version" : "13.11.0"
       }
     },
     {
@@ -197,6 +206,15 @@
       "state" : {
         "revision" : "e3f69fd321d0c9fcdc16fb576a0cdd956675face",
         "version" : "1.31.0"
+      }
+    },
+    {
+      "identity" : "unity-ads-swift-package",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Unity-Technologies/Unity-Ads-Swift-Package.git",
+      "state" : {
+        "revision" : "2d489ee19ef73cdb51410ad09f0f13cb4f9cb388",
+        "version" : "4.20.1"
       }
     },
     {

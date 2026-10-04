@@ -46,17 +46,30 @@ final class DIContainer {
     
     @MainActor func makeMoveListViewController(character: Character) -> MoveListViewController {
         let repository = DefaultMoveRepository(manager: supabaseManager, coreData: coreDataManager)
-        let viewModel = MoveListViewModel(moveRepository: repository)
+        let moveVideoRepository = DefaultMoveVideoRepository(
+            dataSource: supabaseManager,
+            urlBuilder: ConfiguredMoveVideoURLBuilder()
+        )
+        let viewModel = MoveListViewModel(moveRepository: repository, moveVideoRepository: moveVideoRepository)
         let controller = MoveListViewController(
             character: character,
             moveListViewModel: viewModel,
             container: self,
             analytics: analytics,
+            moveVideoPlaybackURLProvider: DefaultMoveVideoPlaybackURLProvider(dataSource: supabaseManager),
             nativeAdService: ads
         )
         // A configured native unit replaces the move-list banner. Debug uses the
         // Google sample unit; Release becomes eligible only with valid real IDs.
         return ads.configuration.usesNativeMoveAds ? controller : withBanner(controller, placement: .moveList)
+    }
+
+    @MainActor func makeMoveVideoPlayerViewController(
+        move: LocalizedMove, reference: MoveVideoReference, playbackURLProvider: MoveVideoPlaybackURLProviding
+    ) -> MoveVideoPlayerViewController {
+        let controller = MoveVideoPlayerViewController(move: move, reference: reference, playbackURLProvider: playbackURLProvider)
+        controller.bannerAdHost = BannerAdHost(service: ads, placement: .moveVideoDetail, analytics: analytics, contentSpacing: 12)
+        return controller
     }
 
     @MainActor func makeMemoListViewController(characterListViewModel: any CharacterSelectable) -> MemoListViewController {

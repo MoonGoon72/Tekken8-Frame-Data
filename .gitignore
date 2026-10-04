@@ -144,6 +144,16 @@ CLAUDE.md
 MODULARIZATION_GUIDE.md
 implementation-notes.md
 
-### Local data scripts ###
+### Data operations live in the private Tekken8-Data-Ops repository ###
 scripts/
+dashboard/
+reports/
+supabase/
+.agents/skills/frame-data-workflow/
+docs/data-dashboard.md
 docs/move-csv-update-guide.md
+docs/move-import-runbook.md
+docs/move-video-import-runbook.md
+docs/move-video-design.md
+
+Tekken8 Frame Data/GoogleService-Info.plist

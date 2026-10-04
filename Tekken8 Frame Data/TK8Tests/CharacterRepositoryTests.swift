@@ -63,6 +63,7 @@ final class CharacterRepositoryTests: XCTestCase {
 }
 
 private final class CharacterRepositorySupabaseStub: SupabaseManageable {
+    func fetchMoveVideos(characterName: String) async throws -> [MoveVideoRemoteRecord] { [] }
     func fetchCharacter() async throws -> [Character] { [] }
     func fetchMoves(characterName name: String) async throws -> [Move] { [] }
     func fetchFrameDataVersion() async throws -> Int { 0 }

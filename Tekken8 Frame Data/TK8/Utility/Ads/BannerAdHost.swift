@@ -11,6 +11,7 @@ final class BannerAdHost: NSObject, BannerViewDelegate {
     private let isApplicationActive: () -> Bool
     private let placement: BannerPlacement
     private let analytics: AnalyticsClient
+    private let contentSpacing: CGFloat
     private let container = UIView()
     private var height: NSLayoutConstraint!
     private var fullContentBottom: NSLayoutConstraint!
@@ -23,12 +24,13 @@ final class BannerAdHost: NSObject, BannerViewDelegate {
     private var preparing = false
     private var impressionRecorded = false
 
-    init(service: any BannerAdServing, placement: BannerPlacement, analytics: AnalyticsClient,
+    init(service: any BannerAdServing, placement: BannerPlacement, analytics: AnalyticsClient, contentSpacing: CGFloat = 0,
          loadAd: @escaping (BannerView) -> Void = { $0.load(Request()) },
          isApplicationActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }) {
         self.service = service
         self.placement = placement
         self.analytics = analytics
+        self.contentSpacing = contentSpacing
         self.loadAd = loadAd
         self.isApplicationActive = isApplicationActive
     }
@@ -48,7 +50,7 @@ final class BannerAdHost: NSObject, BannerViewDelegate {
         container.accessibilityIdentifier = "admob_banner_" + placement.rawValue
         height = container.heightAnchor.constraint(equalToConstant: 0)
         fullContentBottom = content.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
-        adContentBottom = content.bottomAnchor.constraint(equalTo: container.topAnchor)
+        adContentBottom = content.bottomAnchor.constraint(equalTo: container.topAnchor, constant: -contentSpacing)
         NSLayoutConstraint.activate([
             content.topAnchor.constraint(equalTo: wrapper.topAnchor),
             content.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
@@ -154,6 +156,7 @@ final class BannerAdHost: NSObject, BannerViewDelegate {
     }
 
     private func removeBanner() {
+        let hadReservedSpace = fullContentBottom?.isActive == false || (height?.constant ?? 0) > 0
         banner?.delegate = nil
         banner?.removeFromSuperview()
         banner = nil
@@ -163,6 +166,7 @@ final class BannerAdHost: NSObject, BannerViewDelegate {
         height?.constant = 0
         adContentBottom?.isActive = false
         fullContentBottom?.isActive = true
+        if hadReservedSpace { controller?.viewIfLoaded?.setNeedsLayout() }
     }
 
     func bannerViewDidReceiveAd(_ bannerView: BannerView) {
@@ -172,6 +176,7 @@ final class BannerAdHost: NSObject, BannerViewDelegate {
         adContentBottom.isActive = true
         height.constant = bannerView.adSize.size.height
         container.isHidden = false
+        controller?.view.setNeedsLayout()
     }
 
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {

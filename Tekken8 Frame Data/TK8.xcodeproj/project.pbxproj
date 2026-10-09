@@ -53,11 +53,11 @@
 		E41737912D8BD84200FE79E1 /* Exceptions for "TK8" folder in "SupabaseAPITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Character/Model/Character.swift,
-				Move/Model/Move.swift,
-				Repository/Network/Supabase/SupabaseManageable.swift,
-				Version/Model/FrameDataVersion.swift,
-				Version/Model/TekkenVersion.swift,
+				Features/Character/Model/Character.swift,
+				Features/Move/Model/Move.swift,
+				Data/Network/Supabase/SupabaseManageable.swift,
+				Services/FrameDataVersion/Model/FrameDataVersion.swift,
+				Services/FrameDataVersion/Model/TekkenVersion.swift,
 			);
 			target = E41737852D8BD7FC00FE79E1 /* SupabaseAPITests */;
 		};

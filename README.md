@@ -106,26 +106,27 @@ Data Sources
 ```text
 Tekken8 Frame Data/
 ├── TK8/
-│   ├── App/                  # AppDelegate, SceneDelegate
-│   ├── Character/            # 캐릭터 목록, 검색, 이미지 로딩
-│   ├── CharacterSelect/      # 메모 작성용 캐릭터 선택
-│   ├── Memo/                 # 메모 CRUD, 고정, 다중 삭제, 컨텍스트 메뉴
-│   ├── Move/
-│   │   ├── Controller/
-│   │   ├── Filter/           # FilterView, ChipGroupView, RangeSliderView
-│   │   ├── Model/
-│   │   ├── Translator/       # 한국어 -> 영어 번역, 커맨드 렌더링
-│   │   ├── View/
-│   │   └── ViewModel/
-│   ├── OnBoarding/           # 버전별 기능 안내
-│   ├── Repository/
-│   │   ├── Data/             # Repository 구현체, DTO
-│   │   ├── Network/          # Supabase, 네트워크 추상화
-│   │   └── Persistant/       # Core Data, UserDefaults
-│   ├── Settings/
-│   ├── Utility/
-│   └── Version/
-├── TK8Tests/                 # 번역, 커맨드, 필터, 메모 테스트
+│   ├── App/                  # 앱 시작, navigation 조립, DIContainer
+│   ├── Features/             # 사용자 기능별 화면, 상태, 규칙
+│   │   ├── Character/
+│   │   ├── Memo/
+│   │   │   └── CharacterSelection/
+│   │   ├── Move/             # Controller, View, ViewModel, Model
+│   │   │   ├── Command/
+│   │   │   ├── Filter/
+│   │   │   ├── Translator/
+│   │   │   └── Video/
+│   │   ├── Onboarding/
+│   │   └── Settings/
+│   ├── Data/                 # Repository, DTO 매핑, 원격·로컬 adapter
+│   │   ├── Repositories/
+│   │   ├── Mapping/
+│   │   ├── Network/
+│   │   └── Persistence/
+│   ├── Services/             # Analytics, Ads, Purchases, ImageCache,
+│   │                         # FrameDataVersion
+│   └── Shared/               # UI, Localization
+├── TK8Tests/
 ├── SupabaseAPITests/
 └── TK8.xcodeproj/
 ```

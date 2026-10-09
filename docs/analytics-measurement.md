@@ -26,7 +26,7 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 
 ## 이벤트 계약
 
-모든 이벤트 이름과 매개변수는 `Utility/Analytics/AnalyticsClient.swift`의 타입화된 생성자로 관리한다. 검색어 원문, 메모 제목·본문, 파일 경로, 자유 형식 오류 메시지는 전송하지 않는다.
+모든 이벤트 이름과 매개변수는 `Services/Analytics/AnalyticsClient.swift`의 타입화된 생성자로 관리한다. 검색어 원문, 메모 제목·본문, 파일 경로, 자유 형식 오류 메시지는 전송하지 않는다.
 
 | 이벤트 | 발생 조건 | 매개변수 |
 |---|---|---|

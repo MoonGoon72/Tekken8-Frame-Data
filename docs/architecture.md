@@ -2,7 +2,7 @@
 
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
-- 기준일: 2026-10-04
+- 기준일: 2026-10-10
 - 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test` shared scheme
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
@@ -69,21 +69,34 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 .
 ├── Tekken8 Frame Data/
 │   ├── TK8/                         # 앱 타깃 소스(file-system synchronized group)
-│   │   ├── App/                     # AppDelegate, SceneDelegate
-│   │   ├── Character/               # 캐릭터 목록·검색·레이아웃·이미지 표시
-│   │   ├── CharacterSelect/         # 메모 작성 중 캐릭터 선택
-│   │   ├── Memo/                    # 메모 CRUD, 검색, pin, import/export
-│   │   ├── Move/                    # 기술 목록, 검색/필터, 현지화, 커맨드 표시
-│   │   ├── OnBoarding/              # 버전별 온보딩 표시
-│   │   ├── Repository/
-│   │   │   ├── Data/                # Repository protocol/구현체, DTO 매핑
+│   │   ├── App/                     # AppDelegate, SceneDelegate, DIContainer
+│   │   ├── Features/
+│   │   │   ├── Character/           # 캐릭터 목록·검색·레이아웃·이미지 표시
+│   │   │   ├── Memo/                # 메모 CRUD, 검색, pin, import/export
+│   │   │   │   └── CharacterSelection/ # 메모 작성 중 캐릭터 선택
+│   │   │   ├── Move/                # 기술 목록, 검색/필터, 현지화
+│   │   │   │   ├── Command/         # 커맨드 상수와 파싱
+│   │   │   │   ├── Filter/          # 프레임·속성 필터 UI
+│   │   │   │   ├── Translator/      # 한/영 변환과 커맨드 렌더링
+│   │   │   │   └── Video/           # 영상 상세, 재생 세션, 카드 전환
+│   │   │   ├── Onboarding/          # 버전별 온보딩 표시
+│   │   │   └── Settings/            # 버전 정보, 문의, 후원/외부 링크
+│   │   ├── Data/
+│   │   │   ├── Repositories/        # Repository protocol/구현체, 데이터 출처 선택
+│   │   │   ├── Mapping/             # DTO와 영속 모델 매핑
 │   │   │   ├── Network/             # Supabase adapter와 범용 URLSession 추상화
-│   │   │   └── Persistant/          # Core Data/UserDefaults adapter (현재 폴더명 철자 유지)
-│   │   ├── Settings/                # 버전 정보, 문의, 후원/외부 링크
-│   │   ├── Utility/                 # DI, 공통 View, 캐시, Analytics, Ads, extension, 상수
-│   │   ├── Version/                 # 앱 스키마·프레임 데이터 버전 비교와 캐시 무효화
+│   │   │   └── Persistence/         # Core Data/UserDefaults adapter, 캐시 삭제 알림
+│   │   ├── Services/
+│   │   │   ├── Analytics/           # 분석 이벤트와 검색 추적
+│   │   │   ├── Ads/                 # 배너·네이티브 광고 서비스
+│   │   │   ├── Purchases/           # 광고 제거 구매 서비스(작업 중 구현)
+│   │   │   ├── ImageCache/          # 이미지 캐시 구현과 계약
+│   │   │   └── FrameDataVersion/    # 버전 비교와 프레임 캐시 무효화
+│   │   ├── Shared/
+│   │   │   ├── UI/                  # 공통 View/Controller, 재사용 식별자
+│   │   │   └── Localization/        # 공통 문자열 현지화
 │   │   ├── Assets.xcassets/         # 캐릭터·커맨드·색상·앱 아이콘 에셋
-│   │   ├── Localizable.xcstrings     # UI 현지화 문자열
+│   │   ├── Localizable.xcstrings    # UI 현지화 문자열
 │   │   └── Tekken8FrameData.xcdatamodeld/
 │   ├── TK8Tests/                    # 도메인/번역/필터/영상/메모 단위 테스트
 │   ├── SupabaseAPITests/            # Supabase adapter 경계 테스트
@@ -93,21 +106,30 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 └── .github/workflows/               # 빌드 CI와 Supabase wake-up 작업
 ```
 
-`Tekken8 Frame Data/View/MainViewController.swift`는 `TK8` file-system synchronized group 밖에 있는 빈 초기 파일이며 현재 앱 타깃의 실행 흐름에는 참여하지 않는다. `Repository/Network`의 `DefaultNetworkService`도 범용 URLSession 구현으로 남아 있지만 현재 DI는 `SupabaseManager`를 직접 사용한다.
+`Tekken8 Frame Data/View/MainViewController.swift`는 `TK8` file-system synchronized group 밖에 있는 빈 초기 파일이며 현재 앱 타깃의 실행 흐름에는 참여하지 않는다. `Data/Network`의 `DefaultNetworkService`도 범용 URLSession 구현으로 남아 있지만 현재 DI는 `SupabaseManager`를 직접 사용한다.
+
+폴더는 코드의 소유 책임을 기준으로 정한다. `App`은 시작과 DI 조립, `Features`는 사용자 기능별 화면·상태·규칙, `Data`는 조회·저장·출처 선택·매핑, `Services`는 여러 기능에서 사용하는 서비스, `Shared`는 특정 기능을 몰라도 쓸 수 있는 공통 UI·현지화를 소유한다. extension도 문법 대신 기능 소유권을 따른다. 커맨드 파싱·상수와 `LocalizedMove` 정렬은 `Features/Move`에 두고, 프레임 캐시 삭제 알림은 `Data/Persistence/CoreData`에 둔다. 기능 내부의 Controller/View/ViewModel/Model 구분은 유지하고, 파일이 많은 하위 기능만 별도로 묶는다.
+
+이번 변경은 파일 위치만 정리한다. 모든 Swift 파일 내용, 단일 앱 target, DI 조립, UIKit/SwiftUI 경계, Repository·캐시 흐름을 유지한다. 폴더는 별도 Swift module이나 접근 제어 경계를 만들지 않는다. Xcode의 `SupabaseAPITests` 파일 동기화 예외 경로는 새 위치에 맞춰 유지한다.
 
 ## 주요 모듈과 책임
 
 | 모듈 | 주요 타입 | 책임 |
 |---|---|---|
 | App/DI | `AppDelegate`, `SceneDelegate`, `DIContainer` | Firebase 초기화·수집 정책, 창/루트 navigation 구성, manager·repository·view model·view controller·analytics·광고 서비스 조립 |
-| Character | `CharacterListViewController`, `CharacterListViewModel` | 캐릭터 조회/검색/정렬, list/grid 전환, 이미지 로딩, 기술·메모·설정 화면 진입 |
-| Move | `MoveListViewController`, `MoveListViewModel`, `MoveVideoPlayerViewController`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, 영상 metadata 갱신, 선택 셀에서 확대되는 상세 카드·상호작용 전환, 화면 범위 반복 재생 |
-| Memo | `MemoListViewController`, `MemoComposeViewController`, `MemoViewModel` | 로컬 메모 CRUD, pin/검색, 캐릭터 연결, `.tk8memos` 백업 import/export |
-| Repository/Data | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `VideoReference`로 변환 |
-| Repository/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
-| Repository/Persistant | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
-| Version | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
-| Utility | `ImageCacheManager`, `AnalyticsClient`, `SearchAnalyticsTracker`, `BannerAdService`, `BannerAdHost`, base view/controller, extensions | 이미지 메모리/디스크 캐시, Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거, Remote Config·UMP 기반 광고 허용 판정, 공통 UI 생명주기, command parsing·localization 보조 |
+| Features/Character | `CharacterListViewController`, `CharacterListViewModel` | 캐릭터 조회/검색/정렬, list/grid 전환, 이미지 로딩, 기술·메모·설정 화면 진입 |
+| Features/Move | `MoveListViewController`, `MoveListViewModel`, `MoveVideoPlayerViewController`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, 영상 metadata 갱신, 선택 셀에서 확대되는 상세 카드·상호작용 전환, 화면 범위 반복 재생 |
+| Features/Memo | `MemoListViewController`, `MemoComposeViewController`, `MemoViewModel` | 로컬 메모 CRUD, pin/검색, 캐릭터 연결, `.tk8memos` 백업 import/export |
+| Data/Repositories | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Data/Mapping을 통한 Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `MoveVideoReference`로 변환 |
+| Data/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
+| Data/Persistence | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
+| Services/FrameDataVersion | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
+| Services/ImageCache | `ImageCacheManager`, `CacheManageable` | 이미지 메모리/디스크 캐시와 캐시 계약 |
+| Services/Analytics | `AnalyticsClient`, `SearchAnalyticsTracker` | Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거 |
+| Services/Ads | `BannerAdService`, `BannerAdHost`, `NativeMoveAdLoader` | Remote Config·UMP 기반 광고 허용 판정과 배너·네이티브 광고 요청/생명주기 |
+| Services/Purchases | `AdRemovalPurchasesService`, `StoreKitAdRemovalStore` | 기존 작업 중인 광고 제거 구매 구현의 위치; 폴더 이동으로 앱 주입·운영 활성화를 변경하지 않음 |
+| Shared | base view/controller, `ReuseIdentifiable`, `String.localized()` | 공통 UI 생명주기·재사용 식별자·문자열 현지화 |
+| Data/Mapping | `CharacterDTO`, `MoveDTO` | Repository 경계 안에서 도메인 모델과 Core Data entity 매핑 |
 | Data tooling (별도 비공개 저장소) | `Tekken8-Data-Ops`의 `dashboard/`, `scripts/`, `supabase/` | Mac·Windows의 로컬 브라우저에서 비공개 Git 작업본의 CSV·R2 목록·확정 매핑을 다룬다. DB 쓰기 전 원격 차이와 입력 파일을 미리 확인한다. 작업 후 commit·push해야 소스 변경이 원격에 보존된다 |
 
 ## 저장 데이터의 소유권
@@ -167,7 +189,7 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 3. 분석 이벤트
 
-화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Utility/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 `MemoComposeViewController`가 MemoViewModel의 onPersisted 콜백으로 repository 쓰기 성공 직후 성공 이벤트를 기록하고, 빈 내용·변경 없음·repository 오류를 서로 다른 계약으로 보낸다. 저장은 실제 pop 완료 후 수행하며 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
+화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Services/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 `MemoComposeViewController`가 MemoViewModel의 onPersisted 콜백으로 repository 쓰기 성공 직후 성공 이벤트를 기록하고, 빈 내용·변경 없음·repository 오류를 서로 다른 계약으로 보낸다. 저장은 실제 pop 완료 후 수행하며 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
 
 ### 4. 캐릭터 목록
 

@@ -176,12 +176,102 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertFalse(viewModel.canPurchase)
     }
 
+    func testSettingsPurchaseRowsFitSmallScreenAndAccessibilityTextInBothThemes() async {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+          for category in [UIContentSizeCategory.large, .accessibilityExtraExtraExtraLarge] {
+            let viewModel = SettingsPurchaseViewModel(purchases: service)
+            await viewModel.prepare()
+            let controller = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: viewModel)
+            controller.traitOverrides.userInterfaceStyle = style
+            controller.traitOverrides.preferredContentSizeCategory = category
+            let parent = UIViewController()
+            parent.addChild(controller)
+            parent.view.addSubview(controller.view)
+            controller.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                controller.view.topAnchor.constraint(equalTo: parent.view.topAnchor),
+                controller.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                controller.view.widthAnchor.constraint(equalToConstant: 320),
+                controller.view.heightAnchor.constraint(equalToConstant: 568)
+            ])
+            controller.didMove(toParent: parent)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 568))
+            window.rootViewController = parent
+            window.makeKeyAndVisible()
+            for _ in 0..<10 { await Task.yield() }
+            parent.view.layoutIfNeeded()
+            let table = (controller.view as! SettingTableView).tableView
+            table.reloadData()
+            table.layoutIfNeeded()
+            XCTAssertEqual(table.numberOfRows(inSection: 0), 7)
+            XCTAssertTrue(table.isScrollEnabled)
+            if category.isAccessibilityCategory {
+                XCTAssertGreaterThan(table.contentSize.height, table.bounds.height)
+                table.scrollToRow(at: IndexPath(row: 2, section: 0), at: .top, animated: false)
+                table.layoutIfNeeded()
+            }
+            let cell = controller.tableView(table, cellForRowAt: IndexPath(row: 2, section: 0))
+            let content = cell.contentConfiguration as! UIListContentConfiguration
+            XCTAssertTrue(content.secondaryText?.contains("$2.99") == true)
+            XCTAssertEqual(content.textProperties.numberOfLines, 0)
+            XCTAssertEqual(content.secondaryTextProperties.numberOfLines, 0)
+            let image = UIGraphicsImageRenderer(bounds: controller.view.bounds).image { _ in
+                controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "AdRemoval-320-\(category.rawValue)-\(style.rawValue)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            window.isHidden = true
+          }
+        }
+    }
 
     private func prepare() async {
         await service.refresh()
         await service.loadProduct()
     }
 
+    func testPurchaseNoticeRequiresExplicitBuyAndScrollsOnSmallScreens() async {
+        for category in [UIContentSizeCategory.large, .accessibilityExtraExtraExtraLarge] {
+            for style in [UIUserInterfaceStyle.dark, .light] {
+                let viewModel = SettingsPurchaseViewModel(purchases: service)
+                await viewModel.prepare()
+                let controller = PurchaseNoticeViewController(viewModel: viewModel, contact: { _ in })
+                let parent = UIViewController()
+                parent.addChild(controller)
+                parent.setOverrideTraitCollection(UITraitCollection(traitsFrom: [
+                    UITraitCollection(preferredContentSizeCategory: category),
+                    UITraitCollection(userInterfaceStyle: style)
+                ]), forChild: controller)
+                parent.view.addSubview(controller.view)
+                controller.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+                controller.didMove(toParent: parent)
+                let window = UIWindow(frame: controller.view.frame)
+                window.rootViewController = parent
+                window.makeKeyAndVisible()
+                for _ in 0..<10 { await Task.yield() }
+                controller.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+                controller.view.layoutIfNeeded()
+                XCTAssertEqual(controller.view.bounds.size, CGSize(width: 320, height: 568))
+                let scroll = controller.view.subviews.compactMap { $0 as? UIScrollView }.first!
+                XCTAssertGreaterThan(scroll.contentSize.height, scroll.bounds.height)
+                XCTAssertEqual(scroll.contentSize.width, scroll.bounds.width, accuracy: 1)
+                XCTAssertEqual(store.purchaseCount, 0, "Opening purchase information must not start a purchase")
+                for bottom in [false, true] {
+                    scroll.contentOffset.y = bottom ? max(0, scroll.contentSize.height - scroll.bounds.height) : 0
+                    let image = UIGraphicsImageRenderer(bounds: controller.view.bounds).image { _ in
+                        controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+                    }
+                    let attachment = XCTAttachment(image: image)
+                    attachment.name = "PurchaseNotice-320-\(category.rawValue)-\(style.rawValue)-\(bottom ? "bottom" : "top")"
+                    attachment.lifetime = .keepAlways
+                    add(attachment)
+                }
+                window.isHidden = true
+            }
+        }
+    }
 }
 
 @MainActor

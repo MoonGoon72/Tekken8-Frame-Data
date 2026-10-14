@@ -1,10 +1,9 @@
-import MessageUI
 import UIKit
 
-class SettingViewController: BaseViewController, MFMailComposeViewControllerDelegate {
+class SettingViewController: BaseViewController {
     private let tableView: SettingTableView
     private var settingsItems: [SettingItem] {
-        var items: [SettingItem] = [.appVersion, .tekkenVersion, .reportIssue]
+        var items: [SettingItem] = [.appVersion, .tekkenVersion, .removeAds, .purchaseInformation, .restorePurchases, .refund, .reportIssue]
         if ads?.privacyOptionsRequired == true { items.append(.adPrivacy) }
         #if DEBUG
         if ads?.configuration.usesMediationTestAds == true { items.append(.adInspector) }
@@ -12,17 +11,20 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
         return items
     }
     private let ads: BannerAdService?
+    private let purchaseViewModel: SettingsPurchaseViewModel
 
     private let analytics: AnalyticsClient
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         analytics.log(.screenViewed(.settings))
+        Task { await purchaseViewModel.prepare() }
     }
 
-    init(analytics: AnalyticsClient, ads: BannerAdService? = nil) {
+    init(analytics: AnalyticsClient, ads: BannerAdService? = nil, purchaseViewModel: SettingsPurchaseViewModel) {
         self.analytics = analytics
         self.ads = ads
+        self.purchaseViewModel = purchaseViewModel
         tableView = SettingTableView()
         
         super.init(nibName: nil, bundle: nil)
@@ -46,6 +48,18 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
     }
 
     override func bindViewModel() {
+        purchaseViewModel.$state.sink { [weak self] _ in
+            DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
+        }.store(in: &subscriptionSet)
+        purchaseViewModel.$message.compactMap { $0 }.sink { [weak self] message in
+            DispatchQueue.main.async {
+                guard let self, self.navigationController?.topViewController === self else { return }
+                self.purchaseViewModel.clearMessage()
+                let alert = UIAlertController(title: "Ad removal".localized(), message: message, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
+                self.present(alert, animated: true)
+            }
+        }.store(in: &subscriptionSet)
         ads?.$privacyOptionsRequired.removeDuplicates().sink { [weak self] _ in
             // Published values are delivered before assignment.
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
@@ -58,23 +72,20 @@ class SettingViewController: BaseViewController, MFMailComposeViewControllerDele
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.Literals.cellIdentifier)
     }
     
-    private func sendReportMail() {
-        if MFMailComposeViewController.canSendMail() {
-            let mail = MFMailComposeViewController()
-            mail.mailComposeDelegate = self
-            mail.setToRecipients([Constants.Literals.Report.email])
-            mail.setSubject(Constants.Literals.Report.title)
-            mail.setMessageBody(Constants.Literals.Report.body, isHTML: true)
-            present(mail, animated: true)
-        } else {
-            let alert = UIAlertController(title: Constants.Literals.Report.sendFailTitle, message: Constants.Literals.Report.sendFailMessage, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: Constants.Literals.Report.alertAccept, style: .default))
-            present(alert, animated: true)
+    private func openSupportPage(from presenter: UIViewController? = nil) {
+        let presenter = presenter ?? self
+        let url = URL(string: "https://moongoon72.github.io/Tekken8-Frame-Data/support/")!
+        UIApplication.shared.open(url, options: [:]) { opened in
+            guard !opened else { return }
+            DispatchQueue.main.async {
+                guard presenter.presentedViewController == nil else { return }
+                let alert = UIAlertController(title: "Contact developer".localized(),
+                                              message: "Unable to open the page. Please try again.".localized(),
+                                              preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
+                presenter.present(alert, animated: true)
+            }
         }
-    }
-    
-    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
-        controller.dismiss(animated: true)
     }
 }
 
@@ -91,21 +102,24 @@ extension SettingViewController: UITableViewDataSource {
         cell.backgroundColor = UIColor.white.withAlphaComponent(0.07)
 
         // 텍스트 스타일
-        cell.textLabel?.text = item.title
-        cell.textLabel?.textColor = .white
-        cell.textLabel?.font = .systemFont(ofSize: 16)
-
-        // Accessory (버전 라벨)
-        if let accessory = item.accessoryText {
-            let versionLabel = UILabel()
-            versionLabel.text = accessory
-            versionLabel.textColor = UIColor.white.withAlphaComponent(0.4)
-            versionLabel.font = .systemFont(ofSize: 15)
-            versionLabel.sizeToFit()
-            cell.accessoryView = versionLabel
-        } else {
-            cell.accessoryView = nil
+        var configuration = cell.defaultContentConfiguration()
+        configuration.text = item.title
+        configuration.textProperties.color = .white
+        configuration.textProperties.font = .preferredFont(forTextStyle: .body)
+        configuration.textProperties.numberOfLines = 0
+        configuration.secondaryTextProperties.numberOfLines = 0
+        configuration.secondaryText = item.accessoryText
+        if item == .removeAds {
+            configuration.secondaryText = purchaseViewModel.purchaseDetail + "\n" + "One-time purchase. Removes banner and native ads.".localized()
+        } else if item == .restorePurchases && purchaseViewModel.state.operation == .restoring {
+            configuration.secondaryText = "Restoring purchases…".localized()
         }
+        configuration.secondaryTextProperties.color = UIColor.white.withAlphaComponent(0.7)
+        cell.contentConfiguration = configuration
+        cell.isUserInteractionEnabled = !purchaseViewModel.state.isBusy || (item != .removeAds && item != .restorePurchases)
+
+        // Keep version values below the title so large text can wrap freely.
+        cell.accessoryView = nil
 
         // Chevron 색상
         cell.accessoryType = item.showsDisclosureIndicator ? .disclosureIndicator : .none
@@ -134,6 +148,16 @@ extension SettingViewController: UITableViewDelegate {
         let item = settingsItems[indexPath.row]
         
         switch item {
+        case .removeAds, .purchaseInformation:
+            guard !purchaseViewModel.state.isBusy else { return }
+            let notice = PurchaseNoticeViewController(viewModel: purchaseViewModel) { [weak self] presenter in
+                self?.openSupportPage(from: presenter)
+            }
+            navigationController?.pushViewController(notice, animated: true)
+        case .restorePurchases:
+            Task { await purchaseViewModel.restore() }
+        case .refund:
+            UIApplication.shared.open(URL(string: "https://reportaproblem.apple.com/")!)
         #if DEBUG
         case .adInspector:
             Task {
@@ -149,7 +173,7 @@ extension SettingViewController: UITableViewDelegate {
             }
         #endif
         case .reportIssue:
-            sendReportMail()
+            openSupportPage()
         case .adPrivacy:
             Task {
                 do {
@@ -174,12 +198,20 @@ private extension SettingViewController {
         case tekkenVersion
         case reportIssue
         case adPrivacy
+        case removeAds
+        case purchaseInformation
+        case restorePurchases
+        case refund
         #if DEBUG
         case adInspector
         #endif
         
         var title: String {
             switch self {
+            case .removeAds: "Ad removal".localized()
+            case .purchaseInformation: "Purchase information".localized()
+            case .restorePurchases: "Restore purchases".localized()
+            case .refund: "Request a refund from Apple".localized()
             #if DEBUG
             case .adInspector:
                 "Ad Inspector (test)".localized()
@@ -212,7 +244,7 @@ private extension SettingViewController {
             case .adInspector:
                 true
             #endif
-            case .reportIssue, .adPrivacy:
+            case .removeAds, .purchaseInformation, .reportIssue, .adPrivacy, .restorePurchases, .refund:
                 true
             default:
                 false
@@ -225,14 +257,6 @@ private extension SettingViewController {
             static let cellIdentifier = "SettingCell"
             static let title = "Settings".localized()
             static let tekkenVersion = "TekkenVersion"
-            enum Report {
-                static let email = "moongoon.cnu@gmail.com"
-                static let title = "Tekken8 Frame Data Bug Report"
-                static let body = "<p>Please report bugs, suggestions, incorrect frame data entries, and other issues.</p>".localized()
-                static let sendFailTitle = "Mail transfer failure".localized()
-                static let sendFailMessage = "Please check the mail settings.".localized()
-                static let alertAccept = "Accept".localized()
-            }
         }
     }
 }

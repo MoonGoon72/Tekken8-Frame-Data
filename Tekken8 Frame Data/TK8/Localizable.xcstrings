@@ -1,6 +1,261 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Purchase information": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase information"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매 안내"
+          }
+        }
+      }
+    },
+    "Remove Ads · One-time purchase": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Ads · One-time purchase"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "광고 제거 · 1회 구매"
+          }
+        }
+      }
+    },
+    "Buy for %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buy for %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@에 구매"
+          }
+        }
+      }
+    },
+    "Check purchases and price again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check purchases and price again"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매 내역과 가격 다시 확인"
+          }
+        }
+      }
+    },
+    "Apple refund guidance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple refund guidance"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 환불 안내"
+          }
+        }
+      }
+    },
+    "Apple Media Services terms": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Media Services terms"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 미디어 서비스 이용약관"
+          }
+        }
+      }
+    },
+    "Apple standard license agreement": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple standard license agreement"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 표준 사용권 계약"
+          }
+        }
+      }
+    },
+    "Developer information on the App Store": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer information on the App Store"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store의 개발자 정보"
+          }
+        }
+      }
+    },
+    "Contact developer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact developer"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개발자 문의"
+          }
+        }
+      }
+    },
+    "Unable to open the page. Please try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to open the page. Please try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "페이지를 열 수 없습니다. 다시 시도해 주세요."
+          }
+        }
+      }
+    },
+    "Removes banner ads and native ads in the move list in this app. This is not a subscription and does not renew automatically. Check the price on the purchase button and Apple's payment confirmation screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes banner ads and native ads in the move list in this app. This is not a subscription and does not renew automatically. Check the price on the purchase button and Apple's payment confirmation screen."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 앱의 배너 광고와 기술 목록의 네이티브 광고를 제거합니다. 구독이 아니며 자동 갱신되지 않습니다. 가격은 구매 버튼과 Apple 결제 확인 화면에서 확인하세요."
+          }
+        }
+      }
+    },
+    "Ad removal is enabled once the purchase is completed and verified. A pending or failed payment is not treated as a completed purchase. If ad removal is not enabled, try Restore Purchases or contact the developer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad removal is enabled once the purchase is completed and verified. A pending or failed payment is not treated as a completed purchase. If ad removal is not enabled, try Restore Purchases or contact the developer."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매가 완료되고 확인되면 광고 제거 기능이 적용됩니다. 승인 대기 또는 결제 오류 상태에서는 구매가 완료된 것으로 처리되지 않습니다. 기능이 적용되지 않으면 구매 복원을 시도하거나 개발자에게 문의해 주세요."
+          }
+        }
+      }
+    },
+    "Purchases can be restored on supported devices using the same App Store purchase account. Transfer to another Apple Account and Family Sharing are not supported. An internet connection may be required to purchase or restore.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases can be restored on supported devices using the same App Store purchase account. Transfer to another Apple Account and Family Sharing are not supported. An internet connection may be required to purchase or restore."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동일한 App Store 구매 계정을 사용하는 지원 기기에서 구매를 복원할 수 있습니다. 다른 Apple 계정으로의 이전과 가족 공유는 지원하지 않습니다. 구매와 복원에는 인터넷 연결이 필요할 수 있습니다."
+          }
+        }
+      }
+    },
+    "You can request a refund through Apple's Report a Problem page. Refund eligibility and processing are subject to applicable law and Apple's procedures; submitting a request does not guarantee approval. Ad removal is disabled if a refund is approved and the purchase entitlement is revoked. Contact the developer if the purchased feature does not work as described.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can request a refund through Apple's Report a Problem page. Refund eligibility and processing are subject to applicable law and Apple's procedures; submitting a request does not guarantee approval. Ad removal is disabled if a refund is approved and the purchase entitlement is revoked. Contact the developer if the purchased feature does not work as described."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "환불은 Apple의 문제 신고 페이지에서 요청할 수 있습니다. 환불 가능 여부와 처리에는 적용 법령 및 Apple의 절차가 적용되며, 요청했다고 자동 승인되는 것은 아닙니다. 환불이 승인되어 구매 권한이 회수되면 광고 제거 기능이 해제됩니다. 구매한 기능이 정상 제공되지 않는 경우에는 개발자에게도 문의해 주세요."
+          }
+        }
+      }
+    },
+    "Rights to cancel purchases by minors made without their legal representative's consent apply where provided by applicable law. This notice does not limit statutory consumer rights, including withdrawal and refund rights.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rights to cancel purchases by minors made without their legal representative's consent apply where provided by applicable law. This notice does not limit statutory consumer rights, including withdrawal and refund rights."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "법정대리인의 동의 없이 이루어진 미성년자의 구매는 관련 법령에 따라 미성년자 본인 또는 법정대리인이 취소할 수 있습니다. 이 안내는 관련 법령에 따른 청약철회·환불 등 소비자의 권리를 제한하지 않습니다."
+          }
+        }
+      }
+    },
     "Ad removal": {
       "extractionState": "manual",
       "localizations": {

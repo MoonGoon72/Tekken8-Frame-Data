@@ -12,8 +12,8 @@ final class SettingTableView: BaseView {
     
     let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .insetGrouped)
-        tableView.isScrollEnabled = false
-        tableView.alwaysBounceVertical = false
+        tableView.isScrollEnabled = true
+        tableView.alwaysBounceVertical = true
         return tableView
     }()
     

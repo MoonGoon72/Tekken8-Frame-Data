@@ -13,7 +13,8 @@ final class DIContainer {
     private let userDefaultsManager: UserDefaultsManageable
     private let preference: CharacterLayoutPreference
     private let analytics: AnalyticsClient
-    @MainActor private lazy var ads = BannerAdService()
+    @MainActor private lazy var purchases = AdRemovalPurchaseService(store: StoreKitAdRemovalStore())
+    @MainActor private lazy var ads = BannerAdService(purchases: purchases)
 
     @MainActor private func withBanner<T: BaseViewController>(_ controller: T, placement: BannerPlacement) -> T {
         controller.bannerAdHost = BannerAdHost(service: ads, placement: placement, analytics: analytics)
@@ -21,7 +22,7 @@ final class DIContainer {
     }
 
     @MainActor func makeSettingViewController() -> SettingViewController {
-        withBanner(SettingViewController(analytics: analytics, ads: ads), placement: .settings)
+        withBanner(SettingViewController(analytics: analytics, ads: ads, purchaseViewModel: SettingsPurchaseViewModel(purchases: purchases)), placement: .settings)
     }
 
     init(analytics: AnalyticsClient? = nil) {

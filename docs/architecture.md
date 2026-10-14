@@ -2,8 +2,8 @@
 
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
-- 기준일: 2026-10-10
-- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test` shared scheme
+- 기준일: 2026-10-14
+- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test`, 로컬 결제 검증 전용 `TK8 StoreKit Test` shared scheme
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
 
@@ -56,6 +56,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 이미지 캐시 | `NSCache` + 앱 Caches 디렉터리 + `URLSession` |
 | 다국어 | String Catalog(`Localizable.xcstrings`) + 프레임 데이터 규칙 기반 한/영 변환 |
 | 분석 | Firebase Analytics + Firebase Remote Config |
+| 결제 | StoreKit 2의 `remove_ad` 비소모품. 자체 결제 서버·구매 boolean 저장 없이 검증된 거래로 광고 제거 권한 판단 |
 | 광고 | Google Mobile Ads의 적응형 하단 배너와 기술표의 네이티브 카드. UMP가 광고 요청을 허용한 뒤 요청하고 Remote Config로 표시를 중단할 수 있음 |
 | 테스트 | XCTest, in-memory Core Data, Supabase 경계 테스트 |
 | 의존성 관리 | Swift Package Manager; 직접 의존성은 `supabase-swift`, `firebase-ios-sdk`, Google Mobile Ads package, Google의 Unity Ads mediation adapter(SPM 내부 Unity Ads SDK 포함) |
@@ -80,7 +81,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   │   │   │   ├── Translator/      # 한/영 변환과 커맨드 렌더링
 │   │   │   │   └── Video/           # 영상 상세, 재생 세션, 카드 전환
 │   │   │   ├── Onboarding/          # 버전별 온보딩 표시
-│   │   │   └── Settings/            # 버전 정보, 문의, 후원/외부 링크
+│   │   │   └── Settings/            # 버전 정보, 문의, 광고 제거 구매·복원·Apple 환불 링크
 │   │   ├── Data/
 │   │   │   ├── Repositories/        # Repository protocol/구현체, 데이터 출처 선택
 │   │   │   ├── Mapping/             # DTO와 영속 모델 매핑
@@ -89,7 +90,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   │   ├── Services/
 │   │   │   ├── Analytics/           # 분석 이벤트와 검색 추적
 │   │   │   ├── Ads/                 # 배너·네이티브 광고 서비스
-│   │   │   ├── Purchases/           # 광고 제거 구매 서비스(작업 중 구현)
+│   │   │   ├── Purchases/           # StoreKit 광고 제거 권한·거래 처리
 │   │   │   ├── ImageCache/          # 이미지 캐시 구현과 계약
 │   │   │   └── FrameDataVersion/    # 버전 비교와 프레임 캐시 무효화
 │   │   ├── Shared/
@@ -127,9 +128,9 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | Services/ImageCache | `ImageCacheManager`, `CacheManageable` | 이미지 메모리/디스크 캐시와 캐시 계약 |
 | Services/Analytics | `AnalyticsClient`, `SearchAnalyticsTracker` | Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거 |
 | Services/Ads | `BannerAdService`, `BannerAdHost`, `NativeMoveAdLoader` | Remote Config·UMP 기반 광고 허용 판정과 배너·네이티브 광고 요청/생명주기 |
-| Services/Purchases | `AdRemovalPurchaseService`, `StoreKitAdRemovalStore`, `SettingsPurchaseViewModel` | 검증된 구매 권한·거래 처리와 설정 상태. 광고 서비스에 optional 구매 의존성 제공; 앱 DI 연결은 다음 변경에서 수행 |
 | Shared | base view/controller, `ReuseIdentifiable`, `String.localized()` | 공통 UI 생명주기·재사용 식별자·문자열 현지화 |
 | Data/Mapping | `CharacterDTO`, `MoveDTO` | Repository 경계 안에서 도메인 모델과 Core Data entity 매핑 |
+| Services/Purchases · Features/Settings | `AdRemovalPurchaseService`, `StoreKitAdRemovalStore`, `SettingsPurchaseViewModel` | StoreKit 경계, 검증된 구매 권한·거래 생명주기, 설정 구매 상태/액션. DI가 공유 서비스 조립 |
 | Data tooling (별도 비공개 저장소) | `Tekken8-Data-Ops`의 `dashboard/`, `scripts/`, `supabase/` | Mac·Windows의 로컬 브라우저에서 비공개 Git 작업본의 CSV·R2 목록·확정 매핑을 다룬다. DB 쓰기 전 원격 차이와 입력 파일을 미리 확인한다. 작업 후 commit·push해야 소스 변경이 원격에 보존된다 |
 
 ## 저장 데이터의 소유권
@@ -175,6 +176,20 @@ SceneDelegate
 `FirebaseAutomaticScreenReportingEnabled`를 끄고 UIKit 화면의 `viewDidAppear`와 SwiftUI 필터의 `onAppear`에서 `AnalyticsClient`를 통해 안정적인 영문 `screen_view`를 수동 기록한다. 운영 빌드는 Firebase 수집을 사용하고, Debug 빌드는 `-FIRAnalyticsDebugEnabled` 실행 인자가 있을 때만 수집한다. 일반 Debug 및 테스트 호스트에서는 Firebase 초기화를 건너뛰고 DI에서 NoOp 클라이언트를 사용한다. 초기 수집값은 Info.plist에서 NO이며 허용된 실행에서만 활성화한다. 온보딩 종료 콜백으로 아래 화면의 분석 문맥과 버튼 노출을 복원한다.
 
 새 기능 안내는 캐릭터 목록이 window에 연결된 `viewDidAppear`에서 다른 modal이 없을 때만 표시한다. `OnboardingManager`의 안내 revision(현재 3)은 앱 patch 버전과 별도로 관리하며 기존 UserDefaults `onboarding_shown_version`을 유지한다. 최초 설치는 영상·프레임 필터와 기본 기술표·메모 안내를 함께 보여주고, 이전 안내를 본 사용자는 새 영상·필터만 본다. UIKit 기본 page sheet의 scroll 콘텐츠와 고정 확인 버튼을 사용하며 추가 등장 애니메이션은 없다. 표시 중 재진입을 차단하고 버튼 종료 또는 완료된 시트 드래그 종료 후에만 revision을 저장한다. 취소된 드래그나 표시 전에 앱을 종료한 경우에는 확인한 것으로 기록하지 않는다. 안내 표시를 시작한 다음에 하위 화면의 광고 생명주기를 실행해 UMP와 동시에 modal을 열지 않으며, 종료 콜백은 한 번만 처리한다.
+
+### 광고 제거 결제와 권한
+
+`DIContainer`가 `StoreKitAdRemovalStore`를 주입한 단일 `AdRemovalPurchaseService`를 만들고 공통 광고 서비스와 `SettingsPurchaseViewModel`에 공유한다. StoreKit SDK는 어댑터에만 있고 설정 ViewController는 UIKit binding·Apple 환불 웹페이지 열기를 담당한다. 기존 프레임 Repository·Core Data 메모 흐름은 유지한다.
+
+`SettingViewController`는 광고 제거/구매 안내 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 안내 화면은 같은 `SettingsPurchaseViewModel`을 구독하며 제공 범위·복원·환불·소비자 권리를 설명한 뒤 현지 가격의 구매 버튼을 제공한다. 구매 안내는 구매 후에도 열 수 있다. 활성 화면이 구매 결과 alert를 표시하고, 개발자 문의는 설정 화면이 조립한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+
+상품 ID는 `remove_ad`, 비소모품, 가족 공유 OFF다. 가격은 StoreKit `Product.displayPrice`를 사용한다. 서비스 생성 시 `Transaction.updates` 감시와 `unfinished` 처리, 초기 `currentEntitlements` 조회를 시작하고 앱 복귀에서 다시 조회한다. 권한은 `checking/unknown/notPurchased/adFree`로 나뉜다. 초기·검증 실패는 광고 보류이며 정상 조회상 무권한은 기존 광고 조건을 적용한다. 로컬 검증된 구매는 오프라인에도 유지되며 최신 환불은 연결 이후 반영될 수 있다. UserDefaults/Core Data에 구매 증거를 저장하지 않는다.
+
+구매는 검증된 대상 비소모품 거래에서만 권한을 부여하고 광고 제거 후 `finish`한다. 취소·pending·오류는 성공으로 취급하지 않고 중복 요청을 막는다. 검증된 완료 업데이트는 즉시 권한을 부여하고, 환불 업데이트는 전체 현재 권한을 재조회해 오래된 환불이 새 구매를 회수하지 않게 한다. 갱신 세대 번호로 오래된 초기 조회가 새 구매 권한을 덮어쓰지 못하게 한다. 복원 버튼만 `AppStore.sync`로 강제 동기화하고 구매 있음/없음/실패를 구분한다. 동기화 실패로 이미 검증된 구매를 지우지 않는다. 확인 실패에는 무한 재시도 없이 앱 복귀·거래 갱신·설정 재확인을 사용한다.
+
+광고 서비스는 Remote Config의 `enabled`와 구매의 `allowsAds`를 분리해 유효 광고 허용 상태와 `prepare()` 모두에 결합한다. 배너 Host·네이티브 로더가 이 공통 상태를 구독한다. OFF 시 기존 광고·공간·SDK 로더·prepare 대기 placement를 제거하고 늦은 콜백은 무시한다. ON 시 아직 UMP 판정이 없다면 준비를 재시작한다.
+
+로컬 StoreKit fixture는 `Services/Purchases/AdRemoval.storekit`이며 `TK8 StoreKit Test`의 Run에만 연결한다. 일반 scheme·Release 실행에는 로컬 결제 시뮬레이션을 켜지 않는다. `AdRemovalPurchaseTests`는 protocol stub으로 실패·중복·조회 경쟁·광고 차단을 검증하고 `AdRemovalStoreKitTests`는 StoreKit Testing으로 상품·권한·환불을 확인한다. 실제 Sandbox/TestFlight의 재설치/다른 기기 복원·실제 결제는 별도 출시 검증이다. 결제 Analytics 이벤트는 추가하지 않는다.
 
 ### 2. 광고 표시와 원격 중단
 
@@ -258,7 +273,7 @@ frame_data_version 증가
 
 ## 테스트와 검증 경계
 
-- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지·상세 작은 화면/Dynamic Type 레이아웃, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
+- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지·상세 작은 화면/Dynamic Type 레이아웃, 메모 CRUD와 백업 merge, StoreKit 광고 제거 권한·구매/복원/환불·광고 차단, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
 - `SupabaseAPITests`: `Character.swift`, `Move.swift`, `SupabaseManageable.swift`, 버전 모델을 테스트 target의 파일 동기화 예외로 직접 포함하고 mock을 사용해 Supabase adapter 경계를 검증한다. 앱 모듈 import에 의존하지 않아 앱의 Firebase/기타 패키지 의존성이 경계 테스트에 전파되지 않는다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
 - Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다. Firebase Analytics 초기화에 필요한 `TK8/GoogleService-Info.plist`는 `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_BASE64` secret environment variable을 post-clone 단계에서 Base64 복원한다. 복원 파일은 plist 문법과 `BUNDLE_ID=com.moongoon.TK8`을 검증하고 권한 `600`으로 원자적으로 교체한다. 따라서 Firebase configuration은 Git에 추적하지 않는다.
@@ -277,10 +292,3 @@ frame_data_version 증가
 - 캐시 우선순위, 무효화 조건, notification 흐름 변경
 - Analytics 모듈, 이벤트 계약, 수동 화면 추적 또는 Debug 수집 정책 변경
 - 핵심 SPM 의존성, 최소 iOS 버전, UI 프레임워크 또는 테스트/CI 전략 변경
-
-
-## StoreKit 광고 제거 구현 준비
-
-`remove_ad` 비소모품을 StoreKit 2로 검증하며 checking/unknown은 광고 보류, notPurchased만 광고를 허용한다. 구매 완료 후 권한 제공과 finish, 초기/foreground 현재 권한 조회, unfinished/updates 감시, 복원 버튼의 sync, 환불 권한 재조회를 구현했다. 구매 boolean을 영속 저장하지 않는다. 배너/네이티브 광고는 주입된 구매 서비스의 권한과 기존 UMP/Remote Config 조건을 결합한다. 이 변경에서는 앱 DI와 구매 화면을 아직 연결하지 않는다.
-
-`TK8 StoreKit Test` scheme의 Run은 Services/Purchases/AdRemoval.storekit fixture를 사용한다. 일반/Release에는 적용하지 않는다. 관련 테스트는 stub 거래/경쟁/광고 차단과 SKTestSession 구매/환불을 검증한다. 실제 Sandbox/TestFlight 재설치·계정별 복원은 별도 검증이다.

@@ -18,7 +18,7 @@ final class MoveVideoPlayerViewController: UIViewController, @preconcurrency AVP
     private var edgePan: UIPanGestureRecognizer?
     private var isClosing = false
     private var isVideoFullScreen = false
-    var bannerAdHost: BannerAdHost?
+    var bannerAdHost: (any ScreenAdHosting)?
     var cardTransition: MoveVideoCardTransition?
 
     init(move: LocalizedMove, reference: MoveVideoReference, playbackURLProvider: MoveVideoPlaybackURLProviding) {

@@ -170,7 +170,7 @@ final class MoveVideoDetailLayoutTests: XCTestCase {
         if withBanner {
             XCTAssertEqual(banners.count, 1)
             let banner = banners[0]
-            detail.bannerAdHost!.bannerViewDidReceiveAd(banner)
+            (detail.bannerAdHost as! BannerAdHost).bannerViewDidReceiveAd(banner)
             detail.view.layoutIfNeeded()
             bannerPosition = banner.convert(banner.bounds, to: detail.view)
         }
@@ -198,15 +198,15 @@ final class MoveVideoDetailLayoutTests: XCTestCase {
             XCTAssertLessThanOrEqual(bannerPosition.maxY, detail.view.safeAreaLayoutGuide.layoutFrame.maxY + 1)
             detail.beginAppearanceTransition(false, animated: false)
             detail.endAppearanceTransition()
-            detail.bannerAdHost!.bannerViewDidReceiveAd(banner)
-            detail.bannerAdHost!.bannerViewDidRecordImpression(banner)
+            (detail.bannerAdHost as! BannerAdHost).bannerViewDidReceiveAd(banner)
+            (detail.bannerAdHost as! BannerAdHost).bannerViewDidRecordImpression(banner)
             XCTAssertNil(banner.superview)
             XCTAssertTrue(analytics.events.isEmpty)
             detail.beginAppearanceTransition(true, animated: false)
             detail.endAppearanceTransition() // Cancelled dismissal or return from a covering screen.
             XCTAssertEqual(banners.count, 2)
             detail.didFinishDismissal()
-            detail.bannerAdHost!.bannerViewDidReceiveAd(banners[1])
+            (detail.bannerAdHost as! BannerAdHost).bannerViewDidReceiveAd(banners[1])
             XCTAssertNil(banners[1].superview)
         }
         XCTAssertTrue(detail.view.accessibilityViewIsModal)

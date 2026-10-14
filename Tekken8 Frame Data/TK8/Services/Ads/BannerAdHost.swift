@@ -4,7 +4,7 @@ import UIKit
 
 /// Owns an ad only while its screen is eligible. Never changes the screen's data source.
 @MainActor
-final class BannerAdHost: NSObject, BannerViewDelegate {
+final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
     private weak var controller: UIViewController?
     private let service: any BannerAdServing
     private let loadAd: (BannerView) -> Void

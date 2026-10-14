@@ -11,7 +11,7 @@ import UIKit
 class BaseViewController: UIViewController {
 
     var subscriptionSet: Set<AnyCancellable>
-    var bannerAdHost: BannerAdHost?
+    var bannerAdHost: (any ScreenAdHosting)?
 
     // MARK: Initializer
     

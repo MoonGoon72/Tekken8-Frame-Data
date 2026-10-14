@@ -18,6 +18,7 @@ class SettingViewController: BaseViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         analytics.log(.screenViewed(.settings))
+        presentPendingPurchaseMessage()
         Task { await purchaseViewModel.prepare() }
     }
 
@@ -51,19 +52,24 @@ class SettingViewController: BaseViewController {
         purchaseViewModel.$state.sink { [weak self] _ in
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
         }.store(in: &subscriptionSet)
-        purchaseViewModel.$message.compactMap { $0 }.sink { [weak self] message in
-            DispatchQueue.main.async {
-                guard let self, self.navigationController?.topViewController === self else { return }
-                self.purchaseViewModel.clearMessage()
-                let alert = UIAlertController(title: "Ad removal".localized(), message: message, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
-                self.present(alert, animated: true)
-            }
+        purchaseViewModel.$message.compactMap { $0 }.sink { [weak self] _ in
+            // @Published emits before assignment; read the pending value on the next turn.
+            DispatchQueue.main.async { self?.presentPendingPurchaseMessage() }
         }.store(in: &subscriptionSet)
         ads?.$privacyOptionsRequired.removeDuplicates().sink { [weak self] _ in
             // Published values are delivered before assignment.
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
         }.store(in: &subscriptionSet)
+    }
+
+    private func presentPendingPurchaseMessage() {
+        guard navigationController?.topViewController === self,
+              viewIfLoaded?.window != nil, presentedViewController == nil,
+              !isBeingDismissed, let message = purchaseViewModel.message else { return }
+        let alert = UIAlertController(title: "Ad removal".localized(), message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Accept".localized(), style: .default))
+        present(alert, animated: true)
+        purchaseViewModel.clearMessage()
     }
 
     private func setupTableViewDelegation() {

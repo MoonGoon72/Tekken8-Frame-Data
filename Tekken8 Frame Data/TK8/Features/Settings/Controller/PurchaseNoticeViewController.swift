@@ -79,19 +79,25 @@ final class PurchaseNoticeViewController: UIViewController {
             // @Published emits before the property is assigned.
             DispatchQueue.main.async { self?.updateState() }
         }.store(in: &subscriptions)
-        viewModel.$message.compactMap { $0 }.sink { [weak self] message in
-            DispatchQueue.main.async {
-                guard let self, self.navigationController?.topViewController === self else { return }
-                self.viewModel.clearMessage()
-                self.showMessage(message)
-            }
+        viewModel.$message.compactMap { $0 }.sink { [weak self] _ in
+            // Re-read the value so another subscriber can consume it first.
+            DispatchQueue.main.async { self?.presentPendingPurchaseMessage() }
         }.store(in: &subscriptions)
         updateState()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        presentPendingPurchaseMessage()
         Task { await viewModel.prepare() }
+    }
+
+    private func presentPendingPurchaseMessage() {
+        guard navigationController?.topViewController === self,
+              viewIfLoaded?.window != nil, presentedViewController == nil,
+              !isBeingDismissed, let message = viewModel.message else { return }
+        showMessage(message)
+        viewModel.clearMessage()
     }
 
     private func updateState() {

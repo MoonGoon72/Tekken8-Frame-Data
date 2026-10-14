@@ -176,6 +176,100 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertFalse(viewModel.canPurchase)
     }
 
+    func testRestoreMessageWaitsForSettingsToReturn() async {
+        let viewModel = SettingsPurchaseViewModel(purchases: service)
+        let settings = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: viewModel)
+        let navigation = UINavigationController(rootViewController: settings)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 375, height: 667))
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        navigation.view.frame = window.bounds
+        navigation.view.layoutIfNeeded()
+        navigation.beginAppearanceTransition(true, animated: false)
+        navigation.endAppearanceTransition()
+        defer { window.isHidden = true }
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(settings.viewIfLoaded?.window, "Settings must be attached to the test window")
+        navigation.pushViewController(UIViewController(), animated: false)
+        await viewModel.restore()
+        await settlePurchaseMessageUI()
+        let pending = viewModel.message
+        XCTAssertNotNil(pending)
+        XCTAssertNil(settings.presentedViewController)
+        navigation.popViewController(animated: false)
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(settings.viewIfLoaded?.window, "Returning settings must be visible")
+        XCTAssertTrue(navigation.topViewController === settings)
+        // Explicitly deliver appearance for the detached test-window fixture.
+        settings.viewDidAppear(false)
+        XCTAssertEqual((settings.presentedViewController as? UIAlertController)?.message, pending)
+        XCTAssertNil(viewModel.message)
+        settings.dismiss(animated: false)
+    }
+
+    func testQueuedSubscribersIgnoreMessageConsumedByAnotherScreen() async {
+        let viewModel = SettingsPurchaseViewModel(purchases: service)
+        let settings = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: viewModel)
+        let navigation = UINavigationController(rootViewController: settings)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 375, height: 667))
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        navigation.view.frame = window.bounds
+        navigation.view.layoutIfNeeded()
+        navigation.beginAppearanceTransition(true, animated: false)
+        navigation.endAppearanceTransition()
+        defer { window.isHidden = true }
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(settings.viewIfLoaded?.window, "Settings must be attached to the test window")
+        let notice = PurchaseNoticeViewController(viewModel: viewModel) { _ in }
+        navigation.pushViewController(notice, animated: false)
+        navigation.view.layoutIfNeeded()
+        XCTAssertNotNil(notice.viewIfLoaded?.window)
+        await viewModel.restore()
+        let pending = viewModel.message
+        XCTAssertNotNil(pending)
+        // Simulate another presenter consuming the result before queued callbacks run.
+        viewModel.clearMessage()
+        await settlePurchaseMessageUI()
+        XCTAssertNil(settings.presentedViewController)
+        XCTAssertNil(notice.presentedViewController, "Queued blocks must re-read the consumed message")
+    }
+
+    func testVisiblePurchaseNoticeConsumesSharedMessageOnlyOnce() async {
+        let viewModel = SettingsPurchaseViewModel(purchases: service)
+        let settings = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: viewModel)
+        let navigation = UINavigationController(rootViewController: settings)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 375, height: 667))
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        navigation.view.frame = window.bounds
+        navigation.view.layoutIfNeeded()
+        navigation.beginAppearanceTransition(true, animated: false)
+        navigation.endAppearanceTransition()
+        defer { window.isHidden = true }
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(settings.viewIfLoaded?.window, "Settings must be attached to the test window")
+        let notice = PurchaseNoticeViewController(viewModel: viewModel) { _ in }
+        navigation.pushViewController(notice, animated: false)
+        navigation.view.layoutIfNeeded()
+        XCTAssertNotNil(notice.viewIfLoaded?.window)
+        await viewModel.restore()
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(notice.presentedViewController as? UIAlertController)
+        XCTAssertNil(viewModel.message)
+        notice.dismiss(animated: false)
+        await settlePurchaseMessageUI()
+        navigation.popViewController(animated: false)
+        await settlePurchaseMessageUI()
+        XCTAssertNil(settings.presentedViewController)
+    }
+
+    private func settlePurchaseMessageUI() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { continuation.resume() }
+        }
+    }
+
     func testSettingsPurchaseRowsFitSmallScreenAndAccessibilityTextInBothThemes() async {
         for style in [UIUserInterfaceStyle.light, .dark] {
           for category in [UIContentSizeCategory.large, .accessibilityExtraExtraExtraLarge] {

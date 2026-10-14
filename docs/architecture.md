@@ -127,7 +127,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | Services/ImageCache | `ImageCacheManager`, `CacheManageable` | 이미지 메모리/디스크 캐시와 캐시 계약 |
 | Services/Analytics | `AnalyticsClient`, `SearchAnalyticsTracker` | Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거 |
 | Services/Ads | `BannerAdService`, `BannerAdHost`, `NativeMoveAdLoader` | Remote Config·UMP 기반 광고 허용 판정과 배너·네이티브 광고 요청/생명주기 |
-| Services/Purchases | `AdRemovalPurchasesService`, `StoreKitAdRemovalStore` | 기존 작업 중인 광고 제거 구매 구현의 위치; 폴더 이동으로 앱 주입·운영 활성화를 변경하지 않음 |
+| Services/Purchases | `AdRemovalPurchaseService`, `StoreKitAdRemovalStore`, `SettingsPurchaseViewModel` | 검증된 구매 권한·거래 처리와 설정 상태. 광고 서비스에 optional 구매 의존성 제공; 앱 DI 연결은 다음 변경에서 수행 |
 | Shared | base view/controller, `ReuseIdentifiable`, `String.localized()` | 공통 UI 생명주기·재사용 식별자·문자열 현지화 |
 | Data/Mapping | `CharacterDTO`, `MoveDTO` | Repository 경계 안에서 도메인 모델과 Core Data entity 매핑 |
 | Data tooling (별도 비공개 저장소) | `Tekken8-Data-Ops`의 `dashboard/`, `scripts/`, `supabase/` | Mac·Windows의 로컬 브라우저에서 비공개 Git 작업본의 CSV·R2 목록·확정 매핑을 다룬다. DB 쓰기 전 원격 차이와 입력 파일을 미리 확인한다. 작업 후 commit·push해야 소스 변경이 원격에 보존된다 |
@@ -277,3 +277,10 @@ frame_data_version 증가
 - 캐시 우선순위, 무효화 조건, notification 흐름 변경
 - Analytics 모듈, 이벤트 계약, 수동 화면 추적 또는 Debug 수집 정책 변경
 - 핵심 SPM 의존성, 최소 iOS 버전, UI 프레임워크 또는 테스트/CI 전략 변경
+
+
+## StoreKit 광고 제거 구현 준비
+
+`remove_ad` 비소모품을 StoreKit 2로 검증하며 checking/unknown은 광고 보류, notPurchased만 광고를 허용한다. 구매 완료 후 권한 제공과 finish, 초기/foreground 현재 권한 조회, unfinished/updates 감시, 복원 버튼의 sync, 환불 권한 재조회를 구현했다. 구매 boolean을 영속 저장하지 않는다. 배너/네이티브 광고는 주입된 구매 서비스의 권한과 기존 UMP/Remote Config 조건을 결합한다. 이 변경에서는 앱 DI와 구매 화면을 아직 연결하지 않는다.
+
+`TK8 StoreKit Test` scheme의 Run은 Services/Purchases/AdRemoval.storekit fixture를 사용한다. 일반/Release에는 적용하지 않는다. 관련 테스트는 stub 거래/경쟁/광고 차단과 SKTestSession 구매/환불을 검증한다. 실제 Sandbox/TestFlight 재설치·계정별 복원은 별도 검증이다.

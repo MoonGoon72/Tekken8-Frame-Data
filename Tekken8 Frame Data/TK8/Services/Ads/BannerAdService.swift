@@ -20,9 +20,15 @@ final class BannerAdService: BannerAdServing {
     @Published private(set) var privacyOptionsRequired = false
     @Published private(set) var consentAllowsAds = false
 
+    @Published private var purchaseAllowsAds = true
+    private var purchaseSubscription: AnyCancellable?
+    private var adsEnabled: Bool { enabled && purchaseAllowsAds }
+
     let configuration: BannerAdConfiguration
     var statePublisher: AnyPublisher<(Bool, Bool), Never> {
-        $enabled.combineLatest($consentAllowsAds).eraseToAnyPublisher()
+        $enabled.combineLatest($consentAllowsAds, $purchaseAllowsAds)
+            .map { enabled, consent, purchaseAllowsAds in (enabled && purchaseAllowsAds, consent) }
+            .eraseToAnyPublisher()
     }
     private var remoteConfig: RemoteConfig?
     private var registration: ConfigUpdateListenerRegistration?
@@ -32,8 +38,14 @@ final class BannerAdService: BannerAdServing {
     private var didStartSDK = false
     private var isRefreshing = false
 
-    init(configuration: BannerAdConfiguration = .current) {
+    init(configuration: BannerAdConfiguration = .current, purchases: (any AdRemovalPurchasing)? = nil) {
         self.configuration = configuration
+        if let purchases {
+            purchaseAllowsAds = purchases.state.entitlement.allowsAds
+            purchaseSubscription = purchases.statePublisher
+                .map { $0.entitlement.allowsAds }.removeDuplicates()
+                .sink { [weak self] in self?.purchaseAllowsAds = $0 }
+        }
         guard configuration.hasAnyAdUnitID else { return }
         // Local validation stays independent of the production Remote Config switch.
         // Mediation validation requires a separate unit and still goes through UMP.
@@ -86,9 +98,9 @@ final class BannerAdService: BannerAdServing {
     }
 
     func prepare(from controller: UIViewController) async -> Bool {
-        guard enabled, configuration.hasAnyAdUnitID else { return false }
-        if let consentTask { return await consentTask.value }
-        if didCheckConsent { return consentAllowsAds }
+        guard adsEnabled, configuration.hasAnyAdUnitID else { return false }
+        if let consentTask { return await consentTask.value && adsEnabled }
+        if didCheckConsent { return consentAllowsAds && adsEnabled }
         guard controller.viewIfLoaded?.window != nil,
               configuration.usesLocalTestAds || controller.presentedViewController == nil else { return false }
 
@@ -104,11 +116,11 @@ final class BannerAdService: BannerAdServing {
                 }
                 self.didCheckConsent = true
                 self.consentAllowsAds = true
-                return self.enabled
+                return self.adsEnabled
             }
             do {
                 try await ConsentInformation.shared.requestConsentInfoUpdate(with: consentParameters())
-                guard self.enabled, controller.viewIfLoaded?.window != nil,
+                guard self.adsEnabled, controller.viewIfLoaded?.window != nil,
                       self.configuration.usesLocalTestAds || controller.presentedViewController == nil else { return false }
                 try await ConsentForm.loadAndPresentIfRequired(from: controller)
             } catch {
@@ -120,18 +132,18 @@ final class BannerAdService: BannerAdServing {
                 #endif
             }
             self.didCheckConsent = true
-            if self.enabled && ConsentInformation.shared.canRequestAds && !self.didStartSDK {
+            if self.adsEnabled && ConsentInformation.shared.canRequestAds && !self.didStartSDK {
                 self.didStartSDK = true
                 self.configureUnityAds()
                 await MobileAds.shared.start()
             }
             self.updateConsentState()
-            return self.enabled && self.consentAllowsAds
+            return self.adsEnabled && self.consentAllowsAds
         }
         consentTask = task
         let result = await task.value
         consentTask = nil
-        return result
+        return result && adsEnabled
     }
 
     func presentPrivacyOptions(from controller: UIViewController) async throws {

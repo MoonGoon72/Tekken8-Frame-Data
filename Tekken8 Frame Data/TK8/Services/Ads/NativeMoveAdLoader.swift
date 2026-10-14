@@ -6,6 +6,7 @@ import UIKit
 final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelegate {
     private let service: any BannerAdServing
     private let analytics: AnalyticsClient
+    private let loadAd: (AdLoader) -> Void
     private var adLoaders: [Int: AdLoader] = [:]
     private var loaderPlacements: [ObjectIdentifier: Int] = [:]
     private var loadingPlacements = Set<Int>()
@@ -20,9 +21,10 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
     }
     var onAdsChanged: (() -> Void)?
 
-    init(service: any BannerAdServing, analytics: AnalyticsClient) {
+    init(service: any BannerAdServing, analytics: AnalyticsClient, loadAd: @escaping (AdLoader) -> Void = { $0.load(Request()) }) {
         self.service = service
         self.analytics = analytics
+        self.loadAd = loadAd
         super.init()
         stateSubscription = service.statePublisher
             .sink { [weak self] enabled, consent in
@@ -41,7 +43,7 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
             Task { [weak self, weak controller] in
                 guard let self, let controller else { return }
                 let canRequest = await self.service.prepare(from: controller)
-                guard canRequest,
+                guard canRequest, self.adsAreAllowed,
                       self.requestGeneration == generation,
                       self.requestedPlacements.contains(placement),
                       controller.viewIfLoaded?.window != nil else {
@@ -52,7 +54,7 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
                 loader.delegate = self
                 self.adLoaders[placement] = loader
                 self.loaderPlacements[ObjectIdentifier(loader)] = placement
-                loader.load(Request())
+                self.loadAd(loader)
             }
         }
     }
@@ -122,19 +124,20 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
 
     private func updateAdState(enabled: Bool, consent: Bool) {
         let allowed = enabled && consent
-        guard allowed != adsAreAllowed else { return }
-        adsAreAllowed = allowed
-
-        guard allowed else {
+        if !enabled || (adsAreAllowed && !allowed) {
             requestGeneration += 1
             nativeAds.values.forEach { $0.delegate = nil }
             nativeAds.removeAll()
             let placements = Array(adLoaders.keys)
             placements.forEach(removeLoader(for:))
-            return
+            // Also clear tasks waiting for prepare(), which have no SDK loader yet.
+            loadingPlacements.removeAll()
         }
-
-        guard let controller, controller.viewIfLoaded?.window != nil else { return }
+        let changed = allowed != adsAreAllowed
+        adsAreAllowed = allowed
+        // When rights become known, prepare UMP even if consent is not yet known.
+        guard enabled, changed || !consent,
+              let controller, controller.viewIfLoaded?.window != nil else { return }
         load(placements: requestedPlacements, from: controller)
     }
 }

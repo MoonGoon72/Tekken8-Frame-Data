@@ -3,7 +3,7 @@
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
 - 기준일: 2026-10-14
-- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test`, 로컬 결제 검증 전용 `TK8 StoreKit Test` shared scheme
+- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test`, 로컬 결제 검증용 `TK8 StoreKit Test` shared scheme(Run: StoreKit fixture, Test: `TK8Tests` 전체)
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
 

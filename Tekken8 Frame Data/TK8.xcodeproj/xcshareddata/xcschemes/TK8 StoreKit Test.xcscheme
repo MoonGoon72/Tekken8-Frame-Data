@@ -35,9 +35,9 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E41737852D8BD7FC00FE79E1"
-               BuildableName = "SupabaseAPITests.xctest"
-               BlueprintName = "SupabaseAPITests"
+               BlueprintIdentifier = "E46814362DD48870004CA6E9"
+               BuildableName = "TK8Tests.xctest"
+               BlueprintName = "TK8Tests"
                ReferencedContainer = "container:TK8.xcodeproj">
             </BuildableReference>
          </TestableReference>

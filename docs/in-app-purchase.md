@@ -24,7 +24,7 @@ StoreKit 자동 검증을 통과한 대상 비소모품 거래만 구매 증거�
 5. Ask to Buy, 취소, 실패를 시뮬레이션한다. pending/오류를 구매 완료로 표시하지 않는지 확인한다.
 6. 설정 재확인·복원, 앱 복귀, Remote Config 변경이 구매자 광고를 켜지 않는지 확인한다.
 
-자동 테스트는 `TK8Tests` scheme에서 실행한다. `AdRemovalPurchaseTests`는 상태·경쟁·광고 차단을, `AdRemovalStoreKitTests`는 SKTestSession의 실제 로컬 거래·환불을, `NativePurchaseAdTests`는 네이티브 prepare 대기 요청과 재개를 확인한다. `AdRemoval.storekit`은 테스트 fixture이며 앱에 포함돼 있어도 일반/Release StoreKit 거래를 대체하지 않는다.
+자동 테스트는 `TK8Tests` scheme 또는 `TK8 StoreKit Test` scheme의 Test(⌘U)로 실행한다. 두 scheme 모두 `TK8Tests` 전체를 실행하며, `TK8 StoreKit Test`의 Run(⌘R)은 `AdRemoval.storekit`을 사용해 앱에서 직접 구매·복원을 확인하는 용도다. Testables 연결 자체가 Run의 수동 결제 흐름이나 Sandbox/TestFlight 검증을 대체하지 않는다. `AdRemovalPurchaseTests`는 상태·경쟁·광고 차단을, `AdRemovalStoreKitTests`는 SKTestSession의 실제 로컬 거래·환불을, `NativePurchaseAdTests`는 네이티브 prepare 대기 요청과 재개를 확인한다. `AdRemoval.storekit`은 테스트 fixture이며 앱에 포함돼 있어도 일반/Release StoreKit 거래를 대체하지 않는다.
 
 ## Sandbox/TestFlight와 제출 전 확인
 

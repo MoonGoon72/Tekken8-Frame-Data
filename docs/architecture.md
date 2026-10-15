@@ -2,8 +2,8 @@
 
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
-- 기준일: 2026-10-04
-- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test` shared scheme
+- 기준일: 2026-10-14
+- 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test`, 로컬 결제 검증용 `TK8 StoreKit Test` shared scheme(Run: StoreKit fixture, Test: `TK8Tests` 전체)
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
 
@@ -56,7 +56,8 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 이미지 캐시 | `NSCache` + 앱 Caches 디렉터리 + `URLSession` |
 | 다국어 | String Catalog(`Localizable.xcstrings`) + 프레임 데이터 규칙 기반 한/영 변환 |
 | 분석 | Firebase Analytics + Firebase Remote Config |
-| 광고 | Google Mobile Ads의 적응형 하단 배너와 기술표의 네이티브 카드. UMP가 광고 요청을 허용한 뒤 요청하고 Remote Config로 표시를 중단할 수 있음 |
+| 결제 | StoreKit 2의 `remove_ad` 비소모품. 자체 결제 서버·구매 boolean 저장 없이 검증된 거래로 광고 제거 권한 판단 |
+| 광고 | Google Mobile Ads의 하단 네이티브 광고와 기술표의 네이티브 카드. 전용 Unity 미디에이션 검증 scheme만 배너를 사용한다. UMP가 광고 요청을 허용한 뒤 요청하고 Remote Config로 표시를 중단할 수 있음 |
 | 테스트 | XCTest, in-memory Core Data, Supabase 경계 테스트 |
 | 의존성 관리 | Swift Package Manager; 직접 의존성은 `supabase-swift`, `firebase-ios-sdk`, Google Mobile Ads package, Google의 Unity Ads mediation adapter(SPM 내부 Unity Ads SDK 포함) |
 | CI | GitHub Actions에서 SPM resolve 후 iOS Simulator용 clean build, Xcode Cloud에서 `main` 변경 시 Archive 및 TestFlight 전달 |
@@ -69,21 +70,34 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 .
 ├── Tekken8 Frame Data/
 │   ├── TK8/                         # 앱 타깃 소스(file-system synchronized group)
-│   │   ├── App/                     # AppDelegate, SceneDelegate
-│   │   ├── Character/               # 캐릭터 목록·검색·레이아웃·이미지 표시
-│   │   ├── CharacterSelect/         # 메모 작성 중 캐릭터 선택
-│   │   ├── Memo/                    # 메모 CRUD, 검색, pin, import/export
-│   │   ├── Move/                    # 기술 목록, 검색/필터, 현지화, 커맨드 표시
-│   │   ├── OnBoarding/              # 버전별 온보딩 표시
-│   │   ├── Repository/
-│   │   │   ├── Data/                # Repository protocol/구현체, DTO 매핑
+│   │   ├── App/                     # AppDelegate, SceneDelegate, DIContainer
+│   │   ├── Features/
+│   │   │   ├── Character/           # 캐릭터 목록·검색·레이아웃·이미지 표시
+│   │   │   ├── Memo/                # 메모 CRUD, 검색, pin, import/export
+│   │   │   │   └── CharacterSelection/ # 메모 작성 중 캐릭터 선택
+│   │   │   ├── Move/                # 기술 목록, 검색/필터, 현지화
+│   │   │   │   ├── Command/         # 커맨드 상수와 파싱
+│   │   │   │   ├── Filter/          # 프레임·속성 필터 UI
+│   │   │   │   ├── Translator/      # 한/영 변환과 커맨드 렌더링
+│   │   │   │   └── Video/           # 영상 상세, 재생 세션, 카드 전환
+│   │   │   ├── Onboarding/          # 버전별 온보딩 표시
+│   │   │   └── Settings/            # 버전 정보, 문의, 광고 제거 구매·복원·Apple 환불 링크
+│   │   ├── Data/
+│   │   │   ├── Repositories/        # Repository protocol/구현체, 데이터 출처 선택
+│   │   │   ├── Mapping/             # DTO와 영속 모델 매핑
 │   │   │   ├── Network/             # Supabase adapter와 범용 URLSession 추상화
-│   │   │   └── Persistant/          # Core Data/UserDefaults adapter (현재 폴더명 철자 유지)
-│   │   ├── Settings/                # 버전 정보, 문의, 후원/외부 링크
-│   │   ├── Utility/                 # DI, 공통 View, 캐시, Analytics, Ads, extension, 상수
-│   │   ├── Version/                 # 앱 스키마·프레임 데이터 버전 비교와 캐시 무효화
+│   │   │   └── Persistence/         # Core Data/UserDefaults adapter, 캐시 삭제 알림
+│   │   ├── Services/
+│   │   │   ├── Analytics/           # 분석 이벤트와 검색 추적
+│   │   │   ├── Ads/                 # 배너·네이티브 광고 서비스
+│   │   │   ├── Purchases/           # StoreKit 광고 제거 권한·거래 처리
+│   │   │   ├── ImageCache/          # 이미지 캐시 구현과 계약
+│   │   │   └── FrameDataVersion/    # 버전 비교와 프레임 캐시 무효화
+│   │   ├── Shared/
+│   │   │   ├── UI/                  # 공통 View/Controller, 재사용 식별자
+│   │   │   └── Localization/        # 공통 문자열 현지화
 │   │   ├── Assets.xcassets/         # 캐릭터·커맨드·색상·앱 아이콘 에셋
-│   │   ├── Localizable.xcstrings     # UI 현지화 문자열
+│   │   ├── Localizable.xcstrings    # UI 현지화 문자열
 │   │   └── Tekken8FrameData.xcdatamodeld/
 │   ├── TK8Tests/                    # 도메인/번역/필터/영상/메모 단위 테스트
 │   ├── SupabaseAPITests/            # Supabase adapter 경계 테스트
@@ -93,21 +107,30 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 └── .github/workflows/               # 빌드 CI와 Supabase wake-up 작업
 ```
 
-`Tekken8 Frame Data/View/MainViewController.swift`는 `TK8` file-system synchronized group 밖에 있는 빈 초기 파일이며 현재 앱 타깃의 실행 흐름에는 참여하지 않는다. `Repository/Network`의 `DefaultNetworkService`도 범용 URLSession 구현으로 남아 있지만 현재 DI는 `SupabaseManager`를 직접 사용한다.
+`Tekken8 Frame Data/View/MainViewController.swift`는 `TK8` file-system synchronized group 밖에 있는 빈 초기 파일이며 현재 앱 타깃의 실행 흐름에는 참여하지 않는다. `Data/Network`의 `DefaultNetworkService`도 범용 URLSession 구현으로 남아 있지만 현재 DI는 `SupabaseManager`를 직접 사용한다.
+
+폴더는 코드의 소유 책임을 기준으로 정한다. `App`은 시작과 DI 조립, `Features`는 사용자 기능별 화면·상태·규칙, `Data`는 조회·저장·출처 선택·매핑, `Services`는 여러 기능에서 사용하는 서비스, `Shared`는 특정 기능을 몰라도 쓸 수 있는 공통 UI·현지화를 소유한다. extension도 문법 대신 기능 소유권을 따른다. 커맨드 파싱·상수와 `LocalizedMove` 정렬은 `Features/Move`에 두고, 프레임 캐시 삭제 알림은 `Data/Persistence/CoreData`에 둔다. 기능 내부의 Controller/View/ViewModel/Model 구분은 유지하고, 파일이 많은 하위 기능만 별도로 묶는다.
+
+이번 변경은 파일 위치만 정리한다. 모든 Swift 파일 내용, 단일 앱 target, DI 조립, UIKit/SwiftUI 경계, Repository·캐시 흐름을 유지한다. 폴더는 별도 Swift module이나 접근 제어 경계를 만들지 않는다. Xcode의 `SupabaseAPITests` 파일 동기화 예외 경로는 새 위치에 맞춰 유지한다.
 
 ## 주요 모듈과 책임
 
 | 모듈 | 주요 타입 | 책임 |
 |---|---|---|
 | App/DI | `AppDelegate`, `SceneDelegate`, `DIContainer` | Firebase 초기화·수집 정책, 창/루트 navigation 구성, manager·repository·view model·view controller·analytics·광고 서비스 조립 |
-| Character | `CharacterListViewController`, `CharacterListViewModel` | 캐릭터 조회/검색/정렬, list/grid 전환, 이미지 로딩, 기술·메모·설정 화면 진입 |
-| Move | `MoveListViewController`, `MoveListViewModel`, `MoveVideoPlayerViewController`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, 영상 metadata 갱신, 선택 셀에서 확대되는 상세 카드·상호작용 전환, 화면 범위 반복 재생 |
-| Memo | `MemoListViewController`, `MemoComposeViewController`, `MemoViewModel` | 로컬 메모 CRUD, pin/검색, 캐릭터 연결, `.tk8memos` 백업 import/export |
-| Repository/Data | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `VideoReference`로 변환 |
-| Repository/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
-| Repository/Persistant | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
-| Version | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
-| Utility | `ImageCacheManager`, `AnalyticsClient`, `SearchAnalyticsTracker`, `BannerAdService`, `BannerAdHost`, base view/controller, extensions | 이미지 메모리/디스크 캐시, Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거, Remote Config·UMP 기반 광고 허용 판정, 공통 UI 생명주기, command parsing·localization 보조 |
+| Features/Character | `CharacterListViewController`, `CharacterListViewModel` | 캐릭터 조회/검색/정렬, list/grid 전환, 이미지 로딩, 기술·메모·설정 화면 진입 |
+| Features/Move | `MoveListViewController`, `MoveListViewModel`, `MoveVideoPlayerViewController`, `TranslatorEngine` | 캐릭터별 기술 조회, 언어별 변환, 섹션 정렬, 키워드·속성·프레임 필터, 영상 metadata 갱신, 선택 셀에서 확대되는 상세 카드·상호작용 전환, 화면 범위 반복 재생 |
+| Features/Memo | `MemoListViewController`, `MemoComposeViewController`, `MemoViewModel` | 로컬 메모 CRUD, pin/검색, 캐릭터 연결, `.tk8memos` 백업 import/export |
+| Data/Repositories | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Data/Mapping을 통한 Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `MoveVideoReference`로 변환 |
+| Data/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
+| Data/Persistence | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
+| Services/FrameDataVersion | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
+| Services/ImageCache | `ImageCacheManager`, `CacheManageable` | 이미지 메모리/디스크 캐시와 캐시 계약 |
+| Services/Analytics | `AnalyticsClient`, `SearchAnalyticsTracker` | Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거 |
+| Services/Ads | `BannerAdService`, `ScreenAdHosting`, `NativeAdHost`, `CompactNativeAdView`, `BannerAdHost`, `NativeMoveAdLoader` | Remote Config·UMP 기반 광고 허용 판정과 배너·네이티브 광고 요청/생명주기 |
+| Shared | base view/controller, `ReuseIdentifiable`, `String.localized()` | 공통 UI 생명주기·재사용 식별자·문자열 현지화 |
+| Data/Mapping | `CharacterDTO`, `MoveDTO` | Repository 경계 안에서 도메인 모델과 Core Data entity 매핑 |
+| Services/Purchases · Features/Settings | `AdRemovalPurchaseService`, `StoreKitAdRemovalStore`, `AdRemovalVerificationRecovery`, `SettingsPurchaseViewModel` | StoreKit 경계, 검증된 구매 권한·거래 생명주기, 설정 구매 상태/액션. DI가 공유 서비스 조립 |
 | Data tooling (별도 비공개 저장소) | `Tekken8-Data-Ops`의 `dashboard/`, `scripts/`, `supabase/` | Mac·Windows의 로컬 브라우저에서 비공개 Git 작업본의 CSV·R2 목록·확정 매핑을 다룬다. DB 쓰기 전 원격 차이와 입력 파일을 미리 확인한다. 작업 후 commit·push해야 소스 변경이 원격에 보존된다 |
 
 ## 저장 데이터의 소유권
@@ -154,9 +177,29 @@ SceneDelegate
 
 새 기능 안내는 캐릭터 목록이 window에 연결된 `viewDidAppear`에서 다른 modal이 없을 때만 표시한다. `OnboardingManager`의 안내 revision(현재 3)은 앱 patch 버전과 별도로 관리하며 기존 UserDefaults `onboarding_shown_version`을 유지한다. 최초 설치는 영상·프레임 필터와 기본 기술표·메모 안내를 함께 보여주고, 이전 안내를 본 사용자는 새 영상·필터만 본다. UIKit 기본 page sheet의 scroll 콘텐츠와 고정 확인 버튼을 사용하며 추가 등장 애니메이션은 없다. 표시 중 재진입을 차단하고 버튼 종료 또는 완료된 시트 드래그 종료 후에만 revision을 저장한다. 취소된 드래그나 표시 전에 앱을 종료한 경우에는 확인한 것으로 기록하지 않는다. 안내 표시를 시작한 다음에 하위 화면의 광고 생명주기를 실행해 UMP와 동시에 modal을 열지 않으며, 종료 콜백은 한 번만 처리한다.
 
+### 광고 제거 결제와 권한
+
+`DIContainer`가 `StoreKitAdRemovalStore`를 주입한 단일 `AdRemovalPurchaseService`를 만들고 공통 광고 서비스와 `SettingsPurchaseViewModel`에 공유한다. StoreKit SDK는 어댑터에만 있고 설정 ViewController는 UIKit binding·Apple 환불 웹페이지 열기를 담당한다. 기존 프레임 Repository·Core Data 메모 흐름은 유지한다.
+
+`SettingViewController`는 광고 제거/구매 안내 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 안내 화면은 같은 `SettingsPurchaseViewModel`을 구독하며 제공 범위·복원·환불·소비자 권리를 설명한 뒤 현지 가격의 구매 버튼을 제공한다. 구매 안내는 구매 후에도 열 수 있다. 활성 화면이 구매 결과 alert를 표시하고, 개발자 문의는 설정 화면이 조립한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+
+상품 ID는 `remove_ad`, 비소모품, 가족 공유 OFF다. 가격은 StoreKit `Product.displayPrice`를 사용한다. 서비스 생성 시 `Transaction.updates` 감시와 `unfinished` 처리, 초기 `currentEntitlements` 조회를 시작하고 앱 복귀에서 다시 조회한다. 권한은 `checking/unknown/notPurchased/adFree`로 나뉜다. 초기 checking 동안만 광고를 보류한다. 검증/권한 확인 실패인 unknown과 정상 조회상 미구매 notPurchased는 기존 Remote Config·UMP 조건으로 광고를 허용하고, 검증된 adFree에서 광고를 제거한다. unknown은 재구매를 계속 차단한다. 로컬 검증된 구매는 오프라인에도 유지되며 최신 환불은 연결 이후 반영될 수 있다. UserDefaults/Core Data에 구매 증거를 저장하지 않는다.
+
+구매는 검증된 대상 비소모품 거래에서만 권한을 부여하고 광고 제거 후 `finish`한다. 취소·pending·오류는 성공으로 취급하지 않고 중복 요청을 막는다. 검증된 완료 업데이트는 즉시 권한을 부여하고, 환불 업데이트는 전체 현재 권한을 재조회해 오래된 환불이 새 구매를 회수하지 않게 한다. 갱신 세대 번호로 오래된 초기 조회가 새 구매 권한을 덮어쓰지 못하게 한다. 복원 버튼만 `AppStore.sync`로 강제 동기화하고 구매 있음/없음/실패를 구분한다. 동기화 실패로 이미 검증된 구매를 지우지 않는다. 확인 실패에는 무한 재시도 없이 앱 복귀·거래 갱신·설정 재확인을 사용한다.
+
+검증 실패는 `AdRemovalVerificationFailure`의 거래 ID·오류 종류로 보존한다. StoreKit adapter가 `AdRemovalVerificationRecovery`를 통해 동일 거래를 `Transaction.latest(for:)`로 자동 한 번 재조회하며 동시 구매/updates 조회를 합친다. 재조회 실패·빈 결과·다른 ID는 미구매로 확정하지 않고 `unknown`을 유지한다. 미해결 거래는 finish하지 않으며 원문·거래 ID를 Analytics에 전송하지 않는다. 초기/foreground/화면 재확인/사용자 복원에서 각 미해결 거래를 한 번씩 다시 조회할 수 있다. 새 verified 갱신은 늦은 실패보다 우선한다. `AdRemovalStore.verificationFailure`가 진단을 서비스 상태로 전달하고, `finishVerifiedTransactions()`는 권한 적용 후 재조회로 검증된 거래를 종료한다. ViewModel은 구체적인 StoreKit에 의존하지 않고 구매 확인 실패 안내와 재구매 차단을 유지한다.
+
+광고 서비스는 Remote Config의 `enabled`와 구매의 `allowsAds`를 분리해 유효 광고 허용 상태와 `prepare()` 모두에 결합한다. 배너 Host·네이티브 로더가 이 공통 상태를 구독한다. OFF 시 기존 광고·공간·SDK 로더·prepare 대기 placement를 제거하고 늦은 콜백은 무시한다. ON 시 아직 UMP 판정이 없다면 준비를 재시작한다.
+
+로컬 StoreKit fixture는 `Services/Purchases/AdRemoval.storekit`이며 `TK8 StoreKit Test`의 Run에만 연결한다. 일반 scheme·Release 실행에는 로컬 결제 시뮬레이션을 켜지 않는다. `AdRemovalPurchaseTests`는 protocol stub으로 실패·중복·조회 경쟁·광고 차단을 검증하고 `AdRemovalStoreKitTests`는 StoreKit Testing으로 상품·권한·환불을 확인한다. 실제 Sandbox/TestFlight의 재설치/다른 기기 복원·실제 결제는 별도 출시 검증이다. 결제 Analytics 이벤트는 추가하지 않는다.
+
 ### 2. 광고 표시와 원격 중단
 
-`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터 목록·기술 목록·메모 목록·설정 ViewController에 `BannerAdHost`를 주입하고, 기술 영상 상세도 factory에서 동일 서비스의 Host를 별도로 주입한다. Host는 기존 화면 view를 감싸 적응형 하단 배너만 배치하며, 광고가 실제로 로드되기 전·로드 실패·원격 중단 시에는 높이 0으로 접어 콘텐츠 영역을 남기지 않는다. 영상 상세는 스크롤 밖 하단 safe area에 배너를 고정하고 콘텐츠와 12pt를 띄운다. 배너 로드 실패·비활성화 시 이 간격도 제거한다. 상세의 전체 화면 영상 전환과 닫기는 Host를 중단하며, 취소되거나 상세로 복귀하면 다시 요청한다. 상세는 UIViewController를 유지하고 배너 생명주기를 직접 연결한다. 메모 작성 화면에는 Host를 주입하지 않는다. 검색 키보드가 보이거나 메모 목록이 편집 상태이면 Host가 광고를 즉시 제거하고, 화면 이탈·백그라운드·폭 변경 뒤 늦게 도착한 SDK 콜백도 무시한다. 기술표는 하단 배너 대신 `NativeMoveAdLoader`가 위치별로 독립된 네이티브 광고를 요청하고, 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 더 이상 필요한 위치가 아닌 광고와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 같은 경로를 사용한다. 위치별 요청이 실패하면 해당 카드와 빈 공간을 모두 남기지 않는다.
+`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터·메모·설정 목록과 기술 영상 상세에 `ScreenAdHosting` 경계의 `NativeAdHost`를 주입한다. `BaseViewController`와 영상 상세는 기존 `bannerAdHost` 연결 이름을 유지하지만 protocol로 생명주기를 호출한다. Host는 기존 화면 view를 감싸 safe area 하단에 `CompactNativeAdView`를 표시한다. 이미지 광고는 아이콘(제공 시)·광고 표시·줄바꿈 가능한 제목·CTA를 가로로 배치하며 최소 전체 높이는 80pt다. 긴 제목·Dynamic Type에 따라 높이를 늘리고 accessibility 크기에서는 세로 배치한다. 동영상 광고는 최소 120×120pt MediaView 옆에 제목·아이콘·CTA를 세로로 배치하며 필요한 높이로 확장한다. AdChoices를 위해 오른쪽 위에 공간을 확보하고 SDK가 클릭을 처리한다. 기존 네이티브 광고 단위 ID를 재사용하며 네이티브 ID가 없으면 운영 하단 광고를 요청하지 않는다. Unity 배너 검증 scheme은 `BannerAdHost`를 유지한다.
+
+광고 로드 전·실패·원격 중단·광고 제거 구매 시 공간을 접는다. 영상 상세는 콘텐츠와 12pt를 띄우며 광고가 사라질 때 간격도 제거한다. 상세의 전체 화면 영상 전환과 닫기는 Host를 중단하며, 취소되거나 상세로 복귀하면 다시 요청한다. 메모 작성 화면에는 Host를 주입하지 않는다. 키보드·메모 편집·화면 이탈·백그라운드·폭 변경 시 광고와 로더를 제거하고 늦은 SDK callback을 무시한다. 노출·실패는 실제 SDK callback에서 위치별 native 이벤트로 기록한다.
+
+기술표는 기존 `NativeMoveAdLoader`의 목록 카드 배치를 유지한다. 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 불필요한 위치와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 요청한다. 위치별 요청 실패 시 빈 공간을 남기지 않는다.
 
 `BannerAdService`는 Firebase Remote Config의 `admob_banner_enabled`가 `true`일 때만 UMP 동의 정보를 갱신하고, `canRequestAds`가 true가 된 뒤 Google Mobile Ads SDK를 시작한다. 설정 화면은 UMP가 요구할 때만 `광고 개인정보 설정` 항목을 표시한다. 앱이 foreground가 될 때 Remote Config를 다시 가져오고 real-time update를 구독한다. 응답 실패나 앱 ID·광고 단위 ID 미설정 시에는 광고를 끈 상태로 유지한다. Debug는 실제 App ID 설정 여부와 관계없이 Google 샘플 광고 단위를 사용하고 Remote Config·운영 UMP 설정과 독립적으로 테스트 광고를 요청한다. Release는 유효한 실제 ID가 제공되기 전에는 광고를 요청하지 않는다.
 
@@ -167,7 +210,7 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 3. 분석 이벤트
 
-화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Utility/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 `MemoComposeViewController`가 MemoViewModel의 onPersisted 콜백으로 repository 쓰기 성공 직후 성공 이벤트를 기록하고, 빈 내용·변경 없음·repository 오류를 서로 다른 계약으로 보낸다. 저장은 실제 pop 완료 후 수행하며 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
+화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Services/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 `MemoComposeViewController`가 MemoViewModel의 onPersisted 콜백으로 repository 쓰기 성공 직후 성공 이벤트를 기록하고, 빈 내용·변경 없음·repository 오류를 서로 다른 계약으로 보낸다. 저장은 실제 pop 완료 후 수행하며 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
 
 ### 4. 캐릭터 목록
 
@@ -236,7 +279,7 @@ frame_data_version 증가
 
 ## 테스트와 검증 경계
 
-- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지·상세 작은 화면/Dynamic Type 레이아웃, 메모 CRUD와 백업 merge, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 광고 정책·실패·늦은 SDK 응답 처리를 검증한다.
+- `TK8Tests`: 모델 decoding/hash, command tokenization, 한/영 번역, 기술 필터, move-video URL 인코딩·매핑·늦은 metadata 응답, 영상 URL 취소/재시도·비활성화·player 유지·상세 작은 화면/Dynamic Type 레이아웃, 메모 CRUD와 백업 merge, StoreKit 광고 제거 권한·구매/복원/환불·광고 차단, Analytics 이벤트 계약·검색 디바운스·저장 판정, 배너 및 하단 네이티브 광고 정책·실패·늦은 SDK 응답·SDK 노출 중복 제거·작은 화면 레이아웃을 검증한다.
 - `SupabaseAPITests`: `Character.swift`, `Move.swift`, `SupabaseManageable.swift`, 버전 모델을 테스트 target의 파일 동기화 예외로 직접 포함하고 mock을 사용해 Supabase adapter 경계를 검증한다. 앱 모듈 import에 의존하지 않아 앱의 Firebase/기타 패키지 의존성이 경계 테스트에 전파되지 않는다.
 - CI의 `swift.yml`은 SPM 의존성을 해석하고 `Tekken8 Frame Data` scheme을 Simulator 대상으로 clean build한다. 현재 workflow에는 테스트 실행 단계가 별도로 없다.
 - Xcode Cloud release workflow는 `main` 변경 시 Archive한다. `ci_scripts/ci_post_clone.sh`가 `CI_PRIMARY_REPOSITORY_PATH`의 실제 checkout 위치를 기준으로 workflow의 secret 환경변수 `API_KEY`, `SUPABASE_URL`를 추적되지 않는 `TK8/Secrets.xcconfig`에 원자적으로 기록한 뒤 Archive가 진행된다. 둘 중 하나라도 누락되면 스크립트가 실패해 잘못된 설정의 배포를 막는다. 기존 설정 파일이 있어도 최종 권한은 `600`으로 강제한다. `API_KEY`는 `sb_publishable_` key 또는 `role=anon` legacy JWT만 허용하며, secret/service-role key는 사용하지 않는다. Firebase Analytics 초기화에 필요한 `TK8/GoogleService-Info.plist`는 `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_BASE64` secret environment variable을 post-clone 단계에서 Base64 복원한다. 복원 파일은 plist 문법과 `BUNDLE_ID=com.moongoon.TK8`을 검증하고 권한 `600`으로 원자적으로 교체한다. 따라서 Firebase configuration은 Git에 추적하지 않는다.

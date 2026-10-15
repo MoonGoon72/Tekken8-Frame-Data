@@ -2,6 +2,10 @@
 
 기준일: 2026-10-04. 사용자는 PubMatic을 제외하고 AdMob에 Unity Ads만 추가하기로 했다. LevelPlay로 전환하지 않는다. Unity Ads iOS AdMob 어댑터는 배너·전면·보상형을 지원하며 네이티브는 지원하지 않는다. 이 앱의 적용 범위는 기존 배너 광고 단위다.
 
+## 2026-10-14 하단 네이티브 전환
+
+일반 Debug/Release의 캐릭터·메모·설정 목록과 기술 영상 상세는 `NativeAdHost`를 사용한다. 기존 native ad unit ID를 재사용하고 기술표의 네이티브 카드 배치는 유지한다. Unity adapter는 네이티브를 지원하지 않으므로 이 위치의 네이티브 요청에는 Unity 배너 bidding이 참여하지 않는다. SDK와 기존 배너 설정은 전용 `TK8 Unity Mediation Test` 경로를 위해 유지한다. 콘솔의 배너 그룹·계약·매핑은 이번 코드 변경에서 수정하지 않는다. 네이티브 전환에 따른 실제 eCPM·fill rate·사용자별 수익은 운영 측정으로 확인한다.
+
 ## 앱 연동
 
 - 공식 SPM: `https://github.com/googleads/googleads-mobile-ios-mediation-unity.git`

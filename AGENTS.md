@@ -12,7 +12,7 @@
 - UIKit ViewController는 화면 생명주기, navigation, binding, data source 연결을 담당한다.
 - ViewModel은 화면 상태와 사용자 액션을 다루며 구체적인 네트워크나 Core Data 구현에 직접 의존하지 않는다.
 - 데이터 출처 선택과 DTO·영속 모델 매핑은 Repository 경계 안에 둔다.
-- 앱 조립과 구현체 주입은 `Tekken8 Frame Data/TK8/Utility/DIContainer.swift`를 중심으로 유지한다.
+- 앱 조립과 구현체 주입은 `Tekken8 Frame Data/TK8/App/DIContainer.swift`를 중심으로 유지한다.
 - 명시적인 구조 변경 요청이 없다면 UIKit 화면과 SwiftUI 구성 요소의 현재 경계를 유지한다. 경계를 변경하면 책임과 데이터 흐름을 검토하고 `docs/architecture.md`를 함께 갱신한다.
 
 ## 데이터와 보안

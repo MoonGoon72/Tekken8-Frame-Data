@@ -1,0 +1,36 @@
+{
+  "identifier": "DE325246-3194-489F-B2B0-ED1ED9570E13",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "6819986143",
+      "localizations": [
+        {
+          "description": "Permanently removes in-app ads.",
+          "displayName": "Permanently Remove Ads",
+          "locale": "en_US"
+        },
+        {
+          "description": "앱 내 광고를 영구 제거합니다.",
+          "displayName": "광고 영구 제거",
+          "locale": "ko"
+        }
+      ],
+      "productID": "remove_ad",
+      "referenceName": "remove_ad",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

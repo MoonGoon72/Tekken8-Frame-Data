@@ -159,7 +159,7 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
             }
         } catch AdRemovalPurchaseError.unverified {
             invalidateRefresh()
-            state.entitlement = .unknown
+            if state.entitlement != .adFree { state.entitlement = .unknown }
             state.verificationFailure = store.verificationFailure
             return .verificationFailed
         } catch { return .failed }
@@ -190,7 +190,7 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
         invalidateRefresh()
         switch update {
         case .unverified:
-            state.entitlement = .unknown
+            if state.entitlement != .adFree { state.entitlement = .unknown }
             state.verificationFailure = store.verificationFailure
         case .verified(let transaction):
             guard transaction.productID == Self.productID else { return }

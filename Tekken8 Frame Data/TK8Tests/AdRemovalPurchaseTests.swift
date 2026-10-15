@@ -74,6 +74,42 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertTrue(store.finished.isEmpty)
     }
 
+    func testUnverifiedUpdatePreservesVerifiedAdFreeEntitlement() async {
+        store.entitlement = .adFree
+        store.verificationFailure = AdRemovalVerificationFailure(transactionID: 2, reason: .invalidSignature)
+        await service.refresh()
+        service.start()
+        while store.continuation == nil { await Task.yield() }
+
+        store.continuation.yield(.unverified)
+        for _ in 0..<100 where service.state.verificationFailure == nil { await Task.yield() }
+
+        XCTAssertEqual(service.state.entitlement, .adFree)
+        XCTAssertFalse(service.state.entitlement.allowsAds)
+        XCTAssertEqual(service.state.verificationFailure?.transactionID, 2)
+    }
+
+    func testUnverifiedPurchaseFailurePreservesRightsFromConcurrentVerifiedUpdate() async {
+        await prepare()
+        store.purchaseGate = true
+        service.start()
+        let purchase = Task { await service.purchase() }
+        while store.purchaseContinuation == nil || store.continuation == nil { await Task.yield() }
+
+        store.continuation.yield(.verified(AdRemovalTransaction(id: 2, productID: "remove_ad", revoked: false)))
+        for _ in 0..<100 where service.state.entitlement != .adFree { await Task.yield() }
+        XCTAssertEqual(service.state.entitlement, .adFree)
+
+        store.verificationFailure = AdRemovalVerificationFailure(transactionID: 3, reason: .invalidSignature)
+        store.purchaseContinuation?.resume(throwing: AdRemovalPurchaseError.unverified)
+
+        let result = await purchase.value
+        XCTAssertEqual(result, .verificationFailed)
+        XCTAssertEqual(service.state.entitlement, .adFree)
+        XCTAssertFalse(service.state.entitlement.allowsAds)
+        XCTAssertEqual(service.state.verificationFailure?.transactionID, 3)
+    }
+
     func testRecoveredRefreshAppliesRightsBeforeFinishingAndClearsFailure() async {
         store.entitlement = .unknown
         store.verificationFailure = AdRemovalVerificationFailure(transactionID: 1, reason: .revokedCertificate)
@@ -433,7 +469,7 @@ private final class StubAdRemovalStore: AdRemovalStore {
     var onFinish: (() -> Void)?
     var purchaseGate = false
     var entitlementGate = false
-    var purchaseContinuation: CheckedContinuation<AdRemovalPurchaseResult, Never>?
+    var purchaseContinuation: CheckedContinuation<AdRemovalPurchaseResult, Error>?
     var entitlementContinuation: CheckedContinuation<AdRemovalEntitlement, Never>?
     var continuation: AsyncStream<AdRemovalTransactionUpdate>.Continuation!
 
@@ -448,7 +484,7 @@ private final class StubAdRemovalStore: AdRemovalStore {
     func purchase() async throws -> AdRemovalPurchaseResult {
         purchaseCount += 1
         if let purchaseError { throw purchaseError }
-        if purchaseGate { return await withCheckedContinuation { purchaseContinuation = $0 } }
+        if purchaseGate { return try await withCheckedThrowingContinuation { purchaseContinuation = $0 } }
         return result
     }
     func sync() async throws {

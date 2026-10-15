@@ -48,7 +48,7 @@ StoreKit 자동 검증을 통과한 대상 비소모품 거래만 구매 증거�
 
 ## 2026-10-14 재통합 검증
 
-App/DIContainer · Services/Purchases/Ads · Features/Settings 구조에 완성본을 재통합했다. Xcode 27에서 TK8Tests 172개(로컬 StoreKit 구매·환불 포함)와 일반 scheme Release Simulator build가 통과했다. 테스트 환경은 iPhone 16 Plus/iOS 18.5다. 위의 실기기 Sandbox/TestFlight와 제출 전 확인 항목은 별도로 남아 있다.
+App/DIContainer · Services/Purchases/Ads · Features/Settings 구조에 완성본을 재통합했다. Xcode 27에서 TK8Tests 192개(로컬 StoreKit 구매·환불 포함)와 일반 scheme Release Simulator build가 통과했다. 테스트 환경은 iPhone 16 Plus/iOS 18.5다. 위의 실기기 Sandbox/TestFlight와 제출 전 확인 항목은 별도로 남아 있다.
 
 
 ## 구매 전 고지와 법적 검토

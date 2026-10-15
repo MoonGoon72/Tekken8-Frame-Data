@@ -39,7 +39,7 @@ class SettingViewController: BaseViewController {
         super.loadView()
         
         view = tableView
-        // TODO: localizing
+        // TODO: 문자열 현지화
         title = Constants.Literals.title
         view.backgroundColor = .tkBackground
     }
@@ -53,11 +53,11 @@ class SettingViewController: BaseViewController {
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
         }.store(in: &subscriptionSet)
         purchaseViewModel.$message.compactMap { $0 }.sink { [weak self] _ in
-            // @Published emits before assignment; read the pending value on the next turn.
+            // @Published는 값 대입 전에 알린다. 다음 메인 큐 작업에서 현재 메시지를 읽는다.
             DispatchQueue.main.async { self?.presentPendingPurchaseMessage() }
         }.store(in: &subscriptionSet)
         ads?.$privacyOptionsRequired.removeDuplicates().sink { [weak self] _ in
-            // Published values are delivered before assignment.
+            // 값 대입 전에 변경 알림이 오므로 화면 갱신은 다음 메인 큐 작업에서 실행한다.
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
         }.store(in: &subscriptionSet)
     }
@@ -104,7 +104,7 @@ extension SettingViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.Literals.cellIdentifier, for: indexPath)
         let item = settingsItems[indexPath.row]
 
-        // Glass 스타일 배경
+        // 반투명 배경
         cell.backgroundColor = UIColor.white.withAlphaComponent(0.07)
 
         // 텍스트 스타일
@@ -124,10 +124,10 @@ extension SettingViewController: UITableViewDataSource {
         cell.contentConfiguration = configuration
         cell.isUserInteractionEnabled = !purchaseViewModel.state.isBusy || (item != .removeAds && item != .restorePurchases)
 
-        // Keep version values below the title so large text can wrap freely.
+        // 큰 글씨에서도 줄바꿈할 수 있도록 버전 정보는 제목 아래에 표시한다.
         cell.accessoryView = nil
 
-        // Chevron 색상
+        // 이동 화살표 색상
         cell.accessoryType = item.showsDisclosureIndicator ? .disclosureIndicator : .none
         cell.tintColor = UIColor.white.withAlphaComponent(0.3)
 
@@ -136,11 +136,11 @@ extension SettingViewController: UITableViewDataSource {
         selectdBackground.backgroundColor = UIColor.white.withAlphaComponent(0.12)
         cell.selectedBackgroundView = selectdBackground
 
-        // separator 색상
+        // 구분선 색상
         if indexPath.row < settingsItems.count - 1 {
             cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         } else {
-            // 마지막 셀은 separator 없음
+            // 마지막 셀에는 구분선을 표시하지 않는다.
             cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: .greatestFiniteMagnitude)
         }
 

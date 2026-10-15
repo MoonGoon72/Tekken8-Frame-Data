@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-/// Purchase information remains available before and after the transaction.
+/// 구매 전후 모두 제공 범위와 복원·환불 안내를 확인할 수 있는 화면이다.
 @MainActor
 final class PurchaseNoticeViewController: UIViewController {
     private let viewModel: SettingsPurchaseViewModel
@@ -76,11 +76,11 @@ final class PurchaseNoticeViewController: UIViewController {
         }
         stack.addArrangedSubview(contactButton)
         viewModel.$state.sink { [weak self] _ in
-            // @Published emits before the property is assigned.
+            // @Published는 프로퍼티에 값이 대입되기 전에 변경을 알린다.
             DispatchQueue.main.async { self?.updateState() }
         }.store(in: &subscriptions)
         viewModel.$message.compactMap { $0 }.sink { [weak self] _ in
-            // Re-read the value so another subscriber can consume it first.
+            // 다른 구독자가 이미 메시지를 처리했을 수 있으므로 현재 값을 다시 읽는다.
             DispatchQueue.main.async { self?.presentPendingPurchaseMessage() }
         }.store(in: &subscriptions)
         updateState()

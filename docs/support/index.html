@@ -28,12 +28,27 @@
     a { color: #06c; overflow-wrap: anywhere; }
     nav { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
     section { scroll-margin-top: 24px; }
+    .card h2 { margin-top: 0; }
+    label { display: block; font-weight: 600; margin: 20px 0 8px; }
+    select {
+      box-sizing: border-box; width: 100%; padding: 12px;
+      font: inherit; color: inherit; background: transparent;
+      border: 1px solid #86868b; border-radius: 8px;
+    }
+    .button {
+      display: inline-block; margin-top: 16px; padding: 12px 18px;
+      border-radius: 8px; color: #fff; background: #06c; text-decoration: none;
+    }
+    .hint { font-size: .95rem; color: #6e6e73; }
+    li { margin: 6px 0; }
+    :focus-visible { outline: 3px solid #06c; outline-offset: 4px; }
     footer { color: #6e6e73; font-size: .9rem; margin-top: 48px; }
     @media (prefers-color-scheme: dark) {
       body { background: #1c1c1e; color: #f5f5f7; }
       .card { background: #2c2c2e; }
       a { color: #6ab7ff; }
-      footer { color: #aeaeb2; }
+      footer, .hint { color: #aeaeb2; }
+      .button { color: #fff; }
     }
   </style>
 </head>
@@ -46,8 +61,30 @@
 
     <section class="card" aria-labelledby="contact-title">
       <h2 id="contact-title">문의</h2>
-      <p><a href="mailto:moongoon.cnu@gmail.com">moongoon.cnu@gmail.com</a></p>
-      <p>오류 신고에는 앱 버전, 기기 모델, iOS 버전, 문제를 재현하는 방법을 함께 알려 주시면 더 빠르게 도와드릴 수 있습니다.</p>
+      <p>구매 후에도 광고가 보이면 먼저 앱의 설정에서 ‘구매 복원’을 시도해 주세요. 해결되지 않으면 아래에서 문의 유형을 선택해 연락해 주세요.</p>
+      <label for="issue-ko">문의 유형</label>
+      <select id="issue-ko" data-language="ko">
+        <option value="purchase">결제했는데 광고가 제거되지 않음</option>
+        <option value="restore">구매 복원 문제</option>
+        <option value="bug">앱 오류 신고</option>
+        <option value="other">기타 문의 및 의견</option>
+      </select>
+      <p><a class="button" id="email-ko" href="mailto:moongoon.cnu@gmail.com">메일 앱으로 문의하기</a></p>
+      <p class="hint">선택한 유형에 맞는 제목과 작성 항목이 메일에 준비됩니다. 내용을 채운 뒤 직접 전송해 주세요.</p>
+      <p>구매 문의에는 다음 정보를 알려 주세요.</p>
+      <ul>
+        <li>Apple 영수증 또는 구매 내역의 주문 ID — 확인 가능한 경우</li>
+        <li>구매 날짜, 앱 버전, iOS 버전</li>
+        <li>구매 복원을 시도했는지와 그 결과</li>
+        <li>표시된 오류와 문제 상황</li>
+      </ul>
+      <p class="hint">주문 ID를 찾지 못해도 문의할 수 있습니다. 메일 앱을 사용할 수 없다면 <a href="mailto:moongoon.cnu@gmail.com">moongoon.cnu@gmail.com</a>으로 직접 보내 주세요.</p>
+      <noscript><p>메일 제목에 문의 유형을 적고 위 정보를 함께 보내 주세요.</p></noscript>
+    </section>
+    <section class="card" aria-labelledby="refund-title">
+      <h2 id="refund-title">환불을 원하시나요?</h2>
+      <p>개발자 문의를 거치지 않고 Apple에 직접 환불을 요청할 수 있습니다. 환불 가능 여부와 승인 여부는 Apple이 판단합니다.</p>
+      <p><a href="https://reportaproblem.apple.com/">Apple에 환불 요청하기</a> · <a href="https://support.apple.com/ko-kr/118223">Apple 환불 안내</a></p>
     </section>
 
     </section>
@@ -57,12 +94,68 @@
       <p>If you need help using the app or have feedback, please contact us by email.</p>
       <section class="card" aria-labelledby="contact-title-en">
         <h2 id="contact-title-en">Contact</h2>
-        <p><a href="mailto:moongoon.cnu@gmail.com">moongoon.cnu@gmail.com</a></p>
-        <p>When reporting a bug, please include the app version, device model, iOS version, and steps to reproduce the issue. These details help us investigate.</p>
+        <p>If ads still appear after your purchase, first try “Restore purchases” in the app’s settings. If the issue continues, select a topic below and contact us.</p>
+        <label for="issue-en">Contact topic</label>
+        <select id="issue-en" data-language="en">
+          <option value="purchase">Paid, but ads have not been removed</option>
+          <option value="restore">Trouble restoring a purchase</option>
+          <option value="bug">Report an app bug</option>
+          <option value="other">Other questions or feedback</option>
+        </select>
+        <p><a class="button" id="email-en" href="mailto:moongoon.cnu@gmail.com">Contact us by email</a></p>
+        <p class="hint">Your selection prepares an email subject and a list of details to include. Fill them in, then send the email yourself.</p>
+        <p>For purchase issues, please include:</p>
+        <ul>
+          <li>The order ID from your Apple receipt or purchase history, if available</li>
+          <li>Purchase date, app version, and iOS version</li>
+          <li>Whether you tried restoring the purchase and what happened</li>
+          <li>Any error shown and a description of the issue</li>
+        </ul>
+        <p class="hint">You can contact us even if you cannot find the order ID. If you cannot use a mail app, email <a href="mailto:moongoon.cnu@gmail.com">moongoon.cnu@gmail.com</a> directly.</p>
+        <noscript><p>Include the contact topic in your email subject and the details listed above.</p></noscript>
+      </section>
+      <section class="card" aria-labelledby="refund-title-en">
+        <h2 id="refund-title-en">Prefer a refund?</h2>
+        <p>You can request a refund directly from Apple without contacting the developer first. Apple determines eligibility and whether to approve your request.</p>
+        <p><a href="https://reportaproblem.apple.com/">Request a refund from Apple</a> · <a href="https://support.apple.com/en-us/118223">Apple refund guidance</a></p>
       </section>
     </section>
 
     <footer>© 2026 MoonGoon. All rights reserved.</footer>
   </main>
+  <script>
+    const topics = {
+      ko: {
+        purchase: '결제했는데 광고가 제거되지 않음', restore: '구매 복원 문제',
+        bug: '앱 오류 신고', other: '기타 문의 및 의견'
+      },
+      en: {
+        purchase: 'Paid, but ads have not been removed', restore: 'Trouble restoring a purchase',
+        bug: 'Report an app bug', other: 'Other questions or feedback'
+      }
+    };
+    function updateEmail(select) {
+      const language = select.dataset.language;
+      const topic = topics[language][select.value];
+      const isPurchase = select.value === 'purchase' || select.value === 'restore';
+      let body;
+      if (language === 'ko') {
+        body = '문의 유형: ' + topic + '\n\n' + (isPurchase
+          ? '주문 ID (확인 가능한 경우):\n구매 날짜:\n앱 버전:\niOS 버전:\n구매 복원 시도 여부와 결과:\n표시된 오류:\n문제 상황:\n'
+          : '앱 버전:\n기기 모델:\niOS 버전:\n문의 내용 또는 문제 재현 방법:\n');
+      } else {
+        body = 'Topic: ' + topic + '\n\n' + (isPurchase
+          ? 'Order ID (if available):\nPurchase date:\nApp version:\niOS version:\nRestore attempted and result:\nError shown:\nDescription of the issue:\n'
+          : 'App version:\nDevice model:\niOS version:\nQuestion or steps to reproduce:\n');
+      }
+      document.getElementById('email-' + language).href =
+        'mailto:moongoon.cnu@gmail.com?subject=' + encodeURIComponent('[TK8] ' + topic) +
+        '&body=' + encodeURIComponent(body);
+    }
+    document.querySelectorAll('select[data-language]').forEach(select => {
+      updateEmail(select);
+      select.addEventListener('change', () => updateEmail(select));
+    });
+  </script>
 </body>
 </html>

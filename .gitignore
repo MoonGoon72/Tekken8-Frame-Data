@@ -148,7 +148,7 @@ implementation-notes.md
 scripts/
 dashboard/
 reports/
-supabase/
+/supabase/
 .agents/skills/frame-data-workflow/
 docs/data-dashboard.md
 docs/move-csv-update-guide.md

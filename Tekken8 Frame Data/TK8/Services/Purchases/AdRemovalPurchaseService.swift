@@ -5,7 +5,7 @@ import UIKit
 enum AdRemovalEntitlement: Equatable {
     case checking, unknown, notPurchased, adFree
 
-    var allowsAds: Bool { self == .notPurchased }
+    var allowsAds: Bool { self == .notPurchased || self == .unknown }
 }
 
 struct AdRemovalPurchaseState: Equatable {
@@ -13,6 +13,7 @@ struct AdRemovalPurchaseState: Equatable {
     var entitlement: AdRemovalEntitlement = .checking
     var displayPrice: String?
     var operation: Operation = .idle
+    var verificationFailure: AdRemovalVerificationFailure?
     var pending = false
     var isBusy: Bool { operation != .idle }
 }
@@ -37,17 +38,24 @@ enum AdRemovalPurchaseError: Error {
 }
 
 enum AdRemovalActionResult: Equatable {
-    case purchased, restored, noPurchases, cancelled, pending, failed, busy
+    case purchased, restored, noPurchases, cancelled, pending, failed, verificationFailed, busy
 }
 
 @MainActor
 protocol AdRemovalStore: AnyObject {
+    var verificationFailure: AdRemovalVerificationFailure? { get }
+    func finishVerifiedTransactions() async
     func loadDisplayPrice() async throws -> String
     func currentEntitlement() async -> AdRemovalEntitlement
     func purchase() async throws -> AdRemovalPurchaseResult
     func sync() async throws
     func updates() -> AsyncStream<AdRemovalTransactionUpdate>
     func finish(_ transaction: AdRemovalTransaction) async
+}
+
+extension AdRemovalStore {
+    var verificationFailure: AdRemovalVerificationFailure? { nil }
+    func finishVerifiedTransactions() async {}
 }
 
 @MainActor
@@ -60,8 +68,8 @@ protocol AdRemovalPurchasing: AnyObject {
     func restore() async -> AdRemovalActionResult
 }
 
-/// StoreKit's signed transactions are the only source of purchase rights.
-/// Unknown rights suppress advertising without granting or persisting a purchase.
+/// 구매 권한은 StoreKit이 검증한 서명된 거래만 근거로 판단한다.
+/// 초기 확인 이후에는 권한 확인 실패 상태에서도 광고를 허용하지만, 구매 권한은 부여하지 않는다.
 @MainActor
 final class AdRemovalPurchaseService: AdRemovalPurchasing {
     static let productID = "remove_ad"
@@ -109,6 +117,10 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
             let entitlement = await store.currentEntitlement()
             guard !Task.isCancelled, let self, generation == self.refreshGeneration else { return }
             self.state.entitlement = entitlement
+            self.state.verificationFailure = entitlement == .unknown ? store.verificationFailure : nil
+            if entitlement == .adFree || entitlement == .notPurchased {
+                await store.finishVerifiedTransactions()
+            }
         }
         refreshTask = task
         await task.value
@@ -135,8 +147,9 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
                 guard transaction.productID == Self.productID, !transaction.revoked else { return .failed }
                 invalidateRefresh()
                 state.entitlement = .adFree
+                state.verificationFailure = nil
                 state.pending = false
-                // Rights are delivered (including removing existing ads) before finish.
+                // 광고 제거를 포함한 구매 권한을 먼저 적용한 뒤 거래를 종료한다.
                 await store.finish(transaction)
                 return state.entitlement == .adFree ? .purchased : .failed
             case .cancelled: return .cancelled
@@ -147,7 +160,8 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
         } catch AdRemovalPurchaseError.unverified {
             invalidateRefresh()
             state.entitlement = .unknown
-            return .failed
+            state.verificationFailure = store.verificationFailure
+            return .verificationFailed
         } catch { return .failed }
     }
 
@@ -162,10 +176,11 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
             switch state.entitlement {
             case .adFree: return .restored
             case .notPurchased: return .noPurchases
+            case .unknown: return .verificationFailed
             default: return .failed
             }
         } catch {
-            // A failed forced sync does not erase a locally verified purchase.
+            // 강제 동기화가 실패해도 이미 로컬에서 검증된 구매 권한은 지우지 않는다.
             if state.entitlement != .adFree { state.entitlement = .unknown }
             return .failed
         }
@@ -176,16 +191,18 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
         switch update {
         case .unverified:
             state.entitlement = .unknown
+            state.verificationFailure = store.verificationFailure
         case .verified(let transaction):
             guard transaction.productID == Self.productID else { return }
             state.pending = false
             if transaction.revoked {
-                // An old refund must not revoke a newer purchase of the product.
+                // 이전 거래의 환불로 같은 상품의 새 구매 권한까지 회수하지 않도록 재확인한다.
                 await refresh()
             } else {
-                // A verified update delivers rights immediately; the entitlement
-                // snapshot can lag behind a newly approved transaction.
+                // 현재 권한 조회에는 새로 승인된 거래가 아직 반영되지 않았을 수 있다.
+                // 따라서 검증된 거래 갱신을 받으면 구매 권한을 즉시 적용한다.
                 state.entitlement = .adFree
+                state.verificationFailure = nil
             }
             await store.finish(transaction)
         }

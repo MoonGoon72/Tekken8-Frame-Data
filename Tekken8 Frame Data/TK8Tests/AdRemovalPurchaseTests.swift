@@ -19,12 +19,12 @@ final class AdRemovalPurchaseTests: XCTestCase {
         store = nil
     }
 
-    func testInitialUnknownAndNormalAbsenceHaveDifferentAdPolicies() async {
+    func testInitialCheckSuppressesAdsButUnknownAndAbsenceAllowThem() async {
         XCTAssertFalse(service.state.entitlement.allowsAds)
         store.entitlement = .unknown
         await service.refresh()
         XCTAssertEqual(service.state.entitlement, .unknown)
-        XCTAssertFalse(service.state.entitlement.allowsAds)
+        XCTAssertTrue(service.state.entitlement.allowsAds)
         store.entitlement = .notPurchased
         await service.refresh()
         XCTAssertTrue(service.state.entitlement.allowsAds)
@@ -57,13 +57,36 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertTrue(store.finished.isEmpty)
     }
 
-    func testUnverifiedPurchaseSuppressesAdsWithoutClaimingSuccess() async {
+    func testUnverifiedPurchaseAllowsAdsWithoutClaimingSuccess() async {
         await prepare()
+        store.verificationFailure = AdRemovalVerificationFailure(transactionID: 1, reason: .invalidSignature)
         store.purchaseError = AdRemovalPurchaseError.unverified
-        let result = await service.purchase()
-        XCTAssertEqual(result, .failed)
+        let viewModel = SettingsPurchaseViewModel(purchases: service)
+        await viewModel.buy()
         XCTAssertEqual(service.state.entitlement, .unknown)
+        XCTAssertEqual(service.state.verificationFailure?.reason, .invalidSignature)
+        XCTAssertFalse(viewModel.canPurchase)
+        XCTAssertTrue(service.state.entitlement.allowsAds)
+        XCTAssertEqual(viewModel.message, "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer.".localized())
+        let repeated = await service.purchase()
+        XCTAssertEqual(repeated, .failed)
+        XCTAssertEqual(store.purchaseCount, 1)
         XCTAssertTrue(store.finished.isEmpty)
+    }
+
+    func testRecoveredRefreshAppliesRightsBeforeFinishingAndClearsFailure() async {
+        store.entitlement = .unknown
+        store.verificationFailure = AdRemovalVerificationFailure(transactionID: 1, reason: .revokedCertificate)
+        await service.refresh()
+        XCTAssertNotNil(service.state.verificationFailure)
+        store.entitlement = .adFree
+        store.verificationFailure = nil
+        store.onFinishVerified = { [weak service] in XCTAssertEqual(service?.state.entitlement, .adFree) }
+        await service.refresh()
+        XCTAssertEqual(store.finishVerifiedCount, 1)
+        XCTAssertNil(service.state.verificationFailure)
+        XCTAssertEqual(store.purchaseCount, 0)
+        XCTAssertEqual(store.syncCount, 0)
     }
 
     func testRestoreDistinguishesNoPurchaseFromFailureAndPreservesVerifiedRights() async {
@@ -162,6 +185,28 @@ final class AdRemovalPurchaseTests: XCTestCase {
         withExtendedLifetime(subscription) {}
     }
 
+    func testVerificationFailureResumesAdsAndVerifiedRecoveryRemovesThem() async {
+        let configuration = BannerAdConfiguration(isDebug: true, isTesting: false,
+            appID: BannerAdConfiguration.sampleAppID, bannerID: "", nativeID: "", localTestEnabled: true)
+        let ads = BannerAdService(configuration: configuration, purchases: service)
+        var enabled = true
+        let subscription = ads.statePublisher.sink { enabled = $0.0 }
+        XCTAssertFalse(enabled, "Initial checking must not flash ads to a purchaser")
+        await prepare()
+        store.purchaseError = AdRemovalPurchaseError.unverified
+        store.verificationFailure = AdRemovalVerificationFailure(transactionID: 1, reason: .invalidSignature)
+        let result = await service.purchase()
+        XCTAssertEqual(result, .verificationFailed)
+        XCTAssertTrue(enabled, "Verification failure must allow ads through the shared ad gate")
+        XCTAssertFalse(SettingsPurchaseViewModel(purchases: service).canPurchase)
+        XCTAssertTrue(store.finished.isEmpty)
+        store.entitlement = .adFree
+        store.verificationFailure = nil
+        await service.refresh()
+        XCTAssertFalse(enabled, "Verified recovery must remove ads again")
+        withExtendedLifetime(subscription) {}
+    }
+
     func testViewModelSilentlyHandlesCancellationAndUsesStorePrice() async {
         let viewModel = SettingsPurchaseViewModel(purchases: service)
         await viewModel.prepare()
@@ -200,7 +245,7 @@ final class AdRemovalPurchaseTests: XCTestCase {
         await settlePurchaseMessageUI()
         XCTAssertNotNil(settings.viewIfLoaded?.window, "Returning settings must be visible")
         XCTAssertTrue(navigation.topViewController === settings)
-        // Explicitly deliver appearance for the detached test-window fixture.
+        // 별도 테스트 창에서는 화면 표시 콜백을 명시적으로 호출한다.
         settings.viewDidAppear(false)
         XCTAssertEqual((settings.presentedViewController as? UIAlertController)?.message, pending)
         XCTAssertNil(viewModel.message)
@@ -228,7 +273,7 @@ final class AdRemovalPurchaseTests: XCTestCase {
         await viewModel.restore()
         let pending = viewModel.message
         XCTAssertNotNil(pending)
-        // Simulate another presenter consuming the result before queued callbacks run.
+        // 대기 중인 콜백이 실행되기 전에 다른 화면이 결과를 처리한 상황을 재현한다.
         viewModel.clearMessage()
         await settlePurchaseMessageUI()
         XCTAssertNil(settings.presentedViewController)
@@ -370,6 +415,13 @@ final class AdRemovalPurchaseTests: XCTestCase {
 
 @MainActor
 private final class StubAdRemovalStore: AdRemovalStore {
+    var verificationFailure: AdRemovalVerificationFailure?
+    var finishVerifiedCount = 0
+    var onFinishVerified: (() -> Void)?
+    func finishVerifiedTransactions() async {
+        finishVerifiedCount += 1
+        onFinishVerified?()
+    }
     var entitlement: AdRemovalEntitlement = .notPurchased
     var result: AdRemovalPurchaseResult = .success(AdRemovalTransaction(id: 1, productID: "remove_ad", revoked: false))
     var purchaseError: Error?
@@ -433,8 +485,8 @@ final class AdRemovalStoreKitTests: XCTestCase {
     }
 
     private func waitForEntitlement(_ expected: AdRemovalEntitlement, store: StoreKitAdRemovalStore) async -> AdRemovalEntitlement {
-        // SKTestSession injects transactions asynchronously into StoreKit's cache.
-        // Wait for that boundary rather than assuming the cache is synchronous.
+        // SKTestSession의 거래는 StoreKit 캐시에 비동기로 반영된다.
+        // 즉시 조회된다고 가정하지 않고 반영될 때까지 기다린다.
         for _ in 0..<100 {
             let state = await store.currentEntitlement()
             if state == expected { return state }

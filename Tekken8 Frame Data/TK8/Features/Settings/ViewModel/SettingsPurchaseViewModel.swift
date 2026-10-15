@@ -21,6 +21,9 @@ final class SettingsPurchaseViewModel {
     var purchaseDetail: String {
         if state.operation == .purchasing { return "Purchasing…".localized() }
         if state.entitlement == .adFree { return "Ads removed".localized() }
+        if state.entitlement == .unknown && state.verificationFailure != nil {
+            return "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer.".localized()
+        }
         if state.pending { return "Awaiting purchase approval".localized() }
         switch state.entitlement {
         case .checking: return "Checking purchases…".localized()
@@ -44,6 +47,7 @@ final class SettingsPurchaseViewModel {
         case .restored: message = "Your ad removal purchase has been restored.".localized()
         case .noPurchases: message = "No ad removal purchase was found for this Apple Account.".localized()
         case .pending: message = "Your purchase is awaiting approval. Ads will be removed once it is confirmed.".localized()
+        case .verificationFailed: message = "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer.".localized()
         case .failed: message = "Unable to complete the request. Please try again or contact support.".localized()
         case .cancelled, .busy: break
         }

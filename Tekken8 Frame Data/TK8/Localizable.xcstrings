@@ -2274,6 +2274,23 @@
         "en": { "stringUnit": { "state": "translated", "value": "Video could not be played. Check your connection and try again." } },
         "ko": { "stringUnit": { "state": "translated", "value": "영상을 재생할 수 없습니다. 연결을 확인한 뒤 다시 시도해 주세요." } }
       }
+    },
+    "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매 정보를 확인하지 못했습니다. 다시 구매하지 마세요. 구매 재확인이나 구매 복원을 시도하거나 개발자에게 문의해 주세요."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

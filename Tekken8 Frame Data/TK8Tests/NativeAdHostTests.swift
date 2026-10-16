@@ -35,6 +35,22 @@ final class NativeAdHostTests: XCTestCase {
         requests = []
     }
 
+    func testDeferredPermissionRetriesOnForegroundWithoutLeavingScreen() async {
+        service.state.send((true, false))
+        service.preparationResult = .deferred
+        let deferred = expectation(description: "permission preparation deferred")
+        service.onPrepare = { deferred.fulfill() }
+        host.appear()
+        await fulfillment(of: [deferred], timeout: 2)
+        XCTAssertTrue(requests.isEmpty)
+        let retry = expectation(description: "foreground retries preparation")
+        service.onPrepare = { retry.fulfill() }
+        service.preparationResult = .ready
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await fulfillment(of: [retry], timeout: 2)
+        XCTAssertEqual(requests.count, 1)
+    }
+
     func testFailedRequestCollapsesWithoutRetryAndIgnoresLateSuccess() {
         host.appear()
         let request = requests[0]
@@ -162,7 +178,13 @@ private final class FooterAdService: BannerAdServing {
     let configuration = BannerAdConfiguration(isDebug: true, isTesting: false,
         appID: BannerAdConfiguration.sampleAppID, bannerID: "", nativeID: "", localTestEnabled: true)
     var statePublisher: AnyPublisher<(Bool, Bool), Never> { state.eraseToAnyPublisher() }
-    func prepare(from controller: UIViewController) async -> Bool { true }
+    var preparationResult = AdPreparationResult.ready
+    var onPrepare: (() -> Void)?
+    func prepare(from controller: UIViewController) async -> AdPreparationResult {
+        onPrepare?()
+        if preparationResult == .ready { state.send((true, true)) }
+        return preparationResult
+    }
 }
 
 @MainActor

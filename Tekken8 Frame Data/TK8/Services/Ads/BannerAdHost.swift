@@ -25,7 +25,7 @@ final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
     private var impressionRecorded = false
 
     init(service: any BannerAdServing, placement: BannerPlacement, analytics: AnalyticsClient, contentSpacing: CGFloat = 0,
-         loadAd: @escaping (BannerView) -> Void = { $0.load(Request()) },
+         loadAd: @escaping (BannerView) -> Void = { $0.load(AdRequestFactory.make()) },
          isApplicationActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }) {
         self.service = service
         self.placement = placement
@@ -128,9 +128,11 @@ final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
             preparing = true
             Task { [weak self] in
                 guard let self else { return }
-                let allowed = await self.service.prepare(from: controller)
+                let result = await self.service.prepare(from: controller)
                 self.preparing = false
-                if !allowed { self.failedThisVisit = true }
+                // Wait for a lifecycle/layout event instead of spinning or marking a failure.
+                if result == .deferred { return }
+                if result == .unavailable { self.failedThisVisit = true }
                 self.update()
             }
             return

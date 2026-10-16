@@ -25,8 +25,9 @@ final class AdTrackingAuthorization {
     }
 
     func requestIfNeeded(when canPresent: @escaping () -> Bool = { true }) async -> ATTrackingManager.AuthorizationStatus {
+        let currentStatus = status()
         if let pending { return await pending.value }
-        guard status() == .notDetermined else { return status() }
+        guard currentStatus == .notDetermined else { return currentStatus }
         let task = Task { @MainActor in
             // UMP/system dialogs can temporarily make the app inactive.
             while !self.isActive() {

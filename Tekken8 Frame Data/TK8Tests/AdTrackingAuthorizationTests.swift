@@ -39,13 +39,23 @@ final class AdTrackingAuthorizationTests: XCTestCase {
         var requests = 0
         var completion: CheckedContinuation<ATTrackingManager.AuthorizationStatus, Never>?
         var status = ATTrackingManager.AuthorizationStatus.notDetermined
-        let authorization = AdTrackingAuthorization(status: { status }, request: {
+        var onStatusRead: (() -> Void)?
+        let authorization = AdTrackingAuthorization(status: {
+            onStatusRead?()
+            return status
+        }, request: {
             requests += 1
             return await withCheckedContinuation { completion = $0 }
         }, isActive: { true })
         let first = Task { await authorization.requestIfNeeded() }
         while completion == nil { await Task.yield() }
+        let secondEntered = expectation(description: "second caller entered the pending request")
+        onStatusRead = {
+            onStatusRead = nil
+            secondEntered.fulfill()
+        }
         let second = Task { await authorization.requestIfNeeded() }
+        await fulfillment(of: [secondEntered], timeout: 2)
         // Mirror iOS: the stored decision changes before the callback completes.
         // A late-scheduled second caller then reads the decision instead of creating
         // an unresumed continuation; an overlapping caller shares pending work.

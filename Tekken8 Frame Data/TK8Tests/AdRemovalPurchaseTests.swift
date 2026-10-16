@@ -217,7 +217,7 @@ final class AdRemovalPurchaseTests: XCTestCase {
         await ads.refresh()
         XCTAssertFalse(enabled)
         let canRequest = await ads.prepare(from: UIViewController())
-        XCTAssertFalse(canRequest)
+        XCTAssertEqual(canRequest, .unavailable)
         withExtendedLifetime(subscription) {}
     }
 

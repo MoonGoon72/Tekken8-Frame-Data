@@ -131,9 +131,11 @@ final class NativeAdHost: NSObject, NativeAdLoaderDelegate, NativeAdDelegate, Sc
             preparing = true
             Task { [weak self] in
                 guard let self else { return }
-                let allowed = await self.service.prepare(from: controller)
+                let result = await self.service.prepare(from: controller)
                 self.preparing = false
-                if !allowed { self.failedThisVisit = true }
+                // Wait for a lifecycle/layout event instead of spinning or marking a failure.
+                if result == .deferred { return }
+                if result == .unavailable { self.failedThisVisit = true }
                 self.update()
             }
             return

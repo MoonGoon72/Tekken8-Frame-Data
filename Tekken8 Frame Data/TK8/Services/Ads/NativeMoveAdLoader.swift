@@ -13,6 +13,7 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
     private weak var controller: UIViewController?
     private var requestedPlacements = [Int]()
     private var stateSubscription: AnyCancellable?
+    private var foregroundSubscription: AnyCancellable?
     private var adsAreAllowed = false
     private var requestGeneration = 0
 
@@ -30,6 +31,12 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
             .sink { [weak self] enabled, consent in
                 self?.updateAdState(enabled: enabled, consent: consent)
             }
+        foregroundSubscription = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                guard let self, let controller = self.controller,
+                      controller.viewIfLoaded?.window != nil else { return }
+                self.load(placements: self.requestedPlacements, from: controller)
+            }
     }
 
     func load(placements: [Int], from controller: UIViewController) {
@@ -43,7 +50,7 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
             Task { [weak self, weak controller] in
                 guard let self, let controller else { return }
                 let canRequest = await self.service.prepare(from: controller)
-                guard canRequest, self.adsAreAllowed,
+                guard canRequest == .ready, self.adsAreAllowed,
                       self.requestGeneration == generation,
                       self.requestedPlacements.contains(placement),
                       controller.viewIfLoaded?.window != nil else {

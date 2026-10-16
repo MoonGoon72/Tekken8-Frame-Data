@@ -38,14 +38,18 @@ final class AdTrackingAuthorizationTests: XCTestCase {
     func testConcurrentPlacementsShareOnePermissionRequest() async {
         var requests = 0
         var completion: CheckedContinuation<ATTrackingManager.AuthorizationStatus, Never>?
-        let authorization = AdTrackingAuthorization(status: { .notDetermined }, request: {
+        var status = ATTrackingManager.AuthorizationStatus.notDetermined
+        let authorization = AdTrackingAuthorization(status: { status }, request: {
             requests += 1
             return await withCheckedContinuation { completion = $0 }
         }, isActive: { true })
         let first = Task { await authorization.requestIfNeeded() }
         while completion == nil { await Task.yield() }
         let second = Task { await authorization.requestIfNeeded() }
-        await Task.yield()
+        // Mirror iOS: the stored decision changes before the callback completes.
+        // A late-scheduled second caller then reads the decision instead of creating
+        // an unresumed continuation; an overlapping caller shares pending work.
+        status = .denied
         completion?.resume(returning: .denied)
         let results = await [first.value, second.value]
         XCTAssertEqual(results, [.denied, .denied])

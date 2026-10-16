@@ -236,7 +236,7 @@ private final class DetailBannerService: BannerAdServing {
     let configuration = BannerAdConfiguration(isDebug: true, isTesting: false, appID: BannerAdConfiguration.sampleAppID,
                                              bannerID: "", nativeID: "", localTestEnabled: true)
     var statePublisher: AnyPublisher<(Bool, Bool), Never> { Just((true, true)).eraseToAnyPublisher() }
-    func prepare(from controller: UIViewController) async -> Bool { true }
+    func prepare(from controller: UIViewController) async -> AdPreparationResult { .ready }
 }
 
 @MainActor

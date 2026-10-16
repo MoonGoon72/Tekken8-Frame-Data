@@ -27,7 +27,7 @@ final class NativeAdHost: NSObject, NativeAdLoaderDelegate, NativeAdDelegate, Sc
     private var impressionRecorded = false
 
     init(service: any BannerAdServing, placement: BannerPlacement, analytics: AnalyticsClient, contentSpacing: CGFloat = 0,
-         loadAd: @escaping (AdLoader) -> Void = { $0.load(Request()) },
+         loadAd: @escaping (AdLoader) -> Void = { $0.load(AdRequestFactory.make()) },
          isApplicationActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }) {
         self.service = service
         self.placement = placement

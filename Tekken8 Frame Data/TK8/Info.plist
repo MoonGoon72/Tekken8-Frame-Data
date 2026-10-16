@@ -33,6 +33,8 @@
 	<true/>
 	<key>MOVE_VIDEO_BASE_URL</key>
 	<string>https://video.tk8moves.bid</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Your device’s advertising identifier will be used to show personalized ads and measure their performance.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

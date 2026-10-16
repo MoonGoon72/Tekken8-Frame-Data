@@ -21,7 +21,7 @@ final class NativeMoveAdLoader: NSObject, NativeAdLoaderDelegate, NativeAdDelega
     }
     var onAdsChanged: (() -> Void)?
 
-    init(service: any BannerAdServing, analytics: AnalyticsClient, loadAd: @escaping (AdLoader) -> Void = { $0.load(Request()) }) {
+    init(service: any BannerAdServing, analytics: AnalyticsClient, loadAd: @escaping (AdLoader) -> Void = { $0.load(AdRequestFactory.make()) }) {
         self.service = service
         self.analytics = analytics
         self.loadAd = loadAd

@@ -1,3 +1,4 @@
+import AppTrackingTransparency
 import Combine
 import FirebaseCore
 import FirebaseRemoteConfig
@@ -34,6 +35,8 @@ final class BannerAdService: BannerAdServing {
     private var registration: ConfigUpdateListenerRegistration?
     private var foregroundSubscription: AnyCancellable?
     private var consentTask: Task<Bool, Never>?
+    private let trackingAuthorization = AdTrackingAuthorization()
+    private var lastTrackingStatus = ATTrackingManager.trackingAuthorizationStatus
     private var didCheckConsent = false
     private var didStartSDK = false
     private var isRefreshing = false
@@ -75,7 +78,15 @@ final class BannerAdService: BannerAdServing {
         }
         foregroundSubscription = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
-                Task { @MainActor in await self?.refresh() }
+                guard let self else { return }
+                // Settings can change ATT while the app is away. Drop old ads first.
+                let status = ATTrackingManager.trackingAuthorizationStatus
+                if status != self.lastTrackingStatus && self.consentTask == nil {
+                    self.lastTrackingStatus = status
+                    self.didCheckConsent = false
+                    self.consentAllowsAds = false
+                }
+                Task { @MainActor in await self.refresh() }
             }
         Task { await refresh() }
     }
@@ -109,6 +120,7 @@ final class BannerAdService: BannerAdServing {
             if self.configuration.usesLocalTestAds {
                 // General Debug selects Google's sample ad units. Keep that local
                 // verification path independent of production UMP configuration.
+                guard await self.prepareTracking(from: controller) else { return false }
                 if !self.didStartSDK {
                     self.didStartSDK = true
                     self.configureUnityAds()
@@ -131,6 +143,7 @@ final class BannerAdService: BannerAdServing {
                 }
                 #endif
             }
+            guard await self.prepareTracking(from: controller) else { return false }
             self.didCheckConsent = true
             if self.adsEnabled && ConsentInformation.shared.canRequestAds && !self.didStartSDK {
                 self.didStartSDK = true
@@ -151,6 +164,18 @@ final class BannerAdService: BannerAdServing {
         consentAllowsAds = false // Destroy existing ads before changing the choice.
         defer { updateConsentState() }
         try await ConsentForm.presentPrivacyOptionsForm(from: controller)
+    }
+
+    private func prepareTracking(from controller: UIViewController) async -> Bool {
+        guard adsEnabled, controller.viewIfLoaded?.window != nil,
+              controller.presentedViewController == nil else { return false }
+        let status = await trackingAuthorization.requestIfNeeded { [weak self, weak controller] in
+            self?.adsEnabled == true && controller?.viewIfLoaded?.window != nil
+                && controller?.presentedViewController == nil
+        }
+        lastTrackingStatus = status
+        // A request interrupted before a decision must not unlock the SDK.
+        return adsEnabled && status != .notDetermined
     }
 
     private func configureUnityAds() {

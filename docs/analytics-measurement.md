@@ -52,7 +52,7 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 
 `ad_placement`는 `character_list`, `move_list`, `move_video_detail`, `memo_list`, `settings` 중 하나다. 광고 이벤트에는 광고 내용, 클릭 대상, 사용자 식별자, SDK 오류 문구를 전송하지 않는다. impression 이벤트는 SDK의 실제 callback에서만 기록하므로 화면 진입이나 광고 요청 수로 대체하지 않는다.
 
-2026-10-19 하단 배너 복원 이후 `character_list`, `memo_list`, `settings`, `move_video_detail` 위치는 기존 `banner_ad_impression`/`banner_ad_load_failed` 이벤트를 사용한다. 기술표는 `move_list` 위치의 native 이벤트를 유지한다. 이름·파라미터·성공/실패 판정은 기존 Host 계약을 따른다. 전환 이전 버전의 하단 native 이벤트와 비교할 때는 앱 버전과 광고 형식을 함께 구분한다.
+2026-10-19 하단 배너 복원 이후 `character_list`, `memo_list`, `settings`, `move_video_detail` 위치는 기존 `banner_ad_impression`/`banner_ad_load_failed` 이벤트를 사용한다. 기술표는 native 광고가 활성화되면 `move_list` 위치의 native 이벤트를 유지한다. `usesNativeMoveAds == false`인 배너 fallback 경로에서는 배너 설정과 정책이 유효할 때 `banner_ad_impression`/`banner_ad_load_failed`를 기록한다. 이름·파라미터·성공/실패 판정은 기존 Host 계약을 따른다. 전환 이전 버전의 하단 native 이벤트와 비교할 때는 앱 버전과 광고 형식을 함께 구분한다.
 
 ## 중복 제거 및 경계
 

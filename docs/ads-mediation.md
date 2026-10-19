@@ -6,6 +6,10 @@
 
 일반 Debug/Release의 캐릭터·메모·설정 목록과 기술 영상 상세는 `NativeAdHost`를 사용한다. 기존 native ad unit ID를 재사용하고 기술표의 네이티브 카드 배치는 유지한다. Unity adapter는 네이티브를 지원하지 않으므로 이 위치의 네이티브 요청에는 Unity 배너 bidding이 참여하지 않는다. SDK와 기존 배너 설정은 전용 `TK8 Unity Mediation Test` 경로를 위해 유지한다. 콘솔의 배너 그룹·계약·매핑은 이번 코드 변경에서 수정하지 않는다. 네이티브 전환에 따른 실제 eCPM·fill rate·사용자별 수익은 운영 측정으로 확인한다.
 
+## 2026-10-19 하단 배너 복원
+
+2.2.1은 사용자 확인상 10월 17일 배포됐다. 배포 이후 관측된 단가·노출 감소에 대응해 사용자가 하단 배너 복원을 결정했다. 일반 Debug/Release의 캐릭터·메모·설정 목록과 기술 영상 상세를 기존 `BannerAdHost`로 되돌린다. 기술표 네이티브 카드는 유지한다. 기존 배너 광고 단위를 재사용하며 콘솔 미디에이션 그룹 상태는 변경하지 않는다. 수익 회복은 배포 후 별도 검증한다.
+
 ## 앱 연동
 
 - 공식 SPM: `https://github.com/googleads/googleads-mobile-ios-mediation-unity.git`

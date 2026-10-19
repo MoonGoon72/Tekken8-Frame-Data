@@ -22,11 +22,7 @@ final class DIContainer {
     }
 
     @MainActor private func makeBottomAdHost(placement: BannerPlacement, contentSpacing: CGFloat = 0) -> any ScreenAdHosting {
-        // Keep the dedicated Unity banner validation scheme on its original format.
-        if ads.configuration.isDebug && ads.configuration.mediationTestRequested {
-            return BannerAdHost(service: ads, placement: placement, analytics: analytics, contentSpacing: contentSpacing)
-        }
-        return NativeAdHost(service: ads, placement: placement, analytics: analytics, contentSpacing: contentSpacing)
+        return BannerAdHost(service: ads, placement: placement, analytics: analytics, contentSpacing: contentSpacing)
     }
 
     @MainActor func makeSettingViewController() -> SettingViewController {

@@ -45,14 +45,14 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `memo_save_skipped` | 빈 메모 또는 변경 없는 편집을 저장하지 않고 종료할 때 | `memo_mode`, reason=`empty_content`\|`no_changes` |
 | `banner_ad_impression` | SDK가 화면에 표시된 배너의 impression을 실제 기록할 때 | `ad_placement`, `ad_format=banner` |
 | `banner_ad_load_failed` | SDK가 현재 화면의 배너 요청 실패를 알릴 때 | `ad_placement`, `ad_error_code` |
-| `native_ad_impression` | SDK가 기술표 카드 또는 하단 네이티브 광고의 impression을 실제 기록할 때 | `ad_placement`, `ad_format=native` |
-| `native_ad_load_failed` | SDK가 현재 기술표 카드 또는 하단 네이티브 요청 실패를 알릴 때 | `ad_placement`, `ad_error_code` |
+| `native_ad_impression` | SDK가 기술표 네이티브 카드의 impression을 실제 기록할 때 | `ad_placement`, `ad_format=native` |
+| `native_ad_load_failed` | SDK가 현재 기술표 네이티브 카드 요청 실패를 알릴 때 | `ad_placement`, `ad_error_code` |
 
 `character_id`는 사용자 입력이 아닌 Supabase 캐릭터의 영문 이름을 소문자로 정규화한 안정 식별자다. `search_scope` 값은 `character_list`, `move_list`, `memo_list` 중 하나다.
 
 `ad_placement`는 `character_list`, `move_list`, `move_video_detail`, `memo_list`, `settings` 중 하나다. 광고 이벤트에는 광고 내용, 클릭 대상, 사용자 식별자, SDK 오류 문구를 전송하지 않는다. impression 이벤트는 SDK의 실제 callback에서만 기록하므로 화면 진입이나 광고 요청 수로 대체하지 않는다.
 
-하단 광고는 `character_list`, `memo_list`, `settings`, `move_video_detail` 위치에서 native 이벤트를 사용한다. 기술표의 native 이벤트는 `move_list`를 유지한다. 이름·파라미터 형식은 동일하고 발생 위치를 확장한다. 영상 전체 화면과 상세 닫기 중에는 광고를 제거하고 늦은 callback을 무시한다. 상세 복귀 후 새 creative의 실제 SDK impression은 별도 노출로 기록할 수 있다. 기존 native ad unit ID를 재사용하므로 AdMob 수익 보고서는 기술표와 하단 광고가 합산된다. placement 이벤트만으로 위치별 실제 수익을 분리할 수는 없다. 배너 이벤트는 전용 Unity 미디에이션 검증 경로에서만 유지한다.
+2026-10-19 하단 배너 복원 이후 `character_list`, `memo_list`, `settings`, `move_video_detail` 위치는 기존 `banner_ad_impression`/`banner_ad_load_failed` 이벤트를 사용한다. 기술표는 `move_list` 위치의 native 이벤트를 유지한다. 이름·파라미터·성공/실패 판정은 기존 Host 계약을 따른다. 전환 이전 버전의 하단 native 이벤트와 비교할 때는 앱 버전과 광고 형식을 함께 구분한다.
 
 ## 중복 제거 및 경계
 
@@ -124,8 +124,8 @@ Firebase Console의 Analytics > Custom Definitions에서 실제 보고서에 사
 
 1. AdMob에 iOS 앱을 등록하고 실제 앱 ID와 banner/native ad unit ID를 Release build setting `ADMOB_APP_ID`, `ADMOB_BANNER_AD_UNIT_ID`, `ADMOB_NATIVE_AD_UNIT_ID`에 설정한다. 현재 실제 앱 ID와 두 광고 단위 ID가 설정되어 있다. 값을 비워 두거나 Google 샘플 ID를 쓰는 동안 Release는 광고를 요청하지 않는다.
 2. AdMob Privacy & messaging에서 필요한 UMP 메시지를 게시하고, Firebase Remote Config에 boolean `admob_banner_enabled`를 만든다. 배포 전 기본값은 `false`로 둔다.
-3. Debug에서 Google 테스트 네이티브 광고가 캐릭터·메모·설정 목록과 기술 영상 상세 하단에 보이고, 기술표에는 네 번째 기술 뒤부터 20개 간격의 네이티브 테스트 카드가 보이는지 확인한다. 위치별 광고 요청이 실패하면 해당 카드의 공간이 사라져야 한다. Release 기술표는 실제 App ID와 네이티브 광고 단위 ID가 유효할 때 같은 네이티브 카드 경로를 사용한다. Debug는 실제 App ID가 설정돼 있어도 Google 샘플 광고 단위를 사용하며 Remote Config와 운영 UMP 설정을 거치지 않는다.
+3. Debug에서 Google 테스트 배너 광고가 캐릭터·메모·설정 목록과 기술 영상 상세 하단에 보이고, 기술표에는 네 번째 기술 뒤부터 20개 간격의 네이티브 테스트 카드가 보이는지 확인한다. 위치별 광고 요청이 실패하면 해당 카드의 공간이 사라져야 한다. Release 기술표는 실제 App ID와 네이티브 광고 단위 ID가 유효할 때 같은 네이티브 카드 경로를 사용한다. Debug는 실제 App ID가 설정돼 있어도 Google 샘플 광고 단위를 사용하며 Remote Config와 운영 UMP 설정을 거치지 않는다.
 4. 직접 사용해도 괜찮은 경우에만 Remote Config 값을 `true`로 변경해 배포된 앱에서 광고를 시작한다. 문제가 있으면 값을 `false`로 바꾼다. 앱은 foreground 재진입 또는 real-time config update 이후 광고와 공간을 제거한다.
-5. 배포 전후로 같은 앱 버전 범위를 비교해 `native_ad_impression`과 화면 방문·기술 목록 도달률을 보조 신호로 확인한다. 재방문 감소는 GA4의 retention 보고서에서 별도로 확인하며, 광고 이벤트만으로 광고가 원인이라고 단정하지 않는다.
+5. 배포 전후로 같은 앱 버전 범위를 비교해 `banner_ad_impression`·`native_ad_impression`과 화면 방문·기술 목록 도달률을 보조 신호로 확인한다. 재방문 감소는 GA4의 retention 보고서에서 별도로 확인하며, 광고 이벤트만으로 광고가 원인이라고 단정하지 않는다.
 
 공식 참고: [Firebase 이벤트 기록](https://firebase.google.com/docs/analytics/ios/events), [화면 추적](https://firebase.google.com/docs/analytics/screenviews), [DebugView](https://firebase.google.com/docs/analytics/debugview), [GA4 퍼널 탐색](https://support.google.com/analytics/answer/9327974)

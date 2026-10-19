@@ -57,7 +57,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 다국어 | String Catalog(`Localizable.xcstrings`) + 프레임 데이터 규칙 기반 한/영 변환 |
 | 분석 | Firebase Analytics + Firebase Remote Config |
 | 결제 | StoreKit 2의 `remove_ad` 비소모품. 자체 결제 서버·구매 boolean 저장 없이 검증된 거래로 광고 제거 권한 판단 |
-| 광고 | Google Mobile Ads의 하단 네이티브 광고와 기술표의 네이티브 카드. 전용 Unity 미디에이션 검증 scheme만 배너를 사용한다. UMP가 광고 요청을 허용한 뒤 요청하고 Remote Config로 표시를 중단할 수 있음 |
+| 광고 | Google Mobile Ads의 하단 adaptive 배너와 기술표의 네이티브 카드. UMP가 광고 요청을 허용한 뒤 요청하고 Remote Config로 표시를 중단할 수 있음 |
 | 테스트 | XCTest, in-memory Core Data, Supabase 경계 테스트 |
 | 의존성 관리 | Swift Package Manager; 직접 의존성은 `supabase-swift`, `firebase-ios-sdk`, Google Mobile Ads package, Google의 Unity Ads mediation adapter(SPM 내부 Unity Ads SDK 포함) |
 | CI | GitHub Actions에서 SPM resolve 후 iOS Simulator용 clean build, Xcode Cloud에서 `main` 변경 시 Archive 및 TestFlight 전달 |
@@ -195,9 +195,9 @@ SceneDelegate
 
 ### 2. 광고 표시와 원격 중단
 
-`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터·메모·설정 목록과 기술 영상 상세에 `ScreenAdHosting` 경계의 `NativeAdHost`를 주입한다. `BaseViewController`와 영상 상세는 기존 `bannerAdHost` 연결 이름을 유지하지만 protocol로 생명주기를 호출한다. Host는 기존 화면 view를 감싸 safe area 하단에 `CompactNativeAdView`를 표시한다. 이미지 광고는 아이콘(제공 시)·광고 표시·줄바꿈 가능한 제목·CTA를 가로로 배치하며 최소 전체 높이는 80pt다. 긴 제목·Dynamic Type에 따라 높이를 늘리고 accessibility 크기에서는 세로 배치한다. 동영상 광고는 최소 120×120pt MediaView 옆에 제목·아이콘·CTA를 세로로 배치하며 필요한 높이로 확장한다. AdChoices를 위해 오른쪽 위에 공간을 확보하고 SDK가 클릭을 처리한다. 기존 네이티브 광고 단위 ID를 재사용하며 네이티브 ID가 없으면 운영 하단 광고를 요청하지 않는다. Unity 배너 검증 scheme은 `BannerAdHost`를 유지한다.
+`DIContainer`는 하나의 `BannerAdService`를 만들고 캐릭터·메모·설정 목록과 기술 영상 상세에 `ScreenAdHosting` 경계의 `BannerAdHost`를 주입한다. 2026-10-19 하단 네이티브 전환을 롤백하고 기존 배너 광고 단위와 adaptive banner를 복원했다. 기술 영상 상세의 contentSpacing 12pt와 공통 화면 생명주기 연결은 유지한다. Unity 배너 검증 scheme도 같은 Host를 사용하며 검증용 ID 선택은 서비스 설정이 담당한다. `NativeAdHost`와 해당 테스트는 보존하지만 운영 하단 조립에는 사용하지 않는다.
 
-광고 로드 전·실패·원격 중단·광고 제거 구매 시 공간을 접는다. 영상 상세는 콘텐츠와 12pt를 띄우며 광고가 사라질 때 간격도 제거한다. 상세의 전체 화면 영상 전환과 닫기는 Host를 중단하며, 취소되거나 상세로 복귀하면 다시 요청한다. 메모 작성 화면에는 Host를 주입하지 않는다. 키보드·메모 편집·화면 이탈·백그라운드·폭 변경 시 광고와 로더를 제거하고 늦은 SDK callback을 무시한다. 노출·실패는 실제 SDK callback에서 위치별 native 이벤트로 기록한다.
+광고 로드 전·실패·원격 중단·광고 제거 구매 시 하단 공간을 접는다. 키보드·메모 편집·화면 이탈·백그라운드·폭 변경과 늦은 SDK 응답 처리는 기존 BannerAdHost 정책을 따른다. 메모 작성 화면에는 Host를 주입하지 않는다. 하단 노출·실패는 기존 배너 SDK callback과 배너 Analytics 이벤트로 기록한다.
 
 기술표는 기존 `NativeMoveAdLoader`의 목록 카드 배치를 유지한다. 성공한 경우 네 번째 기술 카드 뒤부터 20개 간격으로 SDK 자산 카드를 넣는다. 화면 이탈 시 로더는 보유 광고·진행 중 요청·delegate를 비우고 snapshot에서 광고 카드를 제거한다. 필터 결과가 바뀌면 불필요한 위치와 로더도 정리한다. Debug는 Google 네이티브 테스트 ID를 사용하고, Release는 실제 App ID와 네이티브 광고 단위 ID가 모두 유효할 때만 요청한다. 위치별 요청 실패 시 빈 공간을 남기지 않는다.
 

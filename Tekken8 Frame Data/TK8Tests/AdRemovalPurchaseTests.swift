@@ -257,6 +257,144 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertFalse(viewModel.canPurchase)
     }
 
+    func testRetryIsOfferedOnlyAfterPreparationFailsAndNeverWhileLoading() async {
+        let viewModel = SettingsPurchaseViewModel(purchases: service)
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+        store.productGate = true
+        let preparation = Task { await viewModel.prepare() }
+        while store.productContinuation == nil { await Task.yield() }
+        XCTAssertTrue(viewModel.isPreparing)
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+        store.productContinuation?.resume(returning: "$2.99")
+        await preparation.value
+        XCTAssertFalse(viewModel.isPreparing)
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+        store.productGate = false
+        store.productError = AdRemovalPurchaseError.unavailable
+        await viewModel.prepare()
+        XCTAssertTrue(viewModel.shouldOfferRetry)
+        store.entitlement = .adFree
+        await viewModel.prepare()
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+    }
+
+    func testTwoPurchaseScreensWaitForTheSameInFlightPriceBeforeOfferingRetry() async {
+        store.productGate = true
+        let first = SettingsPurchaseViewModel(purchases: service)
+        let observed = ObservedPricePurchases(service: service)
+        let reachedLookup = expectation(description: "second screen reaches shared product lookup")
+        observed.onLoadProduct = { reachedLookup.fulfill() }
+        let second = SettingsPurchaseViewModel(purchases: observed)
+        let firstPreparation = Task { await first.prepare() }
+        while store.productContinuation == nil { await Task.yield() }
+        let secondPreparation = Task { await second.prepare() }
+        await fulfillment(of: [reachedLookup], timeout: 2)
+        XCTAssertTrue(second.isPreparing, "A pending shared request is not a failed price lookup")
+        XCTAssertFalse(second.shouldOfferRetry)
+        store.productContinuation?.resume(returning: "$2.99")
+        await firstPreparation.value
+        await secondPreparation.value
+        XCTAssertTrue(first.canPurchase)
+        XCTAssertTrue(second.canPurchase)
+        XCTAssertFalse(second.shouldOfferRetry)
+    }
+
+    func testPurchaseScreenKeepsDetailsBehindSeparateInformationScreen() async {
+        let model = SettingsPurchaseViewModel(purchases: service)
+        await model.prepare()
+        var contacts = 0
+        let controller = PurchaseNoticeViewController(viewModel: model) { _ in contacts += 1 }
+        let navigation = UINavigationController(rootViewController: controller)
+        controller.loadViewIfNeeded()
+        let buttons = purchaseDescendants(controller.view).compactMap { $0 as? UIButton }
+        let buy = buttons.first { $0.accessibilityIdentifier == "ad_removal_buy" }!
+        XCTAssertTrue(buy.configuration?.title?.contains("$2.99") == true)
+        XCTAssertTrue(buy.isEnabled)
+        XCTAssertTrue(buttons.first { $0.accessibilityIdentifier == "ad_removal_retry" }!.isHidden)
+        let labels = purchaseDescendants(controller.view).compactMap { ($0 as? UILabel)?.text }
+        XCTAssertFalse(labels.contains { $0.contains("Family Sharing") })
+        let information = buttons.first { $0.accessibilityIdentifier == "ad_removal_information" }!
+        information.sendActions(for: .touchUpInside)
+        guard let details = navigation.topViewController as? PurchaseInformationViewController else {
+            XCTFail("Information should open a separate screen")
+            return
+        }
+        details.loadViewIfNeeded()
+        let detailButtons = purchaseDescendants(details.view).compactMap { $0 as? UIButton }
+        XCTAssertNotNil(detailButtons.first { $0.accessibilityIdentifier == "purchase_information_refund" })
+        detailButtons.first { $0.accessibilityIdentifier == "purchase_information_contact" }!.sendActions(for: .touchUpInside)
+        XCTAssertEqual(contacts, 1)
+        XCTAssertEqual(store.purchaseCount, 0)
+    }
+
+    func testPurchasedScreenHasNoBuyOrRetryAndKeepsRestoreAndInformation() async {
+        store.entitlement = .adFree
+        let model = SettingsPurchaseViewModel(purchases: service)
+        await model.prepare()
+        let controller = PurchaseNoticeViewController(viewModel: model) { _ in }
+        controller.loadViewIfNeeded()
+        let buttons = purchaseDescendants(controller.view).compactMap { $0 as? UIButton }
+        XCTAssertTrue(buttons.first { $0.accessibilityIdentifier == "ad_removal_buy" }!.isHidden)
+        XCTAssertTrue(buttons.first { $0.accessibilityIdentifier == "ad_removal_retry" }!.isHidden)
+        XCTAssertFalse(buttons.first { $0.accessibilityIdentifier == "ad_removal_restore" }!.isHidden)
+        XCTAssertFalse(buttons.first { $0.accessibilityIdentifier == "ad_removal_information" }!.isHidden)
+    }
+
+    func testSettingsHasOnePurchaseEntryWithPurchasedStatus() async {
+        store.entitlement = .adFree
+        let model = SettingsPurchaseViewModel(purchases: service)
+        await model.prepare()
+        let controller = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: model)
+        let navigation = UINavigationController(rootViewController: controller)
+        controller.loadViewIfNeeded()
+        let table = (controller.view as! SettingTableView).tableView
+        XCTAssertEqual(controller.tableView(table, numberOfRowsInSection: 0), 4)
+        let cell = controller.tableView(table, cellForRowAt: IndexPath(row: 2, section: 0))
+        let content = cell.contentConfiguration as! UIListContentConfiguration
+        XCTAssertEqual(content.text, "Ad removal".localized())
+        XCTAssertEqual(content.secondaryText, "Ads removed".localized())
+        controller.tableView(table, didSelectRowAt: IndexPath(row: 2, section: 0))
+        XCTAssertTrue(navigation.topViewController is PurchaseNoticeViewController)
+        XCTAssertEqual(store.purchaseCount, 0)
+    }
+
+    private func purchaseDescendants(_ view: UIView) -> [UIView] {
+        view.subviews.flatMap { [$0] + purchaseDescendants($0) }
+    }
+
+    func testPurchaseResultWaitsUntilReturningFromDetailedInformation() async {
+        let model = SettingsPurchaseViewModel(purchases: service)
+        await model.prepare()
+        let purchase = PurchaseNoticeViewController(viewModel: model) { _ in }
+        let navigation = UINavigationController(rootViewController: purchase)
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first!
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        navigation.view.frame = window.bounds
+        navigation.view.layoutIfNeeded()
+        defer { window.isHidden = true }
+        await settlePurchaseMessageUI()
+        let information = purchaseDescendants(purchase.view).first {
+            $0.accessibilityIdentifier == "ad_removal_information"
+        } as! UIButton
+        information.sendActions(for: .touchUpInside)
+        await settlePurchaseMessageUI()
+        XCTAssertTrue(navigation.topViewController is PurchaseInformationViewController)
+        await model.restore()
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(model.message)
+        XCTAssertNil(purchase.presentedViewController)
+        XCTAssertNil(navigation.topViewController?.presentedViewController)
+        navigation.popViewController(animated: false)
+        XCTAssertTrue(navigation.topViewController === purchase)
+        await settlePurchaseMessageUI()
+        XCTAssertNotNil(purchase.viewIfLoaded?.window)
+        XCTAssertNotNil(purchase.presentedViewController as? UIAlertController)
+        XCTAssertNil(model.message)
+        purchase.dismiss(animated: false)
+    }
+
     func testRestoreMessageWaitsForSettingsToReturn() async {
         let viewModel = SettingsPurchaseViewModel(purchases: service)
         let settings = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: viewModel)
@@ -378,10 +516,9 @@ final class AdRemovalPurchaseTests: XCTestCase {
             let table = (controller.view as! SettingTableView).tableView
             table.reloadData()
             table.layoutIfNeeded()
-            XCTAssertEqual(table.numberOfRows(inSection: 0), 7)
+            XCTAssertEqual(table.numberOfRows(inSection: 0), 4)
             XCTAssertTrue(table.isScrollEnabled)
             if category.isAccessibilityCategory {
-                XCTAssertGreaterThan(table.contentSize.height, table.bounds.height)
                 table.scrollToRow(at: IndexPath(row: 2, section: 0), at: .top, animated: false)
                 table.layoutIfNeeded()
             }
@@ -412,13 +549,15 @@ final class AdRemovalPurchaseTests: XCTestCase {
             for style in [UIUserInterfaceStyle.dark, .light] {
                 let viewModel = SettingsPurchaseViewModel(purchases: service)
                 await viewModel.prepare()
-                let controller = PurchaseNoticeViewController(viewModel: viewModel, contact: { _ in })
+                let screens: [UIViewController] = [
+                    PurchaseNoticeViewController(viewModel: viewModel, contact: { _ in }),
+                    PurchaseInformationViewController(contact: { _ in })
+                ]
+                for controller in screens {
                 let parent = UIViewController()
                 parent.addChild(controller)
-                parent.setOverrideTraitCollection(UITraitCollection(traitsFrom: [
-                    UITraitCollection(preferredContentSizeCategory: category),
-                    UITraitCollection(userInterfaceStyle: style)
-                ]), forChild: controller)
+                controller.traitOverrides.preferredContentSizeCategory = category
+                controller.overrideUserInterfaceStyle = style
                 parent.view.addSubview(controller.view)
                 controller.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
                 controller.didMove(toParent: parent)
@@ -430,23 +569,53 @@ final class AdRemovalPurchaseTests: XCTestCase {
                 controller.view.layoutIfNeeded()
                 XCTAssertEqual(controller.view.bounds.size, CGSize(width: 320, height: 568))
                 let scroll = controller.view.subviews.compactMap { $0 as? UIScrollView }.first!
-                XCTAssertGreaterThan(scroll.contentSize.height, scroll.bounds.height)
+                if category.isAccessibilityCategory {
+                    XCTAssertGreaterThan(scroll.contentSize.height, scroll.bounds.height)
+                }
                 XCTAssertEqual(scroll.contentSize.width, scroll.bounds.width, accuracy: 1)
                 XCTAssertEqual(store.purchaseCount, 0, "Opening purchase information must not start a purchase")
+                for button in purchaseDescendants(controller.view).compactMap({ $0 as? UIButton }).filter({ !$0.isHidden }) {
+                    guard let label = button.titleLabel else { continue }
+                    if category.isAccessibilityCategory {
+                        XCTAssertGreaterThan(label.font.pointSize, 30, "Purchase controls must follow Dynamic Type")
+                    }
+                    let required = label.sizeThatFits(CGSize(width: label.bounds.width, height: .greatestFiniteMagnitude))
+                    XCTAssertLessThanOrEqual(required.height, label.bounds.height + 1, "The complete button title must fit")
+                    let frame = label.convert(label.bounds, to: button)
+                    XCTAssertGreaterThanOrEqual(frame.minY, -1)
+                    XCTAssertLessThanOrEqual(frame.maxY, button.bounds.height + 1)
+                }
                 for bottom in [false, true] {
                     scroll.contentOffset.y = bottom ? max(0, scroll.contentSize.height - scroll.bounds.height) : 0
                     let image = UIGraphicsImageRenderer(bounds: controller.view.bounds).image { _ in
                         controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
                     }
                     let attachment = XCTAttachment(image: image)
-                    attachment.name = "PurchaseNotice-320-\(category.rawValue)-\(style.rawValue)-\(bottom ? "bottom" : "top")"
+                    attachment.name = "\(type(of: controller))-320-\(category.rawValue)-\(style.rawValue)-\(bottom ? "bottom" : "top")"
                     attachment.lifetime = .keepAlways
                     add(attachment)
                 }
                 window.isHidden = true
+                }
             }
         }
     }
+}
+
+@MainActor
+private final class ObservedPricePurchases: AdRemovalPurchasing {
+    let service: AdRemovalPurchaseService
+    var onLoadProduct: (() -> Void)?
+    init(service: AdRemovalPurchaseService) { self.service = service }
+    var state: AdRemovalPurchaseState { service.state }
+    var statePublisher: AnyPublisher<AdRemovalPurchaseState, Never> { service.statePublisher }
+    func refresh() async { await service.refresh() }
+    func loadProduct() async {
+        onLoadProduct?()
+        await service.loadProduct()
+    }
+    func purchase() async -> AdRemovalActionResult { await service.purchase() }
+    func restore() async -> AdRemovalActionResult { await service.restore() }
 }
 
 @MainActor
@@ -463,6 +632,8 @@ private final class StubAdRemovalStore: AdRemovalStore {
     var purchaseError: Error?
     var syncError: Error?
     var productError: Error?
+    var productGate = false
+    var productContinuation: CheckedContinuation<String, Error>?
     var finished: [UInt64] = []
     var syncCount = 0
     var purchaseCount = 0
@@ -474,6 +645,7 @@ private final class StubAdRemovalStore: AdRemovalStore {
     var continuation: AsyncStream<AdRemovalTransactionUpdate>.Continuation!
 
     func loadDisplayPrice() async throws -> String {
+        if productGate { return try await withCheckedThrowingContinuation { productContinuation = $0 } }
         if let productError { throw productError }
         return "$2.99"
     }

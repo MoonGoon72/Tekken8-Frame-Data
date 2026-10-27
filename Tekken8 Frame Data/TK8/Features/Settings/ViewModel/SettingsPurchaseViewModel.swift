@@ -5,8 +5,10 @@ import Foundation
 final class SettingsPurchaseViewModel {
     @Published private(set) var state: AdRemovalPurchaseState
     @Published private(set) var message: String?
+    @Published private(set) var isPreparing = false
     private let purchases: any AdRemovalPurchasing
     private var subscription: AnyCancellable?
+    private var hasPrepared = false
 
     init(purchases: any AdRemovalPurchasing) {
         self.purchases = purchases
@@ -15,16 +17,25 @@ final class SettingsPurchaseViewModel {
     }
 
     var canPurchase: Bool {
-        state.entitlement == .notPurchased && state.displayPrice != nil && !state.isBusy && !state.pending
+        state.entitlement == .notPurchased && state.displayPrice != nil && !state.isBusy && !state.pending && !isPreparing
+    }
+
+    var shouldOfferRetry: Bool {
+        hasPrepared && !isPreparing && !state.isBusy && !state.pending &&
+            (state.entitlement == .unknown || (state.entitlement == .notPurchased && state.displayPrice == nil))
     }
 
     var purchaseDetail: String {
         if state.operation == .purchasing { return "Purchasing…".localized() }
+        if state.operation == .restoring { return "Restoring purchases…".localized() }
         if state.entitlement == .adFree { return "Ads removed".localized() }
         if state.entitlement == .unknown && state.verificationFailure != nil {
             return "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer.".localized()
         }
         if state.pending { return "Awaiting purchase approval".localized() }
+        if state.entitlement == .notPurchased && (isPreparing || (!hasPrepared && state.displayPrice == nil)) {
+            return "Loading price…".localized()
+        }
         switch state.entitlement {
         case .checking: return "Checking purchases…".localized()
         case .unknown: return "Unable to verify purchases. Tap to retry.".localized()
@@ -33,6 +44,12 @@ final class SettingsPurchaseViewModel {
     }
 
     func prepare() async {
+        guard !isPreparing else { return }
+        isPreparing = true
+        defer {
+            hasPrepared = true
+            isPreparing = false
+        }
         await purchases.refresh()
         await purchases.loadProduct()
     }

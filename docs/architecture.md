@@ -145,12 +145,21 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
 | 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
 | 캐릭터 목록 모드 | 사용자 선택 | UserDefaults `characterLayout` | list/grid 토글 시 갱신 |
+| 광고 제거 안내 처리 여부 | 사용자 닫기/알아보기 선택 | UserDefaults `ad_removal_notice_consumed` | 명시적 액션에서만 true 저장. 구매 권한 및 온보딩 revision과 독립 |
 | 온보딩 표시 버전 | 앱 상수 | UserDefaults `onboarding_shown_version` | 현재 온보딩 버전 최초 표시 후 기록 |
 | 캐릭터 이미지 | Asset Catalog 우선, 없으면 `character.image_url`의 외부 URL | `NSCache` + Caches 디렉터리 | 메모리 → 디스크 → 네트워크 순서 |
 
 Core Data의 `deleteAll()`은 `CharacterEntity`와 `MoveEntity`만 batch delete한다. `MemoEntity`는 의도적으로 남아 프레임 데이터 버전 변경이나 로컬 스키마 캐시 무효화 후에도 사용자 메모가 유지된다.
 
 ## 런타임 데이터 흐름
+
+### 캐릭터 선택 화면의 광고 제거 안내
+
+`DIContainer`는 공유 `AdRemovalPurchaseService`와 `DefaultAdRemovalNoticeRepository`를 사용하는 `AdRemovalNoticeViewModel`을 캐릭터 목록에 주입한다. Repository는 기존 `UserDefaultsManageable` 뒤에서 안내 처리 여부만 저장한다. ViewModel은 미처리이고 권한이 `notPurchased`인 경우만 안내 자격을 발행하며 `checking`/`unknown`/`adFree`는 제외한다.
+
+UIKit `AdRemovalNoticeView`는 캐릭터 화면에서만 `BannerAdHost`의 선택적 accessory로 연결된다. Host는 안내 처리/구매 정책을 알지 않고, 실제 배너 로딩 성공 시에만 accessory와 배너의 공간을 함께 확보한다. 로딩 실패·화면 이탈·키보드·광고 중단은 전체 영역을 접고, 안내를 닫는 것은 배너를 유지한다. 최초 온보딩/광고 동의 흐름을 그대로 따른다.
+
+닫기 또는 알아보기에서만 처리 상태를 저장한다. 알아보기는 DI의 공통 구매 설명 화면 factory를 통해 기존 `PurchaseNoticeViewController`로 이동한다. 설정도 같은 factory를 사용하며 공유 구매 서비스가 권한을 갱신하면 광고/안내를 함께 숨긴다. 재실행/업데이트는 안내 처리 상태를 보존하며 재설치는 별도다. Analytics 이벤트 계약은 변경하지 않는다.
 
 ### 1. 앱 시작과 캐시 무효화
 
@@ -181,7 +190,11 @@ SceneDelegate
 
 `DIContainer`가 `StoreKitAdRemovalStore`를 주입한 단일 `AdRemovalPurchaseService`를 만들고 공통 광고 서비스와 `SettingsPurchaseViewModel`에 공유한다. StoreKit SDK는 어댑터에만 있고 설정 ViewController는 UIKit binding·Apple 환불 웹페이지 열기를 담당한다. 기존 프레임 Repository·Core Data 메모 흐름은 유지한다.
 
-`SettingViewController`는 광고 제거/구매 안내 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 안내 화면은 같은 `SettingsPurchaseViewModel`을 구독하며 제공 범위·복원·환불·소비자 권리를 설명한 뒤 현지 가격의 구매 버튼을 제공한다. 구매 안내는 구매 후에도 열 수 있다. 활성 화면이 구매 결과 alert를 표시하고, 개발자 문의는 설정 화면이 조립한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+`SettingViewController`는 단일 광고 제거 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 같은 `SettingsPurchaseViewModel`을 구독하는 구매 화면은 짧은 혜택 설명·1회 결제 조건·StoreKit 현지 가격의 구매 버튼을 우선 표시하고 구매 복원과 상세 안내를 보조 액션으로 제공한다. 구매자는 완료 상태를 표시하며 구매 버튼을 숨긴다. ViewModel의 `isPreparing`은 가격/권한 조회 중임을 구분하고 조회 완료 후 실패 상태에만 재확인을 제공한다.
+
+`PurchaseInformationViewController`는 구매 화면의 ‘구매·환불 안내’에서 push하는 별도 화면으로, 기존 제공 범위·구매 적용·복원·환불·소비자 권리와 약관·문의 링크를 섹션별로 제공한다. 두 화면의 스크롤·문구·버튼 스타일은 기능 내부 `PurchaseScreenLayout`이 공유한다. 구매 안내는 구매 후에도 열 수 있다. 구매/설정 화면 중 활성 화면이 구매 결과 alert를 표시하고, 상세 안내 중 도착한 메시지는 구매 화면 복귀 시 처리한다. 개발자 문의는 DI가 전달한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+
+가격을 처음 가져오는 동안 메인 안내와 설정에서 서로 다른 ViewModel이 생성될 수 있다. 공유 `AdRemovalPurchaseService.loadProduct()`는 진행 중인 product task를 모든 호출자가 함께 기다리게 해, 다른 화면이 조회 중인 상태를 가격 조회 실패로 해석하지 않도록 한다. 구매/권한 조회의 기존 검증 계약은 유지한다.
 
 상품 ID는 `remove_ad`, 비소모품, 가족 공유 OFF다. 가격은 StoreKit `Product.displayPrice`를 사용한다. 서비스 생성 시 `Transaction.updates` 감시와 `unfinished` 처리, 초기 `currentEntitlements` 조회를 시작하고 앱 복귀에서 다시 조회한다. 권한은 `checking/unknown/notPurchased/adFree`로 나뉜다. 초기 checking 동안만 광고를 보류한다. 검증/권한 확인 실패인 unknown과 정상 조회상 미구매 notPurchased는 기존 Remote Config·UMP 조건으로 광고를 허용하고, 검증된 adFree에서 광고를 제거한다. unknown은 재구매를 계속 차단한다. 로컬 검증된 구매는 오프라인에도 유지되며 최신 환불은 연결 이후 반영될 수 있다. UserDefaults/Core Data에 구매 증거를 저장하지 않는다.
 

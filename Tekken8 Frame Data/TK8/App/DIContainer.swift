@@ -26,7 +26,15 @@ final class DIContainer {
     }
 
     @MainActor func makeSettingViewController() -> SettingViewController {
-        withBottomAd(SettingViewController(analytics: analytics, ads: ads, purchaseViewModel: SettingsPurchaseViewModel(purchases: purchases)), placement: .settings)
+        withBottomAd(SettingViewController(analytics: analytics, ads: ads,
+            purchaseViewModel: SettingsPurchaseViewModel(purchases: purchases),
+            makePurchaseNotice: { [self] viewModel in makePurchaseNoticeViewController(viewModel: viewModel) }), placement: .settings)
+    }
+
+    @MainActor func makePurchaseNoticeViewController(viewModel: SettingsPurchaseViewModel? = nil) -> PurchaseNoticeViewController {
+        PurchaseNoticeViewController(viewModel: viewModel ?? SettingsPurchaseViewModel(purchases: purchases)) { presenter in
+            SettingViewController.openSupportPage(from: presenter)
+        }
     }
 
     init(analytics: AnalyticsClient? = nil) {
@@ -41,12 +49,18 @@ final class DIContainer {
     @MainActor func makeCharacterListViewController() -> CharacterListViewController {
         let repository = DefaultCharacterRepository(manager: supabaseManager, coreData: coreDataManager)
         let viewModel = CharacterListViewModel(characterRepository: repository)
-        return withBottomAd(CharacterListViewController(
+        let noticeModel = AdRemovalNoticeViewModel(purchases: purchases,
+            repository: DefaultAdRemovalNoticeRepository(manager: userDefaultsManager))
+        let controller = CharacterListViewController(
             characterListViewModel: viewModel,
             container: self,
             preference: preference,
-            analytics: analytics
-        ), placement: .characterList)
+            analytics: analytics,
+            adRemovalNoticeViewModel: noticeModel
+        )
+        controller.bannerAdHost = BannerAdHost(service: ads, placement: .characterList,
+            analytics: analytics, accessoryView: controller.adRemovalNoticeView)
+        return controller
     }
     
     @MainActor func makeMoveListViewController(character: Character) -> MoveListViewController {

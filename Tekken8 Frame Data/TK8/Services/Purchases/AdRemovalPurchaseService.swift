@@ -81,7 +81,7 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
     private var foreground: AnyCancellable?
     private var refreshTask: Task<Void, Never>?
     private var refreshGeneration = 0
-    private var loadingProduct = false
+    private var productTask: Task<Void, Never>?
 
     init(store: any AdRemovalStore, startsAutomatically: Bool = true) {
         self.store = store
@@ -128,11 +128,15 @@ final class AdRemovalPurchaseService: AdRemovalPurchasing {
     }
 
     func loadProduct() async {
-        guard !loadingProduct else { return }
-        loadingProduct = true
-        defer { loadingProduct = false }
-        do { state.displayPrice = try await store.loadDisplayPrice() }
-        catch { state.displayPrice = nil }
+        if let productTask { await productTask.value; return }
+        let store = store
+        let task = Task { [weak self] in
+            do { self?.state.displayPrice = try await store.loadDisplayPrice() }
+            catch { self?.state.displayPrice = nil }
+        }
+        productTask = task
+        await task.value
+        productTask = nil
     }
 
     func purchase() async -> AdRemovalActionResult {

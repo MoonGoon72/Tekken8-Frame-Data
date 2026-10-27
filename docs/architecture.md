@@ -183,6 +183,8 @@ SceneDelegate
 
 `SettingViewController`는 광고 제거/구매 안내 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 안내 화면은 같은 `SettingsPurchaseViewModel`을 구독하며 제공 범위·복원·환불·소비자 권리를 설명한 뒤 현지 가격의 구매 버튼을 제공한다. 구매 안내는 구매 후에도 열 수 있다. 활성 화면이 구매 결과 alert를 표시하고, 개발자 문의는 설정 화면이 조립한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
 
+가격을 처음 가져오는 동안 메인 안내와 설정에서 서로 다른 ViewModel이 생성될 수 있다. 공유 `AdRemovalPurchaseService.loadProduct()`는 진행 중인 product task를 모든 호출자가 함께 기다리게 해, 다른 화면이 조회 중인 상태를 가격 조회 실패로 해석하지 않도록 한다. 구매/권한 조회의 기존 검증 계약은 유지한다.
+
 상품 ID는 `remove_ad`, 비소모품, 가족 공유 OFF다. 가격은 StoreKit `Product.displayPrice`를 사용한다. 서비스 생성 시 `Transaction.updates` 감시와 `unfinished` 처리, 초기 `currentEntitlements` 조회를 시작하고 앱 복귀에서 다시 조회한다. 권한은 `checking/unknown/notPurchased/adFree`로 나뉜다. 초기 checking 동안만 광고를 보류한다. 검증/권한 확인 실패인 unknown과 정상 조회상 미구매 notPurchased는 기존 Remote Config·UMP 조건으로 광고를 허용하고, 검증된 adFree에서 광고를 제거한다. unknown은 재구매를 계속 차단한다. 로컬 검증된 구매는 오프라인에도 유지되며 최신 환불은 연결 이후 반영될 수 있다. UserDefaults/Core Data에 구매 증거를 저장하지 않는다.
 
 구매는 검증된 대상 비소모품 거래에서만 권한을 부여하고 광고 제거 후 `finish`한다. 취소·pending·오류는 성공으로 취급하지 않고 중복 요청을 막는다. 검증된 완료 업데이트는 즉시 권한을 부여하고, 환불 업데이트는 전체 현재 권한을 재조회해 오래된 환불이 새 구매를 회수하지 않게 한다. 갱신 세대 번호로 오래된 초기 조회가 새 구매 권한을 덮어쓰지 못하게 한다. 복원 버튼만 `AppStore.sync`로 강제 동기화하고 구매 있음/없음/실패를 구분한다. 동기화 실패로 이미 검증된 구매를 지우지 않는다. 확인 실패에는 무한 재시도 없이 앱 복귀·거래 갱신·설정 재확인을 사용한다.

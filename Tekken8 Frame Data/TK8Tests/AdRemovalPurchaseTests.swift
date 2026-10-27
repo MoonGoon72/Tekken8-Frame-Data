@@ -257,6 +257,48 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertFalse(viewModel.canPurchase)
     }
 
+    func testRetryIsOfferedOnlyAfterPreparationFailsAndNeverWhileLoading() async {
+        let viewModel = SettingsPurchaseViewModel(purchases: service)
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+        store.productGate = true
+        let preparation = Task { await viewModel.prepare() }
+        while store.productContinuation == nil { await Task.yield() }
+        XCTAssertTrue(viewModel.isPreparing)
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+        store.productContinuation?.resume(returning: "$2.99")
+        await preparation.value
+        XCTAssertFalse(viewModel.isPreparing)
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+        store.productGate = false
+        store.productError = AdRemovalPurchaseError.unavailable
+        await viewModel.prepare()
+        XCTAssertTrue(viewModel.shouldOfferRetry)
+        store.entitlement = .adFree
+        await viewModel.prepare()
+        XCTAssertFalse(viewModel.shouldOfferRetry)
+    }
+
+    func testTwoPurchaseScreensWaitForTheSameInFlightPriceBeforeOfferingRetry() async {
+        store.productGate = true
+        let first = SettingsPurchaseViewModel(purchases: service)
+        let observed = ObservedPricePurchases(service: service)
+        let reachedLookup = expectation(description: "second screen reaches shared product lookup")
+        observed.onLoadProduct = { reachedLookup.fulfill() }
+        let second = SettingsPurchaseViewModel(purchases: observed)
+        let firstPreparation = Task { await first.prepare() }
+        while store.productContinuation == nil { await Task.yield() }
+        let secondPreparation = Task { await second.prepare() }
+        await fulfillment(of: [reachedLookup], timeout: 2)
+        XCTAssertTrue(second.isPreparing, "A pending shared request is not a failed price lookup")
+        XCTAssertFalse(second.shouldOfferRetry)
+        store.productContinuation?.resume(returning: "$2.99")
+        await firstPreparation.value
+        await secondPreparation.value
+        XCTAssertTrue(first.canPurchase)
+        XCTAssertTrue(second.canPurchase)
+        XCTAssertFalse(second.shouldOfferRetry)
+    }
+
     func testRestoreMessageWaitsForSettingsToReturn() async {
         let viewModel = SettingsPurchaseViewModel(purchases: service)
         let settings = SettingViewController(analytics: NoOpAnalyticsClient(), purchaseViewModel: viewModel)
@@ -450,6 +492,22 @@ final class AdRemovalPurchaseTests: XCTestCase {
 }
 
 @MainActor
+private final class ObservedPricePurchases: AdRemovalPurchasing {
+    let service: AdRemovalPurchaseService
+    var onLoadProduct: (() -> Void)?
+    init(service: AdRemovalPurchaseService) { self.service = service }
+    var state: AdRemovalPurchaseState { service.state }
+    var statePublisher: AnyPublisher<AdRemovalPurchaseState, Never> { service.statePublisher }
+    func refresh() async { await service.refresh() }
+    func loadProduct() async {
+        onLoadProduct?()
+        await service.loadProduct()
+    }
+    func purchase() async -> AdRemovalActionResult { await service.purchase() }
+    func restore() async -> AdRemovalActionResult { await service.restore() }
+}
+
+@MainActor
 private final class StubAdRemovalStore: AdRemovalStore {
     var verificationFailure: AdRemovalVerificationFailure?
     var finishVerifiedCount = 0
@@ -463,6 +521,8 @@ private final class StubAdRemovalStore: AdRemovalStore {
     var purchaseError: Error?
     var syncError: Error?
     var productError: Error?
+    var productGate = false
+    var productContinuation: CheckedContinuation<String, Error>?
     var finished: [UInt64] = []
     var syncCount = 0
     var purchaseCount = 0
@@ -474,6 +534,7 @@ private final class StubAdRemovalStore: AdRemovalStore {
     var continuation: AsyncStream<AdRemovalTransactionUpdate>.Continuation!
 
     func loadDisplayPrice() async throws -> String {
+        if productGate { return try await withCheckedThrowingContinuation { productContinuation = $0 } }
         if let productError { throw productError }
         return "$2.99"
     }

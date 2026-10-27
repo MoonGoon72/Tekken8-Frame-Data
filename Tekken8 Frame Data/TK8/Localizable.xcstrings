@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Loading price…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading price…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "가격 확인 중…"
+          }
+        }
+      }
+    },
     "We could not verify your purchase. Do not buy again. Check purchases again, restore purchases, or contact the developer.": {
       "extractionState": "manual",
       "localizations": {

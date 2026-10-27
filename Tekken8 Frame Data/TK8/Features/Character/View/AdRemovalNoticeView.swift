@@ -7,7 +7,7 @@ final class AdRemovalNoticeView: UIView {
     init(onLearnMore: @escaping () -> Void, onClose: @escaping () -> Void) {
         super.init(frame: .zero)
         accessibilityIdentifier = "ad_removal_notice"
-        backgroundColor = .secondarySystemBackground
+        backgroundColor = .tkSurface
         clipsToBounds = true
 
         let message = UILabel()
@@ -16,7 +16,7 @@ final class AdRemovalNoticeView: UIView {
         message.font = .preferredFont(forTextStyle: .subheadline)
         message.adjustsFontForContentSizeCategory = true
         message.numberOfLines = 0
-        message.textColor = .label
+        message.textColor = .tkPrimaryText
 
         let learnMore = UIButton(type: .system)
         learnMore.setTitle("Learn more".localized(), for: .normal)
@@ -31,7 +31,7 @@ final class AdRemovalNoticeView: UIView {
         close.setImage(UIImage(systemName: "xmark"), for: .normal)
         close.accessibilityLabel = "Close".localized()
         close.accessibilityIdentifier = "ad_removal_notice_close"
-        close.tintColor = .secondaryLabel
+        close.tintColor = .tkSecondaryText
         close.addAction(UIAction { _ in onClose() }, for: .touchUpInside)
 
         messageAndAction.axis = .horizontal

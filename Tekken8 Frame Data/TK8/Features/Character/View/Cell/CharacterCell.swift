@@ -28,11 +28,11 @@ struct CharacterCell: View, ReuseIdentifiable {
                 Text(localizedName.primary)
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.tkPrimaryText)
                 if let secondary = localizedName.secondary {
                     Text(secondary)
                         .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(Color.tkSecondaryText)
                 }
             }
             .padding(.leading, 4)
@@ -41,17 +41,17 @@ struct CharacterCell: View, ReuseIdentifiable {
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(Color.tkSecondaryText)
                 .padding(.trailing, 4)
         }
         .padding(6)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(.white.opacity(0.07))
+                .fill(Color.tkSurface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(.white.opacity(0.12), lineWidth: 0.5)
+                .stroke(Color.tkSeparator, lineWidth: 0.5)
         )
     }
 

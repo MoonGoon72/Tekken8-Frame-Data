@@ -12,6 +12,7 @@ class SettingViewController: BaseViewController {
     }
     private let ads: BannerAdService?
     private let purchaseViewModel: SettingsPurchaseViewModel
+    private let makePurchaseNotice: ((SettingsPurchaseViewModel) -> PurchaseNoticeViewController)?
 
     private let analytics: AnalyticsClient
 
@@ -22,10 +23,12 @@ class SettingViewController: BaseViewController {
         Task { await purchaseViewModel.prepare() }
     }
 
-    init(analytics: AnalyticsClient, ads: BannerAdService? = nil, purchaseViewModel: SettingsPurchaseViewModel) {
+    init(analytics: AnalyticsClient, ads: BannerAdService? = nil, purchaseViewModel: SettingsPurchaseViewModel,
+         makePurchaseNotice: ((SettingsPurchaseViewModel) -> PurchaseNoticeViewController)? = nil) {
         self.analytics = analytics
         self.ads = ads
         self.purchaseViewModel = purchaseViewModel
+        self.makePurchaseNotice = makePurchaseNotice
         tableView = SettingTableView()
         
         super.init(nibName: nil, bundle: nil)
@@ -78,8 +81,7 @@ class SettingViewController: BaseViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.Literals.cellIdentifier)
     }
     
-    private func openSupportPage(from presenter: UIViewController? = nil) {
-        let presenter = presenter ?? self
+    static func openSupportPage(from presenter: UIViewController) {
         let url = URL(string: "https://moongoon72.github.io/Tekken8-Frame-Data/support/")!
         UIApplication.shared.open(url, options: [:]) { opened in
             guard !opened else { return }
@@ -156,8 +158,8 @@ extension SettingViewController: UITableViewDelegate {
         switch item {
         case .removeAds, .purchaseInformation:
             guard !purchaseViewModel.state.isBusy else { return }
-            let notice = PurchaseNoticeViewController(viewModel: purchaseViewModel) { [weak self] presenter in
-                self?.openSupportPage(from: presenter)
+            let notice = makePurchaseNotice?(purchaseViewModel) ?? PurchaseNoticeViewController(viewModel: purchaseViewModel) { presenter in
+                Self.openSupportPage(from: presenter)
             }
             navigationController?.pushViewController(notice, animated: true)
         case .restorePurchases:
@@ -179,7 +181,7 @@ extension SettingViewController: UITableViewDelegate {
             }
         #endif
         case .reportIssue:
-            openSupportPage()
+            Self.openSupportPage(from: self)
         case .adPrivacy:
             Task {
                 do {

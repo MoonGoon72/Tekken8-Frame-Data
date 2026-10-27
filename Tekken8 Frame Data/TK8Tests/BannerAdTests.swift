@@ -266,6 +266,71 @@ final class BannerAdHostTests: XCTestCase {
         host.bannerViewDidRecordImpression(banner)
         XCTAssertEqual(analytics.events.count, 2)
     }
+
+    func testAccessoryReservesSpaceOnlyWithLoadedBannerAndCanCloseIndependently() {
+        let accessory = installAccessory()
+        host.appear()
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height, 667, "No space reserved before a successful load")
+        let banner = requests.last!
+        host.bannerViewDidReceiveAd(banner)
+        controller.view.layoutIfNeeded()
+        let bannerFrame = banner.convert(banner.bounds, to: controller.view)
+        let accessoryFrame = accessory.convert(accessory.bounds, to: controller.view)
+        XCTAssertEqual(accessoryFrame.minY, content.frame.maxY, accuracy: 1)
+        XCTAssertEqual(accessoryFrame.maxY, bannerFrame.minY, accuracy: 1)
+        let withAccessory = content.frame.height
+        accessory.isHidden = true
+        accessory.superview?.layoutIfNeeded()
+        controller.view.setNeedsLayout()
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height - withAccessory, 56, accuracy: 1)
+        XCTAssertNotNil(banner.superview, "Closing the notice must not destroy the banner")
+        host.disappear()
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height, 667)
+    }
+
+    func testAccessoryCollapsesOnFailureRemoteOffAndEditingAndReturnsOnRetry() {
+        _ = installAccessory()
+        host.appear()
+        let failed = requests.last!
+        host.bannerView(failed, didFailToReceiveAdWithError: NSError(domain: "test", code: 2))
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height, 667)
+        host.disappear()
+        host.appear()
+        host.bannerViewDidReceiveAd(requests.last!)
+        controller.view.layoutIfNeeded()
+        XCTAssertLessThan(content.frame.height, 667 - 56)
+        host.setEditing(true)
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height, 667)
+        host.setEditing(false)
+        host.bannerViewDidReceiveAd(requests.last!)
+        controller.view.layoutIfNeeded()
+        XCTAssertLessThan(content.frame.height, 667 - 56)
+        service.state.send((false, true))
+        controller.view.layoutIfNeeded()
+        XCTAssertEqual(content.frame.height, 667)
+    }
+
+    private func installAccessory() -> UIView {
+        host.disappear()
+        let accessory = UIView()
+        let accessoryHeight = accessory.heightAnchor.constraint(equalToConstant: 56)
+        accessoryHeight.priority = .defaultHigh
+        accessoryHeight.isActive = true
+        host = BannerAdHost(service: service, placement: .characterList, analytics: analytics,
+                            accessoryView: accessory,
+                            loadAd: { [weak self] in self?.requests.append($0) }, isApplicationActive: { true })
+        controller = UIViewController()
+        content = controller.view
+        host.install(in: controller)
+        controller.view.frame = CGRect(x: 0, y: 0, width: 375, height: 667)
+        controller.view.layoutIfNeeded()
+        return accessory
+    }
 }
 
 @MainActor

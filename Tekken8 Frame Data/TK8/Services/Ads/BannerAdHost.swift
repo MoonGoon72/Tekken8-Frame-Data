@@ -12,7 +12,9 @@ final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
     private let placement: BannerPlacement
     private let analytics: AnalyticsClient
     private let contentSpacing: CGFloat
-    private let container = UIView()
+    private let container = UIStackView()
+    private let bannerContainer = UIView()
+    private let accessoryView: UIView?
     private var height: NSLayoutConstraint!
     private var fullContentBottom: NSLayoutConstraint!
     private var adContentBottom: NSLayoutConstraint!
@@ -25,12 +27,14 @@ final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
     private var impressionRecorded = false
 
     init(service: any BannerAdServing, placement: BannerPlacement, analytics: AnalyticsClient, contentSpacing: CGFloat = 0,
+         accessoryView: UIView? = nil,
          loadAd: @escaping (BannerView) -> Void = { $0.load(AdRequestFactory.make()) },
          isApplicationActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }) {
         self.service = service
         self.placement = placement
         self.analytics = analytics
         self.contentSpacing = contentSpacing
+        self.accessoryView = accessoryView
         self.loadAd = loadAd
         self.isApplicationActive = isApplicationActive
     }
@@ -46,9 +50,12 @@ final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
         content.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
         container.clipsToBounds = true
+        container.axis = .vertical
+        if let accessoryView { container.addArrangedSubview(accessoryView) }
+        container.addArrangedSubview(bannerContainer)
         container.isHidden = true
         container.accessibilityIdentifier = "admob_banner_" + placement.rawValue
-        height = container.heightAnchor.constraint(equalToConstant: 0)
+        height = bannerContainer.heightAnchor.constraint(equalToConstant: 0)
         fullContentBottom = content.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
         adContentBottom = content.bottomAnchor.constraint(equalTo: container.topAnchor, constant: -contentSpacing)
         NSLayoutConstraint.activate([
@@ -148,10 +155,10 @@ final class BannerAdHost: NSObject, BannerViewDelegate, ScreenAdHosting {
         banner.delegate = self
         banner.translatesAutoresizingMaskIntoConstraints = false
         self.banner = banner
-        container.addSubview(banner)
+        bannerContainer.addSubview(banner)
         NSLayoutConstraint.activate([
-            banner.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            banner.topAnchor.constraint(equalTo: container.topAnchor)
+            banner.centerXAnchor.constraint(equalTo: bannerContainer.centerXAnchor),
+            banner.topAnchor.constraint(equalTo: bannerContainer.topAnchor)
         ])
         // Keep the container collapsed until an ad actually loads.
         loadAd(banner)

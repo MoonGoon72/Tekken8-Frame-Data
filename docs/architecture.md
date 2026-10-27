@@ -145,12 +145,21 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
 | 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
 | 캐릭터 목록 모드 | 사용자 선택 | UserDefaults `characterLayout` | list/grid 토글 시 갱신 |
+| 광고 제거 안내 처리 여부 | 사용자 닫기/알아보기 선택 | UserDefaults `ad_removal_notice_consumed` | 명시적 액션에서만 true 저장. 구매 권한 및 온보딩 revision과 독립 |
 | 온보딩 표시 버전 | 앱 상수 | UserDefaults `onboarding_shown_version` | 현재 온보딩 버전 최초 표시 후 기록 |
 | 캐릭터 이미지 | Asset Catalog 우선, 없으면 `character.image_url`의 외부 URL | `NSCache` + Caches 디렉터리 | 메모리 → 디스크 → 네트워크 순서 |
 
 Core Data의 `deleteAll()`은 `CharacterEntity`와 `MoveEntity`만 batch delete한다. `MemoEntity`는 의도적으로 남아 프레임 데이터 버전 변경이나 로컬 스키마 캐시 무효화 후에도 사용자 메모가 유지된다.
 
 ## 런타임 데이터 흐름
+
+### 캐릭터 선택 화면의 광고 제거 안내
+
+`DIContainer`는 공유 `AdRemovalPurchaseService`와 `DefaultAdRemovalNoticeRepository`를 사용하는 `AdRemovalNoticeViewModel`을 캐릭터 목록에 주입한다. Repository는 기존 `UserDefaultsManageable` 뒤에서 안내 처리 여부만 저장한다. ViewModel은 미처리이고 권한이 `notPurchased`인 경우만 안내 자격을 발행하며 `checking`/`unknown`/`adFree`는 제외한다.
+
+UIKit `AdRemovalNoticeView`는 캐릭터 화면에서만 `BannerAdHost`의 선택적 accessory로 연결된다. Host는 안내 처리/구매 정책을 알지 않고, 실제 배너 로딩 성공 시에만 accessory와 배너의 공간을 함께 확보한다. 로딩 실패·화면 이탈·키보드·광고 중단은 전체 영역을 접고, 안내를 닫는 것은 배너를 유지한다. 최초 온보딩/광고 동의 흐름을 그대로 따른다.
+
+닫기 또는 알아보기에서만 처리 상태를 저장한다. 알아보기는 DI의 공통 구매 설명 화면 factory를 통해 기존 `PurchaseNoticeViewController`로 이동한다. 설정도 같은 factory를 사용하며 공유 구매 서비스가 권한을 갱신하면 광고/안내를 함께 숨긴다. 재실행/업데이트는 안내 처리 상태를 보존하며 재설치는 별도다. Analytics 이벤트 계약은 변경하지 않는다.
 
 ### 1. 앱 시작과 캐시 무효화
 

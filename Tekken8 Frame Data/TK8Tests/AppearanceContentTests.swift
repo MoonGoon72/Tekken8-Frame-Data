@@ -43,6 +43,43 @@ final class AppearanceContentTests: XCTestCase {
         }
     }
 
+    func testSelectedMemoKeepsNormalAppearanceOutsideEditingAcrossThemeChanges() async throws {
+        let appearance = AppAppearance(repository: InMemoryThemeRepository())
+        let root = UIViewController()
+        let cell = MemoCollectionViewCell(frame: CGRect(x: 16, y: 16, width: 288, height: 100))
+        root.view.addSubview(cell)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        appearance.register(window)
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        cell.isSelected = true
+
+        for theme in [AppTheme.light, .dark] {
+            try appearance.select(theme)
+            try? await Task.sleep(for: .milliseconds(100))
+            let traits = cell.traitCollection
+            XCTAssertEqual(cell.contentView.backgroundColor?.resolvedColor(with: traits), UIColor.tkSurface.resolvedColor(with: traits),
+                           "Opening a memo must not apply the editing highlight after a theme change")
+            XCTAssertEqual(cell.contentView.layer.borderColor, UIColor.tkSeparator.resolvedColor(with: traits).cgColor)
+        }
+
+        cell.isSelected = false
+        cell.setEditing(true, animated: false)
+        cell.isSelected = true
+        for theme in [AppTheme.light, .dark] {
+            try appearance.select(theme)
+            try? await Task.sleep(for: .milliseconds(100))
+            let traits = cell.traitCollection
+            XCTAssertEqual(cell.contentView.backgroundColor?.resolvedColor(with: traits), UIColor.tkPositive.withAlphaComponent(0.12).resolvedColor(with: traits))
+            XCTAssertEqual(cell.contentView.layer.borderColor, UIColor.tkPositive.withAlphaComponent(0.25).resolvedColor(with: traits).cgColor)
+        }
+        cell.setEditing(false, animated: false)
+        XCTAssertEqual(cell.contentView.backgroundColor?.resolvedColor(with: cell.traitCollection), UIColor.tkSurface.resolvedColor(with: cell.traitCollection),
+                       "Leaving editing must clear the editing highlight even while the cell remains selected")
+    }
+
     func testMemoTextAndLayerBordersUpdateWhenThemeChanges() async throws {
         let appearance = AppAppearance(repository: InMemoryThemeRepository())
         let root = UIViewController()

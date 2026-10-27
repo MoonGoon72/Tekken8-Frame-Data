@@ -124,7 +124,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
 
         let actions = {
-            if self.isSelected {
+            if self.isEditingMode && self.isSelected {
                 self.checkmarkImage.image = UIImage(systemName: "checkmark.circle.fill", withConfiguration: config)
                 self.checkmarkImage.tintColor = UIColor.tkPositive
                 // 셀 tint

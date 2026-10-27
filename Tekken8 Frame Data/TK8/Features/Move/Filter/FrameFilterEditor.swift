@@ -32,7 +32,7 @@ struct FrameFilterEditor: View {
                 Spacer(minLength: 8)
                 Text(input.summary)
                     .font(.subheadline.monospaced().weight(.semibold))
-                    .foregroundStyle(input.isActive ? accent : .secondary)
+                    .foregroundStyle(input.isActive ? accent : .tkSecondaryText)
             }
 
             ViewThatFits(in: .horizontal) {
@@ -45,7 +45,7 @@ struct FrameFilterEditor: View {
                     ViewThatFits(in: .horizontal) {
                         HStack(spacing: 12) {
                             valueField(text: $input.firstText, label: "Minimum", field: firstField)
-                            Text("…").foregroundStyle(.secondary)
+                            Text("…").foregroundStyle(Color.tkSecondaryText)
                             valueField(text: $input.secondText, label: "Maximum", field: secondField)
                         }
                         VStack(spacing: 12) {
@@ -60,7 +60,7 @@ struct FrameFilterEditor: View {
                 if let message = input.validationMessage {
                     Label(message.localized(), systemImage: "exclamationmark.circle")
                         .font(.caption)
-                        .foregroundStyle(Color.red)
+                        .foregroundStyle(Color.tkNegative)
                         .accessibilityIdentifier("\(firstField).error")
                 } else {
                     conditionDiagram
@@ -69,7 +69,7 @@ struct FrameFilterEditor: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Quick picks".localized())
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Color.tkSecondaryText)
                 FlowLayout(spacing: 8) {
                     ForEach(presets) { preset in
                         Button {
@@ -78,7 +78,7 @@ struct FrameFilterEditor: View {
                         } label: {
                             Text(preset.title)
                                 .font(.subheadline.monospaced().weight(.medium))
-                                .foregroundStyle(isSelected(preset) ? accent : .primary)
+                                .foregroundStyle(isSelected(preset) ? accent : .tkPrimaryText)
                                 .padding(.horizontal, 12)
                                 .frame(minHeight: 44)
                                 .background(isSelected(preset) ? accent.opacity(0.12) : Color(uiColor: .tertiarySystemGroupedBackground))
@@ -106,7 +106,7 @@ struct FrameFilterEditor: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 10)
                     .frame(minHeight: 44)
-                    .foregroundStyle(input.mode == mode ? accent : .secondary)
+                    .foregroundStyle(input.mode == mode ? accent : .tkSecondaryText)
                     .background(input.mode == mode ? accent.opacity(0.14) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
@@ -123,7 +123,7 @@ struct FrameFilterEditor: View {
 
     private func valueField(text: Binding<String>, label: String, field: FrameFilterField) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label.localized()).font(.caption).foregroundStyle(.secondary)
+            Text(label.localized()).font(.caption).foregroundStyle(Color.tkSecondaryText)
             HStack(spacing: 8) {
                 TextField("0", text: text)
                     .font(.title2.monospaced().weight(.semibold))
@@ -147,7 +147,7 @@ struct FrameFilterEditor: View {
                     .foregroundStyle(accent)
                     .accessibilityLabel("\(title), \(label.localized()), \("Change sign".localized())")
                 }
-                Text("F").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Text("F").font(.caption.weight(.semibold)).foregroundStyle(Color.tkSecondaryText)
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, 12)
@@ -156,7 +156,7 @@ struct FrameFilterEditor: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(focusedField == field ? accent : Color.primary.opacity(0.12), lineWidth: focusedField == field ? 2 : 1)
+                    .stroke(focusedField == field ? accent : Color.tkPrimaryText.opacity(0.12), lineWidth: focusedField == field ? 2 : 1)
             }
         }
         .frame(minWidth: input.allowsNegative ? 150 : 100, maxWidth: .infinity)

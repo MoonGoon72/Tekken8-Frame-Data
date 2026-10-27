@@ -53,6 +53,11 @@ final class AppAppearanceTests: XCTestCase {
         XCTAssertEqual(makeAppearance().theme, .system)
     }
 
+    func testSystemFollowingIsNotOverriddenByBundleAppearance() {
+        XCTAssertNil(Bundle.main.object(forInfoDictionaryKey: "UIUserInterfaceStyle"),
+                     "Saved theme controls the default; Info.plist must allow system appearance")
+    }
+
     func testFailedWritePreservesVisibleAndSavedTheme() {
         let appearance = AppAppearance(repository: FailingThemeRepository())
         let window = UIWindow()

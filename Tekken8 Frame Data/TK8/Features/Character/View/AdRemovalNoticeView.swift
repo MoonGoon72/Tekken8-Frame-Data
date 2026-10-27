@@ -20,6 +20,7 @@ final class AdRemovalNoticeView: UIView {
 
         let learnMore = UIButton(type: .system)
         learnMore.setTitle("Learn more".localized(), for: .normal)
+        learnMore.tintColor = .tkActionText
         learnMore.accessibilityIdentifier = "ad_removal_notice_learn_more"
         learnMore.titleLabel?.font = .preferredFont(forTextStyle: .subheadline)
         learnMore.titleLabel?.adjustsFontForContentSizeCategory = true

@@ -140,7 +140,6 @@ final class CharacterListViewController: BaseViewController {
         
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
-        navigationController?.navigationBar.tintColor = .tkRed
 
         let memoButton = UIBarButtonItem(
             image: UIImage(systemName: "note.text"),

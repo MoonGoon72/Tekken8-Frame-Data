@@ -12,6 +12,6 @@ enum AppNavigationStyle {
         bar?.standardAppearance = appearance
         bar?.scrollEdgeAppearance = appearance
         bar?.compactAppearance = appearance
-        bar?.tintColor = .tkRed
+        bar?.tintColor = .tkActionText
     }
 }

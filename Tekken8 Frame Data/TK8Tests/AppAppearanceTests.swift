@@ -72,11 +72,32 @@ final class AppAppearanceTests: XCTestCase {
             let traits = UITraitCollection(userInterfaceStyle: style)
             for surface in ["TKBackground", "TKSurface", "TKMutedSurface"] {
                 let background = try XCTUnwrap(UIColor(named: surface)).resolvedColor(with: traits)
-                for foreground in ["TKPrimaryText", "TKSecondaryText"] {
+                for foreground in ["TKPrimaryText", "TKSecondaryText", "TKActionText"] {
                     let text = try XCTUnwrap(UIColor(named: foreground)).resolvedColor(with: traits)
                     XCTAssertGreaterThanOrEqual(contrast(text, background), 4.5, "\(foreground) on \(surface) in \(style)")
                 }
             }
+        }
+    }
+
+    func testNavigationAndNoticeActionTextHasReadableContrastInBothThemes() throws {
+        let navigationBar = UINavigationBar()
+        AppNavigationStyle.apply(to: navigationBar)
+        let notice = AdRemovalNoticeView(onLearnMore: {}, onClose: {})
+        func descendants(_ view: UIView) -> [UIView] {
+            view.subviews.flatMap { [$0] + descendants($0) }
+        }
+        let learnMore = try XCTUnwrap(descendants(notice).first {
+            $0.accessibilityIdentifier == "ad_removal_notice_learn_more"
+        } as? UIButton)
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            let navigationText = try XCTUnwrap(navigationBar.tintColor).resolvedColor(with: traits)
+            let linkText = try XCTUnwrap(learnMore.tintColor).resolvedColor(with: traits)
+            XCTAssertGreaterThanOrEqual(contrast(navigationText, UIColor.tkBackground.resolvedColor(with: traits)), 4.5,
+                                        "Small navigation action text must remain readable in \(style)")
+            XCTAssertGreaterThanOrEqual(contrast(linkText, UIColor.tkSurface.resolvedColor(with: traits)), 4.5,
+                                        "Notice action text must remain readable in \(style)")
         }
     }
 

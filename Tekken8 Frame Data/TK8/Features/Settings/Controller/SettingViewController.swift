@@ -56,7 +56,6 @@ class SettingViewController: BaseViewController {
     override func setupNavigationBar() {
         super.setupNavigationBar()
         navigationController?.navigationBar.prefersLargeTitles = true
-        navigationController?.navigationBar.tintColor = .tkRed
         navigationItem.largeTitleDisplayMode = .always
     }
 

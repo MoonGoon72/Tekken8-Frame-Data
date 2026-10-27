@@ -89,7 +89,7 @@ struct FilterView: View {
             .scrollDismissesKeyboard(.interactively)
             footer
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Color.tkBackground)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -307,7 +307,7 @@ private struct FilterBlock<Action: View, Content: View>: View {
             content
         }
         .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(Color.tkSurface)
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 }
@@ -329,7 +329,7 @@ private struct ChipButton: View {
                     .foregroundStyle(isActive ? Color.white : Color.primary)
                     .padding(.horizontal, 12)
                     .frame(minHeight: 44)
-                    .background(isActive ? color : Color(uiColor: .tertiarySystemGroupedBackground))
+                    .background(isActive ? color : Color.tkMutedSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
@@ -341,7 +341,7 @@ private struct ChipButton: View {
                     .scaledToFit()
                     .frame(width: 34, height: 34)
                     .padding(5)
-                    .background(isActive ? color.opacity(0.2) : Color(uiColor: .tertiarySystemGroupedBackground))
+                    .background(isActive ? color.opacity(0.2) : Color.tkMutedSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)

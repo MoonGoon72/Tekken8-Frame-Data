@@ -43,6 +43,29 @@ final class AppearanceContentTests: XCTestCase {
         }
     }
 
+    func testMemoTextAndLayerBordersUpdateWhenThemeChanges() async throws {
+        let appearance = AppAppearance(repository: InMemoryThemeRepository())
+        let root = UIViewController()
+        let compose = MemoComposeView()
+        root.view = compose
+        let cell = MemoCollectionViewCell(frame: CGRect(x: 16, y: 300, width: 288, height: 100))
+        cell.configure(memo: Memo(id: UUID(), characterName: "Nina", title: "메모 제목", body: "Nina\n메모 본문", isPinned: false, updatedAt: Date()), image: nil)
+        compose.addSubview(cell)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 568))
+        appearance.register(window)
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        for theme in [AppTheme.dark, .light] {
+            try appearance.select(theme)
+            try? await Task.sleep(for: .milliseconds(100))
+            compose.layoutIfNeeded()
+            let traits = compose.traitCollection
+            XCTAssertEqual(compose.bodyField.textColor?.resolvedColor(with: traits), UIColor.tkPrimaryText.resolvedColor(with: traits))
+            let actual = try XCTUnwrap(cell.contentView.layer.borderColor)
+            XCTAssertEqual(UIColor(cgColor: actual), UIColor.tkSeparator.resolvedColor(with: traits))
+        }
+    }
 }
 
 private struct ThemeEnvironmentProbe: View {

@@ -21,7 +21,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
         let image = UIImage(systemName: "circle", withConfiguration: config)
         let view = UIImageView(image: image)
-        view.tintColor = .white.withAlphaComponent(0.3)
+        view.tintColor = UIColor.tkSecondaryText
         view.contentMode = .center
         return view
     }()
@@ -34,7 +34,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         view.contentMode = .scaleAspectFill
         view.clipsToBounds = true
         view.layer.cornerRadius = 12
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        view.backgroundColor = UIColor.tkMutedSurface
         return view
     }()
     private let contentStackView: UIStackView = {
@@ -46,20 +46,20 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     private let title: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .semibold)
-        label.textColor = .white
+        label.textColor = .tkPrimaryText
         return label
     }()
     private let body: UILabel = {
         let label = UILabel()
         label.numberOfLines = 1
         label.font = .systemFont(ofSize: 13)
-        label.textColor = UIColor.white.withAlphaComponent(0.5)
+        label.textColor = UIColor.tkSecondaryText
         return label
     }()
     private let updatedAt: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 11)
-        label.textColor = UIColor.white.withAlphaComponent(0.35)
+        label.textColor = UIColor.tkSecondaryText
         return label
     }()
 
@@ -78,6 +78,9 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         setupSubViews()
         setupSubViewLayouts()
         setupStyles()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: MemoCollectionViewCell, _) in
+            self.updateCheckmarkAppearance(animated: false)
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -98,7 +101,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         if editing {
             let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
             self.checkmarkImage.image = UIImage(systemName: "circle", withConfiguration: config)
-            self.checkmarkImage.tintColor = .white.withAlphaComponent(0.3)
+            self.checkmarkImage.tintColor = UIColor.tkSecondaryText
         }
 
         let actions = {
@@ -123,17 +126,17 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
         let actions = {
             if self.isSelected {
                 self.checkmarkImage.image = UIImage(systemName: "checkmark.circle.fill", withConfiguration: config)
-                self.checkmarkImage.tintColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1)
+                self.checkmarkImage.tintColor = UIColor.tkPositive
                 // 셀 tint
-                self.contentView.backgroundColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 0.12)
-                self.contentView.layer.borderColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 0.25).cgColor
+                self.contentView.backgroundColor = UIColor.tkPositive.withAlphaComponent(0.12)
+                self.contentView.layer.borderColor = UIColor.tkPositive.withAlphaComponent(0.25).resolvedColor(with: self.traitCollection).cgColor
             } else {
                 // 빈 원
                 self.checkmarkImage.image = UIImage(systemName: "circle", withConfiguration: config)
-                self.checkmarkImage.tintColor = UIColor.white.withAlphaComponent(0.3)
+                self.checkmarkImage.tintColor = UIColor.tkSecondaryText
                 // 기본 glass
-                self.contentView.backgroundColor = UIColor.white.withAlphaComponent(0.07)
-                self.contentView.layer.borderColor = UIColor.white.withAlphaComponent(0.12).cgColor
+                self.contentView.backgroundColor = UIColor.tkSurface
+                self.contentView.layer.borderColor = UIColor.tkSeparator.resolvedColor(with: self.traitCollection).cgColor
             }
         }
 
@@ -145,10 +148,10 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     }
 
     private func setupStyles() {
-        contentView.backgroundColor = UIColor.white.withAlphaComponent(0.07)
+        contentView.backgroundColor = UIColor.tkSurface
         contentView.layer.cornerRadius = 14
         contentView.layer.borderWidth = 0.5
-        contentView.layer.borderColor = UIColor.white.withAlphaComponent(0.12).cgColor
+        contentView.layer.borderColor = UIColor.tkSeparator.resolvedColor(with: self.traitCollection).cgColor
         contentView.clipsToBounds = true
     }
 

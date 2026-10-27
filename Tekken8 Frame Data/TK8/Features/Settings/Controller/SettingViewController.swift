@@ -2,16 +2,17 @@ import UIKit
 
 class SettingViewController: BaseViewController {
     private let tableView: SettingTableView
-    private var settingsItems: [SettingItem] {
-        var items: [SettingItem] = [.appVersion, .tekkenVersion, .removeAds, .reportIssue]
+    private var settingsSections: [[SettingItem]] {
+        var items: [SettingItem] = [.removeAds, .reportIssue]
         if ads?.privacyOptionsRequired == true { items.append(.adPrivacy) }
         #if DEBUG
         if ads?.configuration.usesMediationTestAds == true { items.append(.adInspector) }
         #endif
-        return items
+        return [[.appearance], items]
     }
     private let ads: BannerAdService?
     private let purchaseViewModel: SettingsPurchaseViewModel
+    private let appearance: AppAppearance
     private let makePurchaseNotice: ((SettingsPurchaseViewModel) -> PurchaseNoticeViewController)?
 
     private let analytics: AnalyticsClient
@@ -24,11 +25,13 @@ class SettingViewController: BaseViewController {
     }
 
     init(analytics: AnalyticsClient, ads: BannerAdService? = nil, purchaseViewModel: SettingsPurchaseViewModel,
-         makePurchaseNotice: ((SettingsPurchaseViewModel) -> PurchaseNoticeViewController)? = nil) {
+         makePurchaseNotice: ((SettingsPurchaseViewModel) -> PurchaseNoticeViewController)? = nil,
+         appearance: AppAppearance? = nil) {
         self.analytics = analytics
         self.ads = ads
         self.purchaseViewModel = purchaseViewModel
         self.makePurchaseNotice = makePurchaseNotice
+        self.appearance = appearance ?? AppAppearance(repository: DefaultAppThemeRepository(manager: UserDefaultsManager()))
         tableView = SettingTableView()
         
         super.init(nibName: nil, bundle: nil)
@@ -42,7 +45,6 @@ class SettingViewController: BaseViewController {
         super.loadView()
         
         view = tableView
-        // TODO: 문자열 현지화
         title = Constants.Literals.title
         view.backgroundColor = .tkBackground
     }
@@ -51,7 +53,17 @@ class SettingViewController: BaseViewController {
         setupTableViewDelegation()
     }
 
+    override func setupNavigationBar() {
+        super.setupNavigationBar()
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationController?.navigationBar.tintColor = .tkRed
+        navigationItem.largeTitleDisplayMode = .always
+    }
+
     override func bindViewModel() {
+        appearance.$theme.removeDuplicates().sink { [weak self] _ in
+            DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
+        }.store(in: &subscriptionSet)
         purchaseViewModel.$state.combineLatest(purchaseViewModel.$isPreparing).sink { [weak self] _ in
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
         }.store(in: &subscriptionSet)
@@ -98,31 +110,37 @@ class SettingViewController: BaseViewController {
 }
 
 extension SettingViewController: UITableViewDataSource {
+    func numberOfSections(in tableView: UITableView) -> Int { settingsSections.count }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return settingsItems.count
+        return settingsSections[section].count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.Literals.cellIdentifier, for: indexPath)
-        let item = settingsItems[indexPath.row]
+        let item = settingsSections[indexPath.section][indexPath.row]
 
-        // 반투명 배경
-        cell.backgroundColor = UIColor.white.withAlphaComponent(0.07)
+        cell.backgroundColor = .tkSurface
 
         // 텍스트 스타일
-        var configuration = cell.defaultContentConfiguration()
+        var configuration = item == .appearance && !traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+            ? UIListContentConfiguration.valueCell() : cell.defaultContentConfiguration()
         configuration.text = item.title
-        configuration.textProperties.color = .white
+        configuration.textProperties.color = .tkPrimaryText
         configuration.textProperties.font = .preferredFont(forTextStyle: .body)
         configuration.textProperties.numberOfLines = 0
         configuration.secondaryTextProperties.numberOfLines = 0
-        configuration.secondaryText = item.accessoryText
+        configuration.secondaryText = item == .appearance ? appearance.theme.title : nil
+        configuration.image = UIImage(systemName: item.symbolName)
+        configuration.imageProperties.tintColor = item == .removeAds ? .tkRed : .tkSecondaryText
+        configuration.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        configuration.imageToTextPadding = 12
         if item == .removeAds {
             configuration.secondaryText = purchaseViewModel.state.entitlement == .adFree
                 ? "Ads removed".localized()
-                : purchaseViewModel.purchaseDetail + "\n" + "One-time purchase. No automatic renewal.".localized()
+                : "One-time purchase. No automatic renewal.".localized()
         }
-        configuration.secondaryTextProperties.color = UIColor.white.withAlphaComponent(0.7)
+        configuration.secondaryTextProperties.color = .tkSecondaryText
         cell.contentConfiguration = configuration
         cell.isUserInteractionEnabled = !purchaseViewModel.state.isBusy || item != .removeAds
 
@@ -131,16 +149,16 @@ extension SettingViewController: UITableViewDataSource {
 
         // 이동 화살표 색상
         cell.accessoryType = item.showsDisclosureIndicator ? .disclosureIndicator : .none
-        cell.tintColor = UIColor.white.withAlphaComponent(0.3)
+        cell.tintColor = .tkSecondaryText
 
         // 선택 시 하이라이트
         let selectdBackground = UIView()
-        selectdBackground.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        selectdBackground.backgroundColor = .tkMutedSurface
         cell.selectedBackgroundView = selectdBackground
 
         // 구분선 색상
-        if indexPath.row < settingsItems.count - 1 {
-            cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        if indexPath.row < settingsSections[indexPath.section].count - 1 {
+            cell.separatorInset = UIEdgeInsets(top: 0, left: 56, bottom: 0, right: 0)
         } else {
             // 마지막 셀에는 구분선을 표시하지 않는다.
             cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: .greatestFiniteMagnitude)
@@ -151,11 +169,28 @@ extension SettingViewController: UITableViewDataSource {
 }
 
 extension SettingViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        (section == 0 ? "Appearance" : "Usage and support").localized()
+    }
+
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        guard section == settingsSections.count - 1 else { return nil }
+        return SettingsInfoFooterView(appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
+            dataVersion: UserDefaults.standard.string(forKey: Constants.Literals.tekkenVersion))
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let item = settingsItems[indexPath.row]
+        let item = settingsSections[indexPath.section][indexPath.row]
         
         switch item {
+        case .appearance:
+            let picker = ThemeSelectionViewController(appearance: appearance)
+            let navigation = UINavigationController(rootViewController: picker)
+            navigation.modalPresentationStyle = .pageSheet
+            navigation.sheetPresentationController?.detents = traitCollection.preferredContentSizeCategory.isAccessibilityCategory ? [.large()] : [.medium(), .large()]
+            navigation.sheetPresentationController?.prefersGrabberVisible = true
+            present(navigation, animated: true)
         case .removeAds:
             guard !purchaseViewModel.state.isBusy else { return }
             let notice = makePurchaseNotice?(purchaseViewModel) ?? PurchaseNoticeViewController(viewModel: purchaseViewModel) { presenter in
@@ -190,16 +225,13 @@ extension SettingViewController: UITableViewDelegate {
                     present(alert, animated: true)
                 }
             }
-        default:
-            break
         }
     }
 }
 
 private extension SettingViewController {
     enum SettingItem {
-        case appVersion
-        case tekkenVersion
+        case appearance
         case reportIssue
         case adPrivacy
         case removeAds
@@ -214,25 +246,24 @@ private extension SettingViewController {
             case .adInspector:
                 "Ad Inspector (test)".localized()
             #endif
-            case .appVersion:
-                "Version Info".localized()
-            case .tekkenVersion:
-                "Tekken version".localized()
+            case .appearance:
+                "Screen theme".localized()
             case .reportIssue:
-                "Report".localized()
+                "Contact and report a problem".localized()
             case .adPrivacy:
                 "Ad privacy options".localized()
             }
         }
         
-        var accessoryText: String? {
+        var symbolName: String {
             switch self {
-            case .appVersion:
-                Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-            case .tekkenVersion:
-                UserDefaults.standard.string(forKey: Constants.Literals.tekkenVersion)
-            default:
-                nil
+            case .appearance: "moon.stars"
+            case .removeAds: "sparkles"
+            case .reportIssue: "bubble.left"
+            case .adPrivacy: "hand.raised"
+            #if DEBUG
+            case .adInspector: "wrench.and.screwdriver"
+            #endif
             }
         }
         
@@ -242,10 +273,8 @@ private extension SettingViewController {
             case .adInspector:
                 true
             #endif
-            case .removeAds, .reportIssue, .adPrivacy:
+            case .appearance, .removeAds, .reportIssue, .adPrivacy:
                 true
-            default:
-                false
             }
         }
     }

@@ -126,8 +126,8 @@ final class MoveVideoPlayerViewController: UIViewController, @preconcurrency AVP
     private func configureCloseButton() {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
-        closeButton.tintColor = .white
-        closeButton.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        closeButton.tintColor = .tkPrimaryText
+        closeButton.backgroundColor = .tkMutedSurface
         closeButton.layer.cornerRadius = 22
         closeButton.accessibilityLabel = "move_video_close".localized()
         closeButton.accessibilityIdentifier = "move_detail_close"

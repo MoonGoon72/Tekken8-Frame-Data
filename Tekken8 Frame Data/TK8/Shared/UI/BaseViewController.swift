@@ -76,7 +76,11 @@ class BaseViewController: UIViewController {
     
     func setupDataSource() {}
     
-    func setupNavigationBar() {}
+    func setupNavigationBar() {
+        AppNavigationStyle.apply(to: navigationController?.navigationBar)
+        navigationController?.navigationBar.prefersLargeTitles = false
+        navigationItem.largeTitleDisplayMode = .never
+    }
     
     func setupSubscription() {}
     

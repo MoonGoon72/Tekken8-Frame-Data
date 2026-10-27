@@ -348,12 +348,13 @@ final class AdRemovalPurchaseTests: XCTestCase {
         let navigation = UINavigationController(rootViewController: controller)
         controller.loadViewIfNeeded()
         let table = (controller.view as! SettingTableView).tableView
-        XCTAssertEqual(controller.tableView(table, numberOfRowsInSection: 0), 4)
-        let cell = controller.tableView(table, cellForRowAt: IndexPath(row: 2, section: 0))
+        XCTAssertEqual(controller.tableView(table, numberOfRowsInSection: 0), 1)
+        XCTAssertEqual(controller.tableView(table, numberOfRowsInSection: 1), 2)
+        let cell = controller.tableView(table, cellForRowAt: IndexPath(row: 0, section: 1))
         let content = cell.contentConfiguration as! UIListContentConfiguration
         XCTAssertEqual(content.text, "Ad removal".localized())
         XCTAssertEqual(content.secondaryText, "Ads removed".localized())
-        controller.tableView(table, didSelectRowAt: IndexPath(row: 2, section: 0))
+        controller.tableView(table, didSelectRowAt: IndexPath(row: 0, section: 1))
         XCTAssertTrue(navigation.topViewController is PurchaseNoticeViewController)
         XCTAssertEqual(store.purchaseCount, 0)
     }
@@ -516,15 +517,17 @@ final class AdRemovalPurchaseTests: XCTestCase {
             let table = (controller.view as! SettingTableView).tableView
             table.reloadData()
             table.layoutIfNeeded()
-            XCTAssertEqual(table.numberOfRows(inSection: 0), 4)
+            XCTAssertEqual(table.numberOfSections, 2)
+            XCTAssertEqual(table.numberOfRows(inSection: 0), 1)
+            XCTAssertEqual(table.numberOfRows(inSection: 1), 2)
             XCTAssertTrue(table.isScrollEnabled)
             if category.isAccessibilityCategory {
-                table.scrollToRow(at: IndexPath(row: 2, section: 0), at: .top, animated: false)
+                table.scrollToRow(at: IndexPath(row: 0, section: 1), at: .top, animated: false)
                 table.layoutIfNeeded()
             }
-            let cell = controller.tableView(table, cellForRowAt: IndexPath(row: 2, section: 0))
+            let cell = controller.tableView(table, cellForRowAt: IndexPath(row: 0, section: 1))
             let content = cell.contentConfiguration as! UIListContentConfiguration
-            XCTAssertTrue(content.secondaryText?.contains("$2.99") == true)
+            XCTAssertEqual(content.secondaryText, "One-time purchase. No automatic renewal.".localized())
             XCTAssertEqual(content.textProperties.numberOfLines, 0)
             XCTAssertEqual(content.secondaryTextProperties.numberOfLines, 0)
             let image = UIGraphicsImageRenderer(bounds: controller.view.bounds).image { _ in

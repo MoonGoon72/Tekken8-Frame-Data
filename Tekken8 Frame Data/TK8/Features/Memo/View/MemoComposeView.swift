@@ -13,7 +13,7 @@ final class MemoComposeView: BaseView {
     private let characterChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.cornerStyle = .capsule
-        config.baseForegroundColor = UIColor.white.withAlphaComponent(0.5)
+        config.baseForegroundColor = UIColor.tkSecondaryText
         config.image = UIImage(
             systemName: "chevron.down",
             withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
@@ -21,7 +21,7 @@ final class MemoComposeView: BaseView {
         config.imagePlacement = .trailing
         config.imagePadding = 4
         config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 10)
-        config.background.backgroundColor = UIColor.white.withAlphaComponent(0.07)
+        config.background.backgroundColor = UIColor.tkSurface
 
         let button = UIButton(configuration: config)
         button.titleLabel?.font = .systemFont(ofSize: 14)
@@ -32,7 +32,7 @@ final class MemoComposeView: BaseView {
         view.contentMode = .scaleAspectFill
         view.clipsToBounds = true
         view.layer.cornerRadius = 8
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        view.backgroundColor = UIColor.tkMutedSurface
         return view
     }()
     private let characterRow = UIView()
@@ -42,7 +42,7 @@ final class MemoComposeView: BaseView {
     private let titleTextView: UITextView = {
         let textView = UITextView()
         textView.font = .systemFont(ofSize: 22, weight: .semibold)
-        textView.textColor = .white
+        textView.textColor = .tkPrimaryText
         textView.backgroundColor = .clear
         textView.isScrollEnabled = false
         textView.textContainerInset = .zero
@@ -53,20 +53,20 @@ final class MemoComposeView: BaseView {
         let label = UILabel()
         label.text = "Title".localized()
         label.font = .systemFont(ofSize: 22, weight: .semibold)
-        label.textColor = UIColor.white.withAlphaComponent(0.2)
+        label.textColor = UIColor.tkSecondaryText
         return label
     }()
 
     private let separator: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        view.backgroundColor = UIColor.tkSeparator
         return view
     }()
 
     private let bodyTextView: UITextView = {
         let textView = UITextView()
         textView.font = .systemFont(ofSize: 16)
-        textView.textColor = .white
+        textView.textColor = .tkPrimaryText
         textView.backgroundColor = .clear
         textView.alwaysBounceVertical = true
         textView.keyboardDismissMode = .interactive
@@ -78,7 +78,7 @@ final class MemoComposeView: BaseView {
         let label = UILabel()
         label.text = "Write your memo here...".localized()
         label.font = .systemFont(ofSize: 16)
-        label.textColor = UIColor.white.withAlphaComponent(0.15)
+        label.textColor = UIColor.tkSecondaryText
         return label
     }()
 
@@ -92,8 +92,8 @@ final class MemoComposeView: BaseView {
     override func setupStyles() {
         super.setupStyles()
         self.backgroundColor = .tkBackground
-        titleTextView.tintColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1)
-        bodyTextView.tintColor = UIColor(red: 0.36, green: 0.79, blue: 0.65, alpha: 1)
+        titleTextView.tintColor = UIColor.tkPositive
+        bodyTextView.tintColor = UIColor.tkPositive
     }
 
     override func setupSubviews() {

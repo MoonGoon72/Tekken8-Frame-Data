@@ -15,6 +15,7 @@ final class DIContainer {
     private let analytics: AnalyticsClient
     @MainActor private lazy var purchases = AdRemovalPurchaseService(store: StoreKitAdRemovalStore())
     @MainActor private lazy var ads = BannerAdService(purchases: purchases)
+    @MainActor lazy var appearance = AppAppearance(repository: DefaultAppThemeRepository(manager: userDefaultsManager))
 
     @MainActor private func withBottomAd<T: BaseViewController>(_ controller: T, placement: BannerPlacement) -> T {
         controller.bannerAdHost = makeBottomAdHost(placement: placement)
@@ -28,7 +29,8 @@ final class DIContainer {
     @MainActor func makeSettingViewController() -> SettingViewController {
         withBottomAd(SettingViewController(analytics: analytics, ads: ads,
             purchaseViewModel: SettingsPurchaseViewModel(purchases: purchases),
-            makePurchaseNotice: { [self] viewModel in makePurchaseNoticeViewController(viewModel: viewModel) }), placement: .settings)
+            makePurchaseNotice: { [self] viewModel in makePurchaseNoticeViewController(viewModel: viewModel) },
+            appearance: appearance), placement: .settings)
     }
 
     @MainActor func makePurchaseNoticeViewController(viewModel: SettingsPurchaseViewModel? = nil) -> PurchaseNoticeViewController {

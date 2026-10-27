@@ -37,7 +37,7 @@ struct RangeSliderView: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(.white.opacity(0.10))
+                    .fill(Color.tkSeparator)
                     .frame(width: availableWidth, height: trackHeight)
                     .offset(x: thumbDiameter / 2)
 
@@ -86,7 +86,7 @@ struct RangeSliderView: View {
 
     private var thumb: some View {
         Circle()
-            .fill(Color(red: 0.10, green: 0.14, blue: 0.20))
+            .fill(Color.tkSurface)
             .frame(width: 26, height: 26)
             .overlay(
                 Circle()

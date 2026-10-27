@@ -2,7 +2,7 @@
 
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
-- 기준일: 2026-10-14
+- 기준일: 2026-10-27
 - 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test`, 로컬 결제 검증용 `TK8 StoreKit Test` shared scheme(Run: StoreKit fixture, Test: `TK8Tests` 전체)
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
@@ -53,6 +53,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 원격 파일 | `character.image_url`에 저장된 공개 캐릭터 이미지 URL (현재 Google Drive 호스팅) |
 | 로컬 데이터 | Core Data (`CharacterEntity`, `MoveEntity`, `MemoEntity`) |
 | 설정 저장 | UserDefaults 및 `UserDefaultsManageable` |
+| 테마 | 기본 다크, 선택형 라이트/시스템 추종. `AppAppearance`의 window trait와 역할별 Asset Catalog 색상을 UIKit/SwiftUI가 공유 |
 | 이미지 캐시 | `NSCache` + 앱 Caches 디렉터리 + `URLSession` |
 | 다국어 | String Catalog(`Localizable.xcstrings`) + 프레임 데이터 규칙 기반 한/영 변환 |
 | 분석 | Firebase Analytics + Firebase Remote Config |
@@ -145,6 +146,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
 | 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
 | 캐릭터 목록 모드 | 사용자 선택 | UserDefaults `characterLayout` | list/grid 토글 시 갱신 |
+| 앱 테마 | 사용자 선택(최초/잘못된 저장값은 다크) | UserDefaults `app_theme` | 다크/라이트/시스템 선택 저장 성공 후 window에 즉시 적용 |
 | 광고 제거 안내 처리 여부 | 사용자 닫기/알아보기 선택 | UserDefaults `ad_removal_notice_consumed` | 명시적 액션에서만 true 저장. 구매 권한 및 온보딩 revision과 독립 |
 | 온보딩 표시 버전 | 앱 상수 | UserDefaults `onboarding_shown_version` | 현재 온보딩 버전 최초 표시 후 기록 |
 | 캐릭터 이미지 | Asset Catalog 우선, 없으면 `character.image_url`의 외부 URL | `NSCache` + Caches 디렉터리 | 메모리 → 디스크 → 네트워크 순서 |
@@ -152,6 +154,14 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 Core Data의 `deleteAll()`은 `CharacterEntity`와 `MoveEntity`만 batch delete한다. `MemoEntity`는 의도적으로 남아 프레임 데이터 버전 변경이나 로컬 스키마 캐시 무효화 후에도 사용자 메모가 유지된다.
 
 ## 런타임 데이터 흐름
+
+### 앱 테마 및 설정
+
+`DIContainer`는 기존 `UserDefaultsManageable`을 사용하는 `DefaultAppThemeRepository`와 앱 범위 `AppAppearance`를 조립한다. `SceneDelegate`가 root controller 생성 전에 window를 등록하고 저장한 테마를 적용한다. 최초/잘못된 값은 다크, 시스템 선택은 `overrideUserInterfaceStyle = .unspecified`로 iOS 변경을 따른다. Info.plist의 고정 `UIUserInterfaceStyle`은 지정하지 않고 window override로 기본 다크와 사용자 선택을 관리한다. 현재 앱은 단일 scene이며, 서비스는 등록 window를 약하게 보관한다. 선택은 저장 성공 후에만 발행·반영하므로 실패 시 기존 테마를 보존한다.
+
+`SettingViewController`는 화면(테마)과 이용 및 지원(광고 제거/문의 및 필요한 개인정보/검사기)으로 구분하며 앱/철권 데이터 버전은 비대화형 footer에 표시한다. `ThemeSelectionViewController` sheet에서 다크/라이트/시스템을 선택하면 같은 window의 UIKit 모달과 SwiftUI hosting에 즉시 전파된다. `AppNavigationStyle`은 공통 navigation 배경/글자색을 맞추며, 설정만 큰 제목을 사용한다.
+
+`TKBackground`, `TKSurface`, `TKMutedSurface`, `TKPrimaryText`, `TKSecondaryText`, `TKSeparator` 및 상태 색상은 light/dark variants를 가진 Asset Catalog 색상이다. 캐릭터/기술/메모/구매/영상 상세의 읽기 색상에서 사용하며 영상 영역의 검정/흰 컨트롤과 이미지 자산 자체는 유지한다. Memo 셀의 CALayer border처럼 CGColor를 보관하는 요소는 trait 변경 때 다시 해석한다. 데이터/캐시/구매/Analytics 계약은 변경하지 않는다.
 
 ### 캐릭터 선택 화면의 광고 제거 안내
 

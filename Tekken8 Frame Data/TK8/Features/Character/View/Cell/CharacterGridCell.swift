@@ -30,7 +30,7 @@ struct CharacterGridCell: View, ReuseIdentifiable {
 
                 Text(localizedName)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.tkPrimaryText)
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
                     .multilineTextAlignment(.center)
@@ -41,11 +41,11 @@ struct CharacterGridCell: View, ReuseIdentifiable {
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
             .background(
                 RoundedRectangle(cornerRadius: Constants.Literals.cardCornerRadius)
-                    .fill(.white.opacity(0.07))
+                    .fill(Color.tkSurface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.Literals.cardCornerRadius)
-                    .stroke(.white.opacity(0.12), lineWidth: 0.5)
+                    .stroke(Color.tkSeparator, lineWidth: 0.5)
             )
         }
     }

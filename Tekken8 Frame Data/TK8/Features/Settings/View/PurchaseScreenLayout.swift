@@ -33,7 +33,7 @@ enum PurchaseScreenLayout {
         label.font = .preferredFont(forTextStyle: style)
         label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0
-        label.textColor = secondary ? .white.withAlphaComponent(0.72) : .white
+        label.textColor = secondary ? .tkSecondaryText : .tkPrimaryText
         return label
     }
 
@@ -41,7 +41,7 @@ enum PurchaseScreenLayout {
                           primary: Bool = false, action: @escaping () -> Void) {
         var configuration = primary ? UIButton.Configuration.filled() : .plain()
         configuration.baseBackgroundColor = .tkRed
-        configuration.baseForegroundColor = primary ? .white : .white.withAlphaComponent(0.8)
+        configuration.baseForegroundColor = primary ? .white : .tkSecondaryText
         configuration.cornerStyle = .large
         configuration.title = title.localized()
         configuration.titleLineBreakMode = .byWordWrapping

@@ -3,7 +3,7 @@ import UIKit
 class SettingViewController: BaseViewController {
     private let tableView: SettingTableView
     private var settingsItems: [SettingItem] {
-        var items: [SettingItem] = [.appVersion, .tekkenVersion, .removeAds, .purchaseInformation, .restorePurchases, .refund, .reportIssue]
+        var items: [SettingItem] = [.appVersion, .tekkenVersion, .removeAds, .reportIssue]
         if ads?.privacyOptionsRequired == true { items.append(.adPrivacy) }
         #if DEBUG
         if ads?.configuration.usesMediationTestAds == true { items.append(.adInspector) }
@@ -52,7 +52,7 @@ class SettingViewController: BaseViewController {
     }
 
     override func bindViewModel() {
-        purchaseViewModel.$state.sink { [weak self] _ in
+        purchaseViewModel.$state.combineLatest(purchaseViewModel.$isPreparing).sink { [weak self] _ in
             DispatchQueue.main.async { self?.tableView.tableView.reloadData() }
         }.store(in: &subscriptionSet)
         purchaseViewModel.$message.compactMap { $0 }.sink { [weak self] _ in
@@ -118,13 +118,13 @@ extension SettingViewController: UITableViewDataSource {
         configuration.secondaryTextProperties.numberOfLines = 0
         configuration.secondaryText = item.accessoryText
         if item == .removeAds {
-            configuration.secondaryText = purchaseViewModel.purchaseDetail + "\n" + "One-time purchase. Removes banner and native ads.".localized()
-        } else if item == .restorePurchases && purchaseViewModel.state.operation == .restoring {
-            configuration.secondaryText = "Restoring purchases…".localized()
+            configuration.secondaryText = purchaseViewModel.state.entitlement == .adFree
+                ? "Ads removed".localized()
+                : purchaseViewModel.purchaseDetail + "\n" + "One-time purchase. No automatic renewal.".localized()
         }
         configuration.secondaryTextProperties.color = UIColor.white.withAlphaComponent(0.7)
         cell.contentConfiguration = configuration
-        cell.isUserInteractionEnabled = !purchaseViewModel.state.isBusy || (item != .removeAds && item != .restorePurchases)
+        cell.isUserInteractionEnabled = !purchaseViewModel.state.isBusy || item != .removeAds
 
         // 큰 글씨에서도 줄바꿈할 수 있도록 버전 정보는 제목 아래에 표시한다.
         cell.accessoryView = nil
@@ -156,16 +156,12 @@ extension SettingViewController: UITableViewDelegate {
         let item = settingsItems[indexPath.row]
         
         switch item {
-        case .removeAds, .purchaseInformation:
+        case .removeAds:
             guard !purchaseViewModel.state.isBusy else { return }
             let notice = makePurchaseNotice?(purchaseViewModel) ?? PurchaseNoticeViewController(viewModel: purchaseViewModel) { presenter in
                 Self.openSupportPage(from: presenter)
             }
             navigationController?.pushViewController(notice, animated: true)
-        case .restorePurchases:
-            Task { await purchaseViewModel.restore() }
-        case .refund:
-            UIApplication.shared.open(URL(string: "https://reportaproblem.apple.com/")!)
         #if DEBUG
         case .adInspector:
             Task {
@@ -207,9 +203,6 @@ private extension SettingViewController {
         case reportIssue
         case adPrivacy
         case removeAds
-        case purchaseInformation
-        case restorePurchases
-        case refund
         #if DEBUG
         case adInspector
         #endif
@@ -217,9 +210,6 @@ private extension SettingViewController {
         var title: String {
             switch self {
             case .removeAds: "Ad removal".localized()
-            case .purchaseInformation: "Purchase information".localized()
-            case .restorePurchases: "Restore purchases".localized()
-            case .refund: "Request a refund from Apple".localized()
             #if DEBUG
             case .adInspector:
                 "Ad Inspector (test)".localized()
@@ -252,7 +242,7 @@ private extension SettingViewController {
             case .adInspector:
                 true
             #endif
-            case .removeAds, .purchaseInformation, .reportIssue, .adPrivacy, .restorePurchases, .refund:
+            case .removeAds, .reportIssue, .adPrivacy:
                 true
             default:
                 false

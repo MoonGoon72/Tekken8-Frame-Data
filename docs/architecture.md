@@ -190,7 +190,9 @@ SceneDelegate
 
 `DIContainer`가 `StoreKitAdRemovalStore`를 주입한 단일 `AdRemovalPurchaseService`를 만들고 공통 광고 서비스와 `SettingsPurchaseViewModel`에 공유한다. StoreKit SDK는 어댑터에만 있고 설정 ViewController는 UIKit binding·Apple 환불 웹페이지 열기를 담당한다. 기존 프레임 Repository·Core Data 메모 흐름은 유지한다.
 
-`SettingViewController`는 광고 제거/구매 안내 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 안내 화면은 같은 `SettingsPurchaseViewModel`을 구독하며 제공 범위·복원·환불·소비자 권리를 설명한 뒤 현지 가격의 구매 버튼을 제공한다. 구매 안내는 구매 후에도 열 수 있다. 활성 화면이 구매 결과 alert를 표시하고, 개발자 문의는 설정 화면이 조립한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+`SettingViewController`는 단일 광고 제거 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 같은 `SettingsPurchaseViewModel`을 구독하는 구매 화면은 짧은 혜택 설명·1회 결제 조건·StoreKit 현지 가격의 구매 버튼을 우선 표시하고 구매 복원과 상세 안내를 보조 액션으로 제공한다. 구매자는 완료 상태를 표시하며 구매 버튼을 숨긴다. ViewModel의 `isPreparing`은 가격/권한 조회 중임을 구분하고 조회 완료 후 실패 상태에만 재확인을 제공한다.
+
+`PurchaseInformationViewController`는 구매 화면의 ‘구매·환불 안내’에서 push하는 별도 화면으로, 기존 제공 범위·구매 적용·복원·환불·소비자 권리와 약관·문의 링크를 섹션별로 제공한다. 두 화면의 스크롤·문구·버튼 스타일은 기능 내부 `PurchaseScreenLayout`이 공유한다. 구매 안내는 구매 후에도 열 수 있다. 구매/설정 화면 중 활성 화면이 구매 결과 alert를 표시하고, 상세 안내 중 도착한 메시지는 구매 화면 복귀 시 처리한다. 개발자 문의는 DI가 전달한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
 
 가격을 처음 가져오는 동안 메인 안내와 설정에서 서로 다른 ViewModel이 생성될 수 있다. 공유 `AdRemovalPurchaseService.loadProduct()`는 진행 중인 product task를 모든 호출자가 함께 기다리게 해, 다른 화면이 조회 중인 상태를 가격 조회 실패로 해석하지 않도록 한다. 구매/권한 조회의 기존 검증 계약은 유지한다.
 

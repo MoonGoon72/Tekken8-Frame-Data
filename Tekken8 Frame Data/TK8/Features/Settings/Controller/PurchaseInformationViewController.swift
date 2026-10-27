@@ -15,6 +15,7 @@ final class PurchaseInformationViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Purchase and refund information".localized()
+        navigationItem.largeTitleDisplayMode = .never
         let stack = PurchaseScreenLayout.installScroll(in: self)
         addSection("Purchase activation", paragraphs: [Self.paragraphs[0], Self.paragraphs[1]], to: stack)
         addSection("Restoring on another device", paragraphs: [Self.paragraphs[2]], to: stack)

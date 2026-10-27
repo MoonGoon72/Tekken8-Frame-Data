@@ -27,6 +27,7 @@ final class PurchaseNoticeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Ad removal".localized()
+        navigationItem.largeTitleDisplayMode = .never
         let stack = PurchaseScreenLayout.installScroll(in: self)
         stack.addArrangedSubview(makeBenefitCard())
         statusLabel.textAlignment = .center
@@ -83,7 +84,7 @@ final class PurchaseNoticeViewController: UIViewController {
 
     private func makeBenefitCard() -> UIView {
         let card = UIView()
-        card.backgroundColor = .white.withAlphaComponent(0.06)
+        card.backgroundColor = .tkSurface
         card.layer.cornerRadius = 20
         let content = UIStackView(arrangedSubviews: [icon, headline, summary])
         content.axis = .vertical

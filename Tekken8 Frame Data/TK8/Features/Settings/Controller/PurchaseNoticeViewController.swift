@@ -117,7 +117,7 @@ final class PurchaseNoticeViewController: UIViewController {
         icon.tintColor = purchased ? .systemGreen : .tkRed
         paymentNote.isHidden = purchased
         statusLabel.text = viewModel.purchaseDetail
-        statusLabel.isHidden = purchased || (!viewModel.isPreparing && state.entitlement == .notPurchased &&
+        statusLabel.isHidden = (purchased && state.operation != .restoring) || (!viewModel.isPreparing && state.entitlement == .notPurchased &&
             state.displayPrice != nil && !state.isBusy && !state.pending)
         purchaseButton.configuration?.title = state.displayPrice.map {
             String(format: "Remove ads for %@".localized(), $0)

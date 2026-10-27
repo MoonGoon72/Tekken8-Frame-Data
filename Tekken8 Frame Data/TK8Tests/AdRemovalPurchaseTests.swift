@@ -340,6 +340,36 @@ final class AdRemovalPurchaseTests: XCTestCase {
         XCTAssertFalse(buttons.first { $0.accessibilityIdentifier == "ad_removal_information" }!.isHidden)
     }
 
+    func testPurchasedScreenShowsRestoreProgressUntilRestoreCompletes() async throws {
+        store.entitlement = .adFree
+        let model = SettingsPurchaseViewModel(purchases: service)
+        await model.prepare()
+        let controller = PurchaseNoticeViewController(viewModel: model) { _ in }
+        controller.loadViewIfNeeded()
+        let status = try XCTUnwrap(purchaseDescendants(controller.view).first {
+            $0.accessibilityIdentifier == "ad_removal_status"
+        } as? UILabel)
+        let restore = try XCTUnwrap(purchaseDescendants(controller.view).first {
+            $0.accessibilityIdentifier == "ad_removal_restore"
+        } as? UIButton)
+        XCTAssertTrue(status.isHidden)
+
+        store.entitlementGate = true
+        let restoring = Task { await model.restore() }
+        while store.entitlementContinuation == nil { await Task.yield() }
+        await settlePurchaseMessageUI()
+        XCTAssertEqual(status.text, "Restoring purchases…".localized())
+        XCTAssertFalse(status.isHidden, "Purchased users must also see restore progress")
+        XCTAssertFalse(restore.isEnabled)
+
+        store.entitlementContinuation?.resume(returning: .adFree)
+        await restoring.value
+        await settlePurchaseMessageUI()
+        XCTAssertTrue(status.isHidden)
+        XCTAssertTrue(restore.isEnabled)
+        XCTAssertEqual(store.purchaseCount, 0)
+    }
+
     func testSettingsHasOnePurchaseEntryWithPurchasedStatus() async {
         store.entitlement = .adFree
         let model = SettingsPurchaseViewModel(purchases: service)

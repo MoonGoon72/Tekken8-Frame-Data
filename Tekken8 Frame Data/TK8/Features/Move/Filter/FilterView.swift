@@ -76,11 +76,11 @@ struct FilterView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Choose a condition, then enter frames.".localized())
-                        .font(.subheadline).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(Color.tkSecondaryText)
                     startupBlock
                     guardBlock
                     Text("Moves with variable frames match when any value meets your condition.".localized())
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Color.tkSecondaryText)
                     sectionBlock
                     attributeBlock
                 }
@@ -89,7 +89,7 @@ struct FilterView: View {
             .scrollDismissesKeyboard(.interactively)
             footer
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(Color.tkBackground)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -109,7 +109,7 @@ struct FilterView: View {
                     reset()
                 }
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.tkSecondaryText)
                 .padding(.horizontal, 8)
                 .frame(minHeight: 48)
 
@@ -187,7 +187,7 @@ struct FilterView: View {
             input: $state.startup,
             focusedField: $focusedField,
             title: "Startup Frame".localized(),
-            accent: .orange,
+            accent: .tkWarning,
             presets: startupPresets,
             firstField: .startupValue,
             secondField: .startupUpper
@@ -199,7 +199,7 @@ struct FilterView: View {
             input: $state.guardFrame,
             focusedField: $focusedField,
             title: "Guard Frame".localized(),
-            accent: .teal,
+            accent: .tkPositive,
             presets: guardPresets,
             firstField: .guardValue,
             secondField: .guardUpper
@@ -281,12 +281,12 @@ private struct FilterBlock<Action: View, Content: View>: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.tkPrimaryText)
 
                 if let hint {
                     Text(hint)
                         .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.tkSecondaryText)
                 }
 
                 Spacer()
@@ -297,7 +297,7 @@ private struct FilterBlock<Action: View, Content: View>: View {
                     // Keep the same header geometry before the first selection.
                     Button("Clear".localized()) { clearAction?() }
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.tkSecondaryText)
                         .frame(minHeight: 44)
                         .opacity(clearAction == nil ? 0 : 1)
                         .disabled(clearAction == nil)
@@ -307,7 +307,7 @@ private struct FilterBlock<Action: View, Content: View>: View {
             content
         }
         .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(Color.tkSurface)
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 }
@@ -326,14 +326,14 @@ private struct ChipButton: View {
             case .text(let text):
                 Text(text)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isActive ? Color.white : Color.primary)
+                    .foregroundStyle(isActive ? Color.white : Color.tkPrimaryText)
                     .padding(.horizontal, 12)
                     .frame(minHeight: 44)
-                    .background(isActive ? color : Color(uiColor: .tertiarySystemGroupedBackground))
+                    .background(isActive ? color : Color.tkMutedSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(isActive ? color : Color.primary.opacity(0.12), lineWidth: 0.5)
+                            .stroke(isActive ? color : Color.tkPrimaryText.opacity(0.12), lineWidth: 0.5)
                     )
             case .icon(let text):
                 Image(text)
@@ -341,7 +341,7 @@ private struct ChipButton: View {
                     .scaledToFit()
                     .frame(width: 34, height: 34)
                     .padding(5)
-                    .background(isActive ? color.opacity(0.2) : Color(uiColor: .tertiarySystemGroupedBackground))
+                    .background(isActive ? color.opacity(0.2) : Color.tkMutedSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)

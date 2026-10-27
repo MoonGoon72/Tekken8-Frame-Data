@@ -28,13 +28,13 @@ final class MemoSectionHeaderView: UICollectionReusableView, ReuseIdentifiable {
         case .pinned:
             let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
             iconView.image = UIImage(systemName: "pin.fill", withConfiguration: config)
-            iconView.tintColor = UIColor(red: 0.98, green: 0.78, blue: 0.46, alpha: 0.7)
+            iconView.tintColor = UIColor.tkWarning
             titleLabel.text = "PINNED".localized()
-            titleLabel.textColor = UIColor(red: 0.98, green: 0.78, blue: 0.46, alpha: 0.7)
+            titleLabel.textColor = UIColor.tkWarning
         case .general:
             iconView.image = nil
             titleLabel.text = "MEMOS".localized()
-            titleLabel.textColor = UIColor.white.withAlphaComponent(0.3)
+            titleLabel.textColor = UIColor.tkSecondaryText
         }
     }
 

@@ -34,10 +34,13 @@ final class SettingTableView: BaseView {
     override func setupStyles() {
         super.setupStyles()
         
-        tableView.backgroundColor = UIColor.white.withAlphaComponent(0.07)
-        tableView.separatorColor = UIColor.white.withAlphaComponent(0.08)
-        tableView.layer.cornerRadius = 14
-        tableView.clipsToBounds = true
+        backgroundColor = .tkBackground
+        tableView.backgroundColor = .clear
+        tableView.separatorColor = .tkSeparator
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 64
+        tableView.sectionFooterHeight = UITableView.automaticDimension
+        tableView.estimatedSectionFooterHeight = 110
     }
     
     // MARK: Custom methods
@@ -60,9 +63,9 @@ final class SettingTableView: BaseView {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 16),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            tableView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
     }

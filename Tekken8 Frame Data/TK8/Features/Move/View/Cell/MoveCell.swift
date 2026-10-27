@@ -22,11 +22,11 @@ struct MoveCell: View, ReuseIdentifiable {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(.white.opacity(0.07))
+                .fill(Color.tkSurface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(.white.opacity(0.12), lineWidth: 0.5)
+                .stroke(Color.tkSeparator, lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
         .accessibilityValue(hasVideo ? "move_video_available".localized() : "")
@@ -46,10 +46,10 @@ struct MoveSummaryView: View {
             if expanded {
                 Text(move.skillNamePrimary)
                     .font(.title2.bold())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.tkPrimaryText)
                     .fixedSize(horizontal: false, vertical: true)
                 if let secondary = move.skillNameSecondary, !secondary.isEmpty {
-                    Text(secondary).font(.subheadline).foregroundStyle(.white.opacity(0.6))
+                    Text(secondary).font(.subheadline).foregroundStyle(Color.tkSecondaryText)
                 }
                 if let attribute = move.attribute, !attribute.isEmpty {
                     FlowLayout(spacing: 4) { AttributeView(attributes: attribute) }
@@ -58,7 +58,7 @@ struct MoveSummaryView: View {
                 HStack {
                     Text(move.skillNamePrimary)
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.tkPrimaryText)
                         .padding(.horizontal, 3)
                     if let attribute = move.attribute, attribute != "" {
                         AttributeView(attributes: attribute)
@@ -67,12 +67,12 @@ struct MoveSummaryView: View {
                     if let sub = move.skillNameSecondary, !sub.isEmpty {
                         Text(sub)
                             .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(Color.tkSecondaryText)
                     }
                     if hasVideo {
                         Image(systemName: "play.circle.fill")
                             .font(.title3)
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(Color.tkSecondaryText)
                             .accessibilityHidden(true)
                     }
                 }
@@ -128,11 +128,11 @@ struct JudgeBadge: View {
 
     private var badgeColor: Color {
         switch text {
-        case "상", "high": return Color(red: 0.94, green: 0.37, blue: 0.37)  // coral red
-        case "중", "mid": return Color(red: 0.98, green: 0.78, blue: 0.46)  // warm amber
-        case "하", "low": return Color(red: 0.52, green: 0.72, blue: 0.92)  // soft blue
-        case "특중", "s.mid": return Color(red: 0.36, green: 0.79, blue: 0.65) // teal
-        default:   return Color(red: 0.68, green: 0.60, blue: 0.88)  // soft purple
+        case "상", "high": return Color.tkNegative  // coral red
+        case "중", "mid": return Color.tkWarning  // warm amber
+        case "하", "low": return Color.tkInfo  // soft blue
+        case "특중", "s.mid": return Color.tkPositive // teal
+        default:   return Color.tkSpecial  // soft purple
         }
     }
 
@@ -187,7 +187,7 @@ struct SpecView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(.white.opacity(0.04))
+                .fill(Color.tkMutedSurface)
         )
     }
 
@@ -199,11 +199,11 @@ struct SpecView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(expanded ? .caption : .system(size: 11))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(Color.tkSecondaryText)
             Text(value ?? "-")
                 .font(expanded ? .body.weight(.semibold) : .system(size: 14, weight: .semibold))
                 .fixedSize(horizontal: false, vertical: true)
-                .foregroundStyle(colorize ? frameColor(value) : .white)
+                .foregroundStyle(colorize ? frameColor(value) : Color.tkPrimaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
@@ -212,16 +212,16 @@ struct SpecView: View {
 
     private var specDivider: some View {
         Rectangle()
-            .fill(.white.opacity(0.08))
+            .fill(Color.tkSeparator)
             .frame(width: 0.5)
             .padding(.vertical, 6)
     }
 
     private func frameColor(_ value: String?) -> Color {
-        guard let value, let num = Int(value) else { return .white }
-        if num > 0 { return Color(red: 0.36, green: 0.79, blue: 0.65) }  // teal +
-        if num < 0 { return Color(red: 0.94, green: 0.37, blue: 0.37) }  // red -
-        return .white
+        guard let value, let num = Int(value) else { return .tkPrimaryText }
+        if num > 0 { return Color.tkPositive }  // teal +
+        if num < 0 { return Color.tkNegative }  // red -
+        return .tkPrimaryText
     }
 }
 
@@ -236,7 +236,7 @@ struct CommandView: View {
     @ScaledMetric(relativeTo: .subheadline) private var scaledDescriptionSize = 24.0
 
     private var commandColor: Color {
-        expanded ? (isDescription ? .white.opacity(0.65) : .white) : .primary
+        isDescription ? .tkSecondaryText : .tkPrimaryText
     }
 
     private var iconSize: CGFloat {
@@ -291,10 +291,10 @@ struct DescriptionView: View {
     
     var body: some View {
         Divider()
-            .background(.white.opacity(0.08))
+            .background(Color.tkSeparator)
         ForEach(Array(descriptionSplitter(description).enumerated()), id: \.offset) { _, command in
             CommandView(command: command, isDescription: true, expanded: expanded)
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(Color.tkSecondaryText)
         }
     }
     

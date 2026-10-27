@@ -25,6 +25,7 @@ final class MoveSectionHeaderView: UICollectionReusableView, ReuseIdentifiable {
     private func setupTitleLabel() {
         containerView.addSubview(titleLabel)
         titleLabel.font = .boldSystemFont(ofSize: 18)
+        titleLabel.textColor = .white
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),

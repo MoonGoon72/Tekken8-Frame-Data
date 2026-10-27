@@ -17,11 +17,15 @@ final class FrameFilterLayoutTests: XCTestCase {
         let model = MoveListViewModel(moveRepository: FilterLayoutRepository())
         model.filterCondition.startupRange = 13...15
         model.filterCondition.guardRange = -14...(-10)
+        var observedScheme: ColorScheme?
         let filter = FilterView(moveListViewModel: model, characterID: "fixture", analytics: RecordingAnalyticsClient())
             .environment(\.dynamicTypeSize, size)
+            .background(FilterThemeProbe { observedScheme = $0 })
         let controller = UIHostingController(rootView: filter)
         controller.overrideUserInterfaceStyle = style
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: width, height: height))
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first!
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: width, height: height)
         window.rootViewController = controller
         window.makeKeyAndVisible()
         defer { window.isHidden = true }
@@ -30,6 +34,8 @@ final class FrameFilterLayoutTests: XCTestCase {
             try? await Task.sleep(nanoseconds: 20_000_000)
         }
 
+        XCTAssertEqual(observedScheme, style == .dark ? .dark : .light,
+                       "Filter screenshots must render the requested SwiftUI appearance")
         let scrolls = descendants(of: controller.view).compactMap { $0 as? UIScrollView }
         XCTAssertFalse(scrolls.isEmpty)
         for scroll in scrolls {
@@ -60,4 +66,14 @@ final class FrameFilterLayoutTests: XCTestCase {
 
 private struct FilterLayoutRepository: MoveRepository {
     func fetchMoves(characterName name: String) async throws -> [Move] { [] }
+}
+
+private struct FilterThemeProbe: View {
+    @Environment(\.colorScheme) private var scheme
+    let report: (ColorScheme) -> Void
+    var body: some View {
+        Color.clear
+            .onAppear { report(scheme) }
+            .onChange(of: scheme) { _, value in report(value) }
+    }
 }

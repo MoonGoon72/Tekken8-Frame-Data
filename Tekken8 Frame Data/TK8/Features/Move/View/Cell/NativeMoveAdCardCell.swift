@@ -49,7 +49,7 @@ final class NativeMoveAdCardCell: UICollectionViewCell {
 
     private func setupViews() {
         contentView.backgroundColor = .clear
-        adView.backgroundColor = .secondarySystemBackground
+        adView.backgroundColor = .tkSurface
         adView.layer.cornerRadius = 12
         adView.clipsToBounds = true
         adView.translatesAutoresizingMaskIntoConstraints = false
@@ -57,11 +57,11 @@ final class NativeMoveAdCardCell: UICollectionViewCell {
 
         sponsoredLabel.text = NSLocalizedString("Advertisement", comment: "Native ad attribution")
         sponsoredLabel.font = .preferredFont(forTextStyle: .caption2)
-        sponsoredLabel.textColor = .secondaryLabel
+        sponsoredLabel.textColor = .tkSecondaryText
         headlineLabel.font = .preferredFont(forTextStyle: .headline)
         headlineLabel.numberOfLines = 2
         bodyLabel.font = .preferredFont(forTextStyle: .subheadline)
-        bodyLabel.textColor = .secondaryLabel
+        bodyLabel.textColor = .tkSecondaryText
         bodyLabel.numberOfLines = 2
         mediaView.backgroundColor = .tertiarySystemFill
         mediaView.layer.cornerRadius = 8

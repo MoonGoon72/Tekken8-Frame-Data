@@ -116,7 +116,6 @@ final class MoveListViewController: BaseViewController {
         
         setupSearchController()
         navigationItem.title = Bundle.main.preferredLocalizations.first == "ko" ? character.nameKR : character.nameEN
-        navigationController?.navigationBar.tintColor = .tkRed
         navigationController?.navigationBar.topItem?.title = ""
         let settingsButton = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(settingsButtonTapped))
         let filterButton = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease"), style: .plain, target: self, action: #selector(filterButtonTapped))

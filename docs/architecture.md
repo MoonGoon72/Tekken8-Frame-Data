@@ -2,7 +2,7 @@
 
 이 문서는 현재 저장소의 코드와 Xcode 설정을 기준으로 TK8 앱의 기술 스택, 디렉터리 구성, 주요 모듈 책임, 데이터 흐름을 설명한다. 구조 변경 작업에서는 이 문서를 기준선으로 사용하고, 실제 구조가 달라지면 같은 작업에서 함께 갱신한다.
 
-- 기준일: 2026-10-14
+- 기준일: 2026-10-27
 - 앱 타깃: `TK8` (`Tekken8 Frame Data` scheme); 배너 미디에이션 검증 전용 `TK8 Unity Mediation Test`, 로컬 결제 검증용 `TK8 StoreKit Test` shared scheme(Run: StoreKit fixture, Test: `TK8Tests` 전체)
 - 최소 지원 버전: iOS 17.0
 - 기본 구조: MVVM + Repository Pattern + 수동 Dependency Injection
@@ -53,6 +53,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 원격 파일 | `character.image_url`에 저장된 공개 캐릭터 이미지 URL (현재 Google Drive 호스팅) |
 | 로컬 데이터 | Core Data (`CharacterEntity`, `MoveEntity`, `MemoEntity`) |
 | 설정 저장 | UserDefaults 및 `UserDefaultsManageable` |
+| 테마 | 기본 다크, 선택형 라이트/시스템 추종. `AppAppearance`의 window trait와 역할별 Asset Catalog 색상을 UIKit/SwiftUI가 공유 |
 | 이미지 캐시 | `NSCache` + 앱 Caches 디렉터리 + `URLSession` |
 | 다국어 | String Catalog(`Localizable.xcstrings`) + 프레임 데이터 규칙 기반 한/영 변환 |
 | 분석 | Firebase Analytics + Firebase Remote Config |
@@ -145,12 +146,30 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
 | 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
 | 캐릭터 목록 모드 | 사용자 선택 | UserDefaults `characterLayout` | list/grid 토글 시 갱신 |
+| 앱 테마 | 사용자 선택(최초/잘못된 저장값은 다크) | UserDefaults `app_theme` | 다크/라이트/시스템 선택 저장 성공 후 window에 즉시 적용 |
+| 광고 제거 안내 처리 여부 | 사용자 닫기/알아보기 선택 | UserDefaults `ad_removal_notice_consumed` | 명시적 액션에서만 true 저장. 구매 권한 및 온보딩 revision과 독립 |
 | 온보딩 표시 버전 | 앱 상수 | UserDefaults `onboarding_shown_version` | 현재 온보딩 버전 최초 표시 후 기록 |
 | 캐릭터 이미지 | Asset Catalog 우선, 없으면 `character.image_url`의 외부 URL | `NSCache` + Caches 디렉터리 | 메모리 → 디스크 → 네트워크 순서 |
 
 Core Data의 `deleteAll()`은 `CharacterEntity`와 `MoveEntity`만 batch delete한다. `MemoEntity`는 의도적으로 남아 프레임 데이터 버전 변경이나 로컬 스키마 캐시 무효화 후에도 사용자 메모가 유지된다.
 
 ## 런타임 데이터 흐름
+
+### 앱 테마 및 설정
+
+`DIContainer`는 기존 `UserDefaultsManageable`을 사용하는 `DefaultAppThemeRepository`와 앱 범위 `AppAppearance`를 조립한다. `SceneDelegate`가 root controller 생성 전에 window를 등록하고 저장한 테마를 적용한다. 최초/잘못된 값은 다크, 시스템 선택은 `overrideUserInterfaceStyle = .unspecified`로 iOS 변경을 따른다. Info.plist의 고정 `UIUserInterfaceStyle`은 지정하지 않고 window override로 기본 다크와 사용자 선택을 관리한다. 현재 앱은 단일 scene이며, 서비스는 등록 window를 약하게 보관한다. 선택은 저장 성공 후에만 발행·반영하므로 실패 시 기존 테마를 보존한다.
+
+`SettingViewController`는 화면(테마)과 이용 및 지원(광고 제거/문의 및 필요한 개인정보/검사기)으로 구분하며 앱/철권 데이터 버전은 비대화형 footer에 표시한다. `ThemeSelectionViewController` sheet에서 다크/라이트/시스템을 선택하면 같은 window의 UIKit 모달과 SwiftUI hosting에 즉시 전파된다. `AppNavigationStyle`은 공통 navigation 배경/글자색을 맞추며, 설정만 큰 제목을 사용한다.
+
+`TKBackground`, `TKSurface`, `TKMutedSurface`, `TKPrimaryText`, `TKSecondaryText`, `TKSeparator` 및 상태 색상은 light/dark variants를 가진 Asset Catalog 색상이다. 캐릭터/기술/메모/구매/영상 상세의 읽기 색상에서 사용하며 영상 영역의 검정/흰 컨트롤과 이미지 자산 자체는 유지한다. Memo 셀의 CALayer border처럼 CGColor를 보관하는 요소는 trait 변경 때 다시 해석한다. 데이터/캐시/구매/Analytics 계약은 변경하지 않는다.
+
+### 캐릭터 선택 화면의 광고 제거 안내
+
+`DIContainer`는 공유 `AdRemovalPurchaseService`와 `DefaultAdRemovalNoticeRepository`를 사용하는 `AdRemovalNoticeViewModel`을 캐릭터 목록에 주입한다. Repository는 기존 `UserDefaultsManageable` 뒤에서 안내 처리 여부만 저장한다. ViewModel은 미처리이고 권한이 `notPurchased`인 경우만 안내 자격을 발행하며 `checking`/`unknown`/`adFree`는 제외한다.
+
+UIKit `AdRemovalNoticeView`는 캐릭터 화면에서만 `BannerAdHost`의 선택적 accessory로 연결된다. Host는 안내 처리/구매 정책을 알지 않고, 실제 배너 로딩 성공 시에만 accessory와 배너의 공간을 함께 확보한다. 로딩 실패·화면 이탈·키보드·광고 중단은 전체 영역을 접고, 안내를 닫는 것은 배너를 유지한다. 최초 온보딩/광고 동의 흐름을 그대로 따른다.
+
+닫기 또는 알아보기에서만 처리 상태를 저장한다. 알아보기는 DI의 공통 구매 설명 화면 factory를 통해 기존 `PurchaseNoticeViewController`로 이동한다. 설정도 같은 factory를 사용하며 공유 구매 서비스가 권한을 갱신하면 광고/안내를 함께 숨긴다. 재실행/업데이트는 안내 처리 상태를 보존하며 재설치는 별도다. Analytics 이벤트 계약은 변경하지 않는다.
 
 ### 1. 앱 시작과 캐시 무효화
 
@@ -181,7 +200,11 @@ SceneDelegate
 
 `DIContainer`가 `StoreKitAdRemovalStore`를 주입한 단일 `AdRemovalPurchaseService`를 만들고 공통 광고 서비스와 `SettingsPurchaseViewModel`에 공유한다. StoreKit SDK는 어댑터에만 있고 설정 ViewController는 UIKit binding·Apple 환불 웹페이지 열기를 담당한다. 기존 프레임 Repository·Core Data 메모 흐름은 유지한다.
 
-`SettingViewController`는 광고 제거/구매 안내 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 안내 화면은 같은 `SettingsPurchaseViewModel`을 구독하며 제공 범위·복원·환불·소비자 권리를 설명한 뒤 현지 가격의 구매 버튼을 제공한다. 구매 안내는 구매 후에도 열 수 있다. 활성 화면이 구매 결과 alert를 표시하고, 개발자 문의는 설정 화면이 조립한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+`SettingViewController`는 단일 광고 제거 행에서 UIKit `PurchaseNoticeViewController`를 push한다. 같은 `SettingsPurchaseViewModel`을 구독하는 구매 화면은 짧은 혜택 설명·1회 결제 조건·StoreKit 현지 가격의 구매 버튼을 우선 표시하고 구매 복원과 상세 안내를 보조 액션으로 제공한다. 구매자는 완료 상태를 표시하며 구매 버튼을 숨긴다. ViewModel의 `isPreparing`은 가격/권한 조회 중임을 구분하고 조회 완료 후 실패 상태에만 재확인을 제공한다.
+
+`PurchaseInformationViewController`는 구매 화면의 ‘구매·환불 안내’에서 push하는 별도 화면으로, 기존 제공 범위·구매 적용·복원·환불·소비자 권리와 약관·문의 링크를 섹션별로 제공한다. 두 화면의 스크롤·문구·버튼 스타일은 기능 내부 `PurchaseScreenLayout`이 공유한다. 구매 안내는 구매 후에도 열 수 있다. 구매/설정 화면 중 활성 화면이 구매 결과 alert를 표시하고, 상세 안내 중 도착한 메시지는 구매 화면 복귀 시 처리한다. 개발자 문의는 DI가 전달한 callback으로 한국어/영어 지원 웹페이지를 연다. 메일 설정 여부와 무관하게 문제 신고와 개발자 문의가 같은 페이지로 연결된다. 구매 안내가 자체 EULA를 만들거나 법정 권리 포기 동의를 수집하지 않는다.
+
+가격을 처음 가져오는 동안 메인 안내와 설정에서 서로 다른 ViewModel이 생성될 수 있다. 공유 `AdRemovalPurchaseService.loadProduct()`는 진행 중인 product task를 모든 호출자가 함께 기다리게 해, 다른 화면이 조회 중인 상태를 가격 조회 실패로 해석하지 않도록 한다. 구매/권한 조회의 기존 검증 계약은 유지한다.
 
 상품 ID는 `remove_ad`, 비소모품, 가족 공유 OFF다. 가격은 StoreKit `Product.displayPrice`를 사용한다. 서비스 생성 시 `Transaction.updates` 감시와 `unfinished` 처리, 초기 `currentEntitlements` 조회를 시작하고 앱 복귀에서 다시 조회한다. 권한은 `checking/unknown/notPurchased/adFree`로 나뉜다. 초기 checking 동안만 광고를 보류한다. 검증/권한 확인 실패인 unknown과 정상 조회상 미구매 notPurchased는 기존 Remote Config·UMP 조건으로 광고를 허용하고, 검증된 adFree에서 광고를 제거한다. unknown은 재구매를 계속 차단한다. 로컬 검증된 구매는 오프라인에도 유지되며 최신 환불은 연결 이후 반영될 수 있다. UserDefaults/Core Data에 구매 증거를 저장하지 않는다.
 

@@ -16,17 +16,17 @@ final class CompactNativeAdView: NativeAdView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .secondarySystemBackground
+        backgroundColor = .tkSurface
         layer.cornerRadius = 12
 
         attribution.text = NSLocalizedString("Advertisement", comment: "Native ad attribution")
         attribution.font = .preferredFont(forTextStyle: .caption2)
-        attribution.textColor = .secondaryLabel
+        attribution.textColor = .tkSecondaryText
         attribution.adjustsFontForContentSizeCategory = true
         attribution.numberOfLines = 0
         attribution.heightAnchor.constraint(greaterThanOrEqualToConstant: 15).isActive = true
         headline.font = .preferredFont(forTextStyle: .subheadline)
-        headline.textColor = .label
+        headline.textColor = .tkPrimaryText
         headline.adjustsFontForContentSizeCategory = true
         headline.numberOfLines = 0
 

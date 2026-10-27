@@ -25,6 +25,11 @@ final class CharacterListViewController: BaseViewController {
     private var pendingImageKeys = Set<String>()
     private let onboardingDefaults: UserDefaults
     private var isPresentingOnboarding = false
+    private let adRemovalNoticeViewModel: AdRemovalNoticeViewModel?
+    private(set) lazy var adRemovalNoticeView = AdRemovalNoticeView(
+        onLearnMore: { [weak self] in self?.showAdRemovalInformation() },
+        onClose: { [weak self] in self?.adRemovalNoticeViewModel?.consume() }
+    )
 
     private let preference: CharacterLayoutPreference
     private var currentLayoutMode: CharacterCollectionViewMode
@@ -40,7 +45,8 @@ final class CharacterListViewController: BaseViewController {
         container: DIContainer,
         preference: CharacterLayoutPreference,
         analytics: AnalyticsClient,
-        onboardingDefaults: UserDefaults = .standard
+        onboardingDefaults: UserDefaults = .standard,
+        adRemovalNoticeViewModel: AdRemovalNoticeViewModel? = nil
     ) {
         characterCollectionView = CharacterCollectionView()
         characterListViewModel = viewModel
@@ -51,6 +57,7 @@ final class CharacterListViewController: BaseViewController {
         characterCollectionView.applyViewMode(currentLayoutMode)
         self.analytics = analytics
         self.onboardingDefaults = onboardingDefaults
+        self.adRemovalNoticeViewModel = adRemovalNoticeViewModel
         searchAnalyticsTracker = SearchAnalyticsTracker(
             scope: .characterList,
             analytics: analytics
@@ -133,7 +140,6 @@ final class CharacterListViewController: BaseViewController {
         
         setupSearchController()
         navigationController?.navigationBar.prefersLargeTitles = false
-        navigationController?.navigationBar.tintColor = .tkRed
 
         let memoButton = UIBarButtonItem(
             image: UIImage(systemName: "note.text"),
@@ -153,6 +159,15 @@ final class CharacterListViewController: BaseViewController {
     @objc private func settingsButtonTapped() {
         let settingsViewController = container.makeSettingViewController()
         navigationController?.pushViewController(settingsViewController, animated: true)
+    }
+
+    private func showAdRemovalInformation() {
+        guard adRemovalNoticeViewModel?.isEligible == true,
+              let navigationController, navigationController.topViewController === self,
+              presentedViewController == nil else { return }
+        let purchaseNotice = container.makePurchaseNoticeViewController()
+        adRemovalNoticeViewModel?.consume()
+        navigationController.pushViewController(purchaseNotice, animated: true)
     }
 
     @objc private func memoButtonTapped() {
@@ -200,6 +215,13 @@ final class CharacterListViewController: BaseViewController {
 
     override func bindViewModel() {
         super.bindViewModel()
+
+        adRemovalNoticeView.isHidden = true
+        adRemovalNoticeViewModel?.$isEligible.removeDuplicates().sink { [weak self] eligible in
+            guard let self else { return }
+            self.adRemovalNoticeView.isHidden = !eligible
+            self.viewIfLoaded?.setNeedsLayout()
+        }.store(in: &subscriptionSet)
         
         characterListViewModel
             .filteredCharactersPublisher

@@ -851,6 +851,159 @@
         }
       }
     },
+    "Feedback message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feedback message"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "문의 내용"
+          }
+        }
+      }
+    },
+    "Tell us what happened or what could be improved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell us what happened or what could be improved."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "어떤 문제가 있었는지, 또는 개선하고 싶은 점을 알려 주세요."
+          }
+        }
+      }
+    },
+    "Continue to email": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue to email"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메일 작성으로 이동"
+          }
+        }
+      }
+    },
+    "Email unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email unavailable"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메일을 보낼 수 없음"
+          }
+        }
+      }
+    },
+    "Open support page": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open support page"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지원 페이지 열기"
+          }
+        }
+      }
+    },
+    "Set up an account in Apple Mail or visit the support page for contact options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set up an account in Apple Mail or visit the support page for contact options."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Mail에 계정을 설정하거나 지원 페이지에서 문의 방법을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "The email could not be sent. Your message is still here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The email could not be sent. Your message is still here."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메일을 보내지 못했습니다. 작성한 내용은 이 화면에 남아 있습니다."
+          }
+        }
+      }
+    },
+    "[TK8] App feedback": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[TK8] App feedback"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[TK8] 앱 문의"
+          }
+        }
+      }
+    },
+    "App version: %@\niOS version: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App version: %@\niOS version: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 버전: %@\niOS 버전: %@"
+          }
+        }
+      }
+    },
     "Unable to open the page. Please try again.": {
       "extractionState": "manual",
       "localizations": {

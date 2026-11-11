@@ -1,6 +1,9 @@
+import SwiftUI
 import UIKit
 
 class SettingViewController: BaseViewController {
+    private static let supportURL = URL(string: "https://moongoon72.github.io/Tekken8-Frame-Data/support/")!
+
     private let tableView: SettingTableView
     private var settingsSections: [[SettingItem]] {
         var items: [SettingItem] = [.removeAds, .reportIssue]
@@ -93,8 +96,7 @@ class SettingViewController: BaseViewController {
     }
     
     static func openSupportPage(from presenter: UIViewController) {
-        let url = URL(string: "https://moongoon72.github.io/Tekken8-Frame-Data/support/")!
-        UIApplication.shared.open(url, options: [:]) { opened in
+        UIApplication.shared.open(supportURL, options: [:]) { opened in
             guard !opened else { return }
             DispatchQueue.main.async {
                 guard presenter.presentedViewController == nil else { return }
@@ -211,7 +213,9 @@ extension SettingViewController: UITableViewDelegate {
             }
         #endif
         case .reportIssue:
-            Self.openSupportPage(from: self)
+            let contact = UIHostingController(rootView: SupportContactView(supportURL: Self.supportURL))
+            contact.modalPresentationStyle = .pageSheet
+            present(contact, animated: true)
         case .adPrivacy:
             Task {
                 do {

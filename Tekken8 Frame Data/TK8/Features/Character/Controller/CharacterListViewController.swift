@@ -231,6 +231,7 @@ final class CharacterListViewController: BaseViewController {
             .store(in: &subscriptionSet)
 
         characterListViewModel.characterImagesPublisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] images in
                 self?.reconfigureCharacters(with: images)
             }
@@ -334,7 +335,6 @@ private extension CharacterListViewController {
         dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
             guard let self else { return }
             self.searchAnalyticsTracker.resultsApplied(count: characters.count, for: attemptID)
-            self.reconfigureCharacters(with: self.characterListViewModel.characterImages)
         }
     }
 

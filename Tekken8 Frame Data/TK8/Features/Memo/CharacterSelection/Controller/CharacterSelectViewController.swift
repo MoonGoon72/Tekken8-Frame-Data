@@ -154,10 +154,7 @@ private extension CharacterSelectViewController {
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
         snapshot.appendItems(characters, toSection: .main)
-        dataSource?.apply(snapshot, animatingDifferences: false) { [weak self] in
-            guard let self else { return }
-            self.reconfigureCharacters(with: self.viewModel.characterImages)
-        }
+        dataSource?.apply(snapshot, animatingDifferences: false)
     }
 
     func reconfigureCharacters(with images: [String: UIImage]) {

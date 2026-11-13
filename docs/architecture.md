@@ -151,6 +151,8 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | 온보딩 표시 버전 | 앱 상수 | UserDefaults `onboarding_shown_version` | 현재 온보딩 버전 최초 표시 후 기록 |
 | 캐릭터 이미지 | Asset Catalog 우선, 없으면 `character.image_url`의 외부 URL | `NSCache` + Caches 디렉터리 | 메모리 → 디스크 → 네트워크 순서 |
 
+영어 기술 화면은 `move.command_en`과 `move.description_en` 원문을 필드별로 우선 표시한다. 두 필드는 선택 사항이며 Core Data `MoveEntity`에 저장한다. 값이 없으면 기존 한국어 필드와 공통 번역 규칙을 사용한다. 한국어 표시와 검색용 입력 표기는 기존 필드를 사용한다.
+
 Core Data의 `deleteAll()`은 `CharacterEntity`와 `MoveEntity`만 batch delete한다. `MemoEntity`는 의도적으로 남아 프레임 데이터 버전 변경이나 로컬 스키마 캐시 무효화 후에도 사용자 메모가 유지된다.
 
 ## 런타임 데이터 흐름

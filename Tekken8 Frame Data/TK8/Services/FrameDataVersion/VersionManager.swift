@@ -8,7 +8,7 @@
 import Foundation
 
 final class VersionManager: VersionManageable {
-    private static let currentDataSchemaVersion = 1
+    private static let currentDataSchemaVersion = 2
     private let store: UserDefaults
     private let supabaseManager: SupabaseManageable
     private let coreDataManager: CoreDataManageable

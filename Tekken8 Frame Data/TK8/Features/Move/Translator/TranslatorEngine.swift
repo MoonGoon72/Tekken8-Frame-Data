@@ -7,10 +7,27 @@ private final class Box<T> {
     init(value: T) { self.value = value }
 }
 
+private final class MoveCacheKey: NSObject {
+    let move: Move
+
+    init(_ move: Move) { self.move = move }
+
+    override var hash: Int { move.hashValue }
+
+    override func isEqual(_ object: Any?) -> Bool {
+        (object as? MoveCacheKey)?.move == move
+    }
+}
+
 final class TranslatorEngine {
     enum Lang: String, Sendable { case ko, en }
 
-    private var cache = NSCache<NSString, Box<LocalizedMove>>()
+    private func nonblank(_ text: String?) -> String? {
+        guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return text
+    }
+
+    private var cache = NSCache<MoveCacheKey, Box<LocalizedMove>>()
 
     func localize(move: Move, to lang: Lang) -> LocalizedMove {
         // ko: 원형
@@ -34,18 +51,18 @@ final class TranslatorEngine {
             )
         }
 
-        let key = NSString(string: "\(move.id)|\(move.command ?? "")|\(move.description ?? "")|\(move.section)|\(move.skillNameEN ?? "")|\(move.skillNameKR ?? "")")
+        let key = MoveCacheKey(move)
         if let hit = cache.object(forKey: key) { return hit.value }
 
         // TranslatorEngine.localize(_:to:)
         let commandRaw = move.command ?? ""
         // (A) 화면 표시용 커맨드: 문장만 EN, 커맨드 토큰은 보존
-        let commandDisplay = KRToENDescription.translatePreservingCommands(commandRaw)
+        let commandDisplay = nonblank(move.commandEnglish) ?? KRToENDescription.translatePreservingCommands(commandRaw)
         // (B) 검색 보조용 서양식
         let commandEN = ENCommandRenderer.render(from: commandRaw)
 
         // 설명/섹션: 문장만 EN (커맨드는 그대로)
-        let descEN = move.description.map { KRToENDescription.translatePreservingCommands($0) }
+        let descEN = nonblank(move.descriptionEnglish) ?? move.description.map { KRToENDescription.translatePreservingCommands($0) }
         let sectionEN = KRToENTranslator.translateSection(move.section) // 섹션은 보통 문장/라벨이므로 그대로 변환
 
         let localized = LocalizedMove(

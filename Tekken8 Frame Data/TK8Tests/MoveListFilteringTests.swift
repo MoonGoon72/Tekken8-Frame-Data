@@ -34,6 +34,12 @@ final class MoveListFilteringTests: XCTestCase {
         XCTAssertEqual(viewModel.moves.map(\.id), [2, 3, 4])
         XCTAssertEqual(repository.requestedCharacters, ["kazuya", "kazuya"])
         XCTAssertEqual(viewModel.filterCondition.keyword, "rp+lk")
+        viewModel.resetFilter()
+        XCTAssertEqual(Set(viewModel.filtered.map(\.id)), [2, 3, 4])
+        XCTAssertTrue(viewModel.filterCondition.keyword.isEmpty)
+        XCTAssertTrue(viewModel.filterCondition.attributes.isEmpty)
+        XCTAssertNil(viewModel.filterCondition.startupRange)
+
     }
 
     private let moves: [Move] = [

@@ -193,7 +193,7 @@ final class MoveListViewModel {
     }
     
     func resetFilter() {
-        filtered = sortLocalized(localized)
+        filterCondition = FilterCondition()
     }
     
     // MARK: private functions

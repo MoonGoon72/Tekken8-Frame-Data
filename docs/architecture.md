@@ -87,13 +87,13 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   │   │   ├── Repositories/        # Repository protocol/구현체, 데이터 출처 선택
 │   │   │   ├── Mapping/             # DTO와 영속 모델 매핑
 │   │   │   ├── Network/             # Supabase adapter와 범용 URLSession 추상화
-│   │   │   └── Persistence/         # Core Data/UserDefaults adapter, 캐시 삭제 알림
+│   │   │   └── Persistence/         # Core Data/UserDefaults adapter, 캐시 교체 알림
 │   │   ├── Services/
 │   │   │   ├── Analytics/           # 분석 이벤트와 검색 추적
 │   │   │   ├── Ads/                 # 배너·네이티브 광고 서비스
 │   │   │   ├── Purchases/           # StoreKit 광고 제거 권한·거래 처리
 │   │   │   ├── ImageCache/          # 이미지 캐시 구현과 계약
-│   │   │   └── FrameDataVersion/    # 버전 비교와 프레임 캐시 무효화
+│   │   │   └── FrameDataVersion/    # 버전 비교와 프레임 캐시 갱신
 │   │   ├── Shared/
 │   │   │   ├── UI/                  # 공통 View/Controller, 재사용 식별자
 │   │   │   └── Localization/        # 공통 문자열 현지화
@@ -110,7 +110,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 
 `Tekken8 Frame Data/View/MainViewController.swift`는 `TK8` file-system synchronized group 밖에 있는 빈 초기 파일이며 현재 앱 타깃의 실행 흐름에는 참여하지 않는다. `Data/Network`의 `DefaultNetworkService`도 범용 URLSession 구현으로 남아 있지만 현재 DI는 `SupabaseManager`를 직접 사용한다.
 
-폴더는 코드의 소유 책임을 기준으로 정한다. `App`은 시작과 DI 조립, `Features`는 사용자 기능별 화면·상태·규칙, `Data`는 조회·저장·출처 선택·매핑, `Services`는 여러 기능에서 사용하는 서비스, `Shared`는 특정 기능을 몰라도 쓸 수 있는 공통 UI·현지화를 소유한다. extension도 문법 대신 기능 소유권을 따른다. 커맨드 파싱·상수와 `LocalizedMove` 정렬은 `Features/Move`에 두고, 프레임 캐시 삭제 알림은 `Data/Persistence/CoreData`에 둔다. 기능 내부의 Controller/View/ViewModel/Model 구분은 유지하고, 파일이 많은 하위 기능만 별도로 묶는다.
+폴더는 코드의 소유 책임을 기준으로 정한다. `App`은 시작과 DI 조립, `Features`는 사용자 기능별 화면·상태·규칙, `Data`는 조회·저장·출처 선택·매핑, `Services`는 여러 기능에서 사용하는 서비스, `Shared`는 특정 기능을 몰라도 쓸 수 있는 공통 UI·현지화를 소유한다. extension도 문법 대신 기능 소유권을 따른다. 커맨드 파싱·상수와 `LocalizedMove` 정렬은 `Features/Move`에 두고, 프레임 캐시 교체 알림은 `Data/Persistence/CoreData`에 둔다. 기능 내부의 Controller/View/ViewModel/Model 구분은 유지하고, 파일이 많은 하위 기능만 별도로 묶는다.
 
 이번 변경은 파일 위치만 정리한다. 모든 Swift 파일 내용, 단일 앱 target, DI 조립, UIKit/SwiftUI 경계, Repository·캐시 흐름을 유지한다. 폴더는 별도 Swift module이나 접근 제어 경계를 만들지 않는다. Xcode의 `SupabaseAPITests` 파일 동기화 예외 경로는 새 위치에 맞춰 유지한다.
 
@@ -125,7 +125,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 | Data/Repositories | `DefaultCharacterRepository`, `DefaultMoveRepository`, `DefaultMoveVideoRepository`, `DefaultMemoRepository` | 데이터 출처 선택, 캐시 우선 조회, 원격 결과 저장, Data/Mapping을 통한 Core Data entity와 domain model 매핑; 영상 관계를 현재 `move.id`와 `MoveVideoReference`로 변환 |
 | Data/Network | `SupabaseManager` | `character`, `move`, `frame_data_version`, `tekken_version` 조회; `move_video` metadata query adapter (원격 table 적용) |
 | Data/Persistence | `CoreDataManager`, `UserDefaultsManager`, `CharacterLayoutPreference` | Core Data context/save/fetch/delete, 버전·온보딩·목록 레이아웃 설정 보존 |
-| Services/FrameDataVersion | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 무효화 |
+| Services/FrameDataVersion | `VersionManager` | 로컬 데이터 스키마 및 서버 프레임 데이터 버전을 비교해 캐릭터/기술 캐시 갱신 |
 | Services/ImageCache | `ImageCacheManager`, `CacheManageable` | 이미지 메모리/디스크 캐시와 캐시 계약 |
 | Services/Analytics | `AnalyticsClient`, `SearchAnalyticsTracker` | Firebase 이벤트 어댑터, 수동 화면 추적, 검색 디바운스·중복 제거 |
 | Services/Ads | `BannerAdService`, `ScreenAdHosting`, `NativeAdHost`, `CompactNativeAdView`, `BannerAdHost`, `NativeMoveAdLoader` | Remote Config·UMP 기반 광고 허용 판정과 배너·네이티브 광고 요청/생명주기 |
@@ -138,20 +138,22 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 
 | 데이터 | 원본/외부 저장소 | 로컬 저장소 | 갱신 기준 |
 |---|---|---|---|
-| 캐릭터 | Supabase `character` | Core Data `CharacterEntity` | 캐시가 비었을 때 fetch; 버전 무효화 후 재fetch |
+| 캐릭터 | Supabase `character` | Core Data `CharacterEntity` | 캐시가 비었을 때 fetch; 버전 갱신 시 다운로드 후 교체 |
 | 기술 | 편집 원본: 비공개 `Tekken8-Data-Ops`의 캐릭터별 CSV; 앱 제공본: Supabase `move` | Core Data `MoveEntity` | 캐릭터별 캐시가 비었을 때 fetch; `sort_order` 순서 유지 |
 | 기술 보조 영상 연결 | 검토 원본: 비공개 `Tekken8-Data-Ops`의 JSON; 앱 제공본: Supabase `move_video`의 `character_name`, `move_key`, R2 `object_key`, revision, enabled 상태 (2026-09-30 적용 3,508건) | 기술 화면 방문 중의 메모리 `[move.id: VideoReference]`만 사용. 영상 파일과 metadata를 Core Data/UserDefaults에 저장하지 않음 | 각 캐릭터 화면에서 별도 조회; 활성 연결 행을 탭할 때만 Cloudflare R2 HTTPS media URL 및 AVPlayer 생성 |
 | 기술 보조 영상 파일 | Cloudflare R2 Object Storage | 앱 자체 영상 파일 캐시 없음 | 공개 커스텀 도메인 연결 시 R2가 앱에 직접 전송. 비공개로 운영하면 탭 시 R2 서명 URL을 발급받아 R2에서 전송 |
-| 프레임 데이터 버전 | Supabase `frame_data_version` | UserDefaults `Version` | 앱 시작 시 서버 값이 더 크면 캐릭터/기술 캐시 삭제 |
+| 프레임 데이터 버전 | Supabase `frame_data_version` | UserDefaults `Version` | 전체 프레임 데이터 저장 성공 후 기록 |
 | 철권 버전 문자열 | Supabase `tekken_version` | UserDefaults `TekkenVersion` | 프레임 데이터 버전이 오른 경우 함께 갱신 |
-| 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 무효화 대상이 아님 |
+| 메모 | 기기 로컬 | Core Data `MemoEntity` | 사용자 CRUD 및 백업 import; 프레임 캐시 갱신 대상이 아님 |
 | 캐릭터 목록 모드 | 사용자 선택 | UserDefaults `characterLayout` | list/grid 토글 시 갱신 |
 | 앱 테마 | 사용자 선택(최초/잘못된 저장값은 다크) | UserDefaults `app_theme` | 다크/라이트/시스템 선택 저장 성공 후 window에 즉시 적용 |
 | 광고 제거 안내 처리 여부 | 사용자 닫기/알아보기 선택 | UserDefaults `ad_removal_notice_consumed` | 명시적 액션에서만 true 저장. 구매 권한 및 온보딩 revision과 독립 |
 | 온보딩 표시 버전 | 앱 상수 | UserDefaults `onboarding_shown_version` | 현재 온보딩 버전 최초 표시 후 기록 |
 | 캐릭터 이미지 | Asset Catalog 우선, 없으면 `character.image_url`의 외부 URL | `NSCache` + Caches 디렉터리 | 메모리 → 디스크 → 네트워크 순서 |
 
-Core Data의 `deleteAll()`은 `CharacterEntity`와 `MoveEntity`만 batch delete한다. `MemoEntity`는 의도적으로 남아 프레임 데이터 버전 변경이나 로컬 스키마 캐시 무효화 후에도 사용자 메모가 유지된다.
+영어 기술 화면은 `move.command_en`과 `move.description_en` 원문을 필드별로 우선 표시한다. 두 필드는 선택 사항이며 Core Data `MoveEntity`에 저장한다. 값이 없으면 기존 한국어 필드와 공통 번역 규칙을 사용한다. 한국어 표시와 검색용 입력 표기는 기존 필드를 사용한다.
+
+프레임 캐시 교체는 `CharacterEntity`와 `MoveEntity`만 대상으로 한다. `MemoEntity`는 별도로 보존한다.
 
 ## 런타임 데이터 흐름
 
@@ -171,26 +173,11 @@ UIKit `AdRemovalNoticeView`는 캐릭터 화면에서만 `BannerAdHost`의 선�
 
 닫기 또는 알아보기에서만 처리 상태를 저장한다. 알아보기는 DI의 공통 구매 설명 화면 factory를 통해 기존 `PurchaseNoticeViewController`로 이동한다. 설정도 같은 factory를 사용하며 공유 구매 서비스가 권한을 갱신하면 광고/안내를 함께 숨긴다. 재실행/업데이트는 안내 처리 상태를 보존하며 재설치는 별도다. Analytics 이벤트 계약은 변경하지 않는다.
 
-### 1. 앱 시작과 캐시 무효화
+### 1. 앱 시작과 프레임 캐시 갱신
 
-```text
-AppDelegate -- Firebase configure
-     |
-SceneDelegate
-     |-- VersionManager.invalidateCacheIfAppUpdated()
-     |      `-- 로컬 데이터 스키마 버전이 낮으면 Character/Move 삭제
-     |
-     |-- VersionManager.checkFrameDataVersion()
-     |      |-- Supabase frame_data_version 조회
-     |      |-- 서버 버전이 높으면 tekken_version 조회
-     |      `-- 두 버전 응답이 유효할 때만 Character/Move 삭제
-     |          + UserDefaults 버전 갱신
-     |          + tekken_version 저장
-     |
-     `-- DIContainer가 CharacterListViewController를 루트로 생성
-```
+`SceneDelegate`는 캐시 우선 캐릭터 화면을 띄우고 버전을 비동기로 확인한다. 서버 버전이 오르거나 앱의 로컬 데이터 스키마가 바뀌면 `VersionManager`가 캐릭터와 각 캐릭터의 기술을 모두 메모리로 다운로드한다. 다운로드 끝에 서버 버전을 다시 확인한다.
 
-빈 버전 응답은 `SupabaseVersionError`로 전달되며, `SceneDelegate`가 이를 기록하고 기존 캐시를 유지한다. 캐시 삭제 뒤 `.allDatabaseDeleted` notification이 발행된다. `CharacterListViewModel`이 이를 구독해 캐릭터를 다시 요청한다. 시작 직후 최초 fetch와 비동기 버전 확인이 겹칠 수 있지만, 최종적으로 notification이 재fetch를 유도한다.
+Core Data는 별도 private queue 컨텍스트에서 캐릭터·기술 교체를 한 번의 저장으로 커밋한다. 다운로드·검증·저장 실패 시 기존 캐시와 버전을 유지한다. 저장이 성공하면 버전을 기록하고 `.frameDataReplaced`를 발행해 캐릭터 목록과 열려 있는 캐릭터의 기술 목록을 다시 읽는다. 기술 목록은 현재 검색어와 필터를 새 데이터에 재적용한다. 교체보다 먼저 시작한 캐시 미스 요청은 세대가 바뀌면 새 캐시를 사용한다. 교체 저장이 진행 중이면 개별 조회 응답을 캐시에 쓰지 않는다.
 
 `FirebaseAutomaticScreenReportingEnabled`를 끄고 UIKit 화면의 `viewDidAppear`와 SwiftUI 필터의 `onAppear`에서 `AnalyticsClient`를 통해 안정적인 영문 `screen_view`를 수동 기록한다. 운영 빌드는 Firebase 수집을 사용하고, Debug 빌드는 `-FIRAnalyticsDebugEnabled` 실행 인자가 있을 때만 수집한다. 일반 Debug 및 테스트 호스트에서는 Firebase 초기화를 건너뛰고 DI에서 NoOp 클라이언트를 사용한다. 초기 수집값은 Info.plist에서 NO이며 허용된 실행에서만 활성화한다. 온보딩 종료 콜백으로 아래 화면의 분석 문맥과 버튼 노출을 복원한다.
 
@@ -293,7 +280,7 @@ Supabase move upsert
 frame_data_version 증가
               |
               v
-앱 시작 시 버전 비교 -> Core Data Character/Move 캐시 삭제 -> 재fetch
+앱 시작 시 버전 비교 -> 전체 다운로드·검증 -> Core Data Character/Move 교체
 ```
 
 비공개 `Tekken8-Data-Ops`의 `dashboard/server.py`는 Mac·Windows의 `127.0.0.1`에서만 열리는 로컬 운영 도구다. 브라우저에는 비밀키를 보내지 않고, 각 컴퓨터의 Git 무시 `.env.local` 자격증명을 서버 프로세스에서만 사용한다. 기술 CSV는 검증 후 원본 파일을 교체하고 백업하며, `move` 반영 전에 원격 행과 비교한다. 영상은 R2 전체 key 목록을 읽은 뒤 확정 JSON을 만들고, `move_video` 반영 전에 원격 연결과 비교한다. 기술표가 바뀐 경우에만 `frame_data_version.version_number`를 올린다. 앱의 Repository·캐시·영상 재생 경계는 이 도구로 변경되지 않는다.

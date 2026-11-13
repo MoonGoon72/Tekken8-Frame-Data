@@ -33,37 +33,20 @@ final class CoreDataManager: CoreDataManageable {
         context.delete(object)
     }
     
-    func deleteAll() throws {
-        // 삭제할 엔티티 이름들을 배열로 관리
-        let entityNames = [Text.character, Text.move]
-        
-        for name in entityNames {
-            // 1) NSFetchRequest<Result> 생성
-            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: name)
-            
-            // 2) Batch Delete Request 생성
-            let batchDelete = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-            // 삭제된 객체의 ObjectID를 반환받아 컨텍스트에 머지하기 위함
-            batchDelete.resultType = .resultTypeObjectIDs
-            
-            // 3) 실행
-            let result = try context.execute(batchDelete) as? NSBatchDeleteResult
-            
-            // 4) 컨텍스트에 변경사항 머지
-            if let objectIDs = result?.result as? [NSManagedObjectID] {
-                let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
-                NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
-            }
-        }
-        // 5) 저장
-        try saveContext()
+    @MainActor private(set) var frameDataGeneration = 0
+    @MainActor private(set) var isReplacingFrameData = false
+
+    @MainActor
+    func replaceFrameData(characters: [Character], moves: [Move]) async throws {
+        isReplacingFrameData = true
+        defer { isReplacingFrameData = false }
+        try await saveFrameDataSnapshot(characters: characters, moves: moves)
+        frameDataGeneration += 1
     }
 }
 
 private extension CoreDataManager {
     enum Text {
         static let containerName = "Tekken8FrameData"
-        static let character = "CharacterEntity"
-        static let move = "MoveEntity"
     }
 }

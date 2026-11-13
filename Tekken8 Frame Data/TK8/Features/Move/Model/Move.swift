@@ -24,6 +24,8 @@ struct Move: Decodable, Hashable {
     let counterFrame: String?
     let attribute: String?
     let description: String?
+    var commandEnglish: String? = nil
+    var descriptionEnglish: String? = nil
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -42,6 +44,8 @@ struct Move: Decodable, Hashable {
         case counterFrame = "counter_frame"
         case attribute
         case description
+        case commandEnglish = "command_en"
+        case descriptionEnglish = "description_en"
     }
 }
 

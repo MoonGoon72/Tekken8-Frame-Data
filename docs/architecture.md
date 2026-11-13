@@ -177,7 +177,7 @@ UIKit `AdRemovalNoticeView`는 캐릭터 화면에서만 `BannerAdHost`의 선�
 
 `SceneDelegate`는 캐시 우선 캐릭터 화면을 띄우고 버전을 비동기로 확인한다. 서버 버전이 오르거나 앱의 로컬 데이터 스키마가 바뀌면 `VersionManager`가 캐릭터와 각 캐릭터의 기술을 모두 메모리로 다운로드한다. 다운로드 끝에 서버 버전을 다시 확인한다.
 
-Core Data는 별도 컨텍스트에서 캐릭터·기술 교체를 한 번의 저장으로 커밋한다. 다운로드·검증·저장 실패 시 기존 캐시와 버전을 유지한다. 저장이 성공하면 버전을 기록하고 `.frameDataReplaced`를 발행해 캐릭터 목록을 다시 읽는다. 교체보다 먼저 시작한 캐시 미스 요청은 완료 시 새 캐시를 사용한다.
+Core Data는 별도 컨텍스트에서 캐릭터·기술 교체를 한 번의 저장으로 커밋한다. 다운로드·검증·저장 실패 시 기존 캐시와 버전을 유지한다. 저장이 성공하면 버전을 기록하고 `.frameDataReplaced`를 발행해 캐릭터 목록과 열려 있는 캐릭터의 기술 목록을 다시 읽는다. 기술 목록은 현재 검색어와 필터를 새 데이터에 재적용한다. 교체보다 먼저 시작한 캐시 미스 요청은 완료 시 새 캐시를 사용한다.
 
 `FirebaseAutomaticScreenReportingEnabled`를 끄고 UIKit 화면의 `viewDidAppear`와 SwiftUI 필터의 `onAppear`에서 `AnalyticsClient`를 통해 안정적인 영문 `screen_view`를 수동 기록한다. 운영 빌드는 Firebase 수집을 사용하고, Debug 빌드는 `-FIRAnalyticsDebugEnabled` 실행 인자가 있을 때만 수집한다. 일반 Debug 및 테스트 호스트에서는 Firebase 초기화를 건너뛰고 DI에서 NoOp 클라이언트를 사용한다. 초기 수집값은 Info.plist에서 NO이며 허용된 실행에서만 활성화한다. 온보딩 종료 콜백으로 아래 화면의 분석 문맥과 버튼 노출을 복원한다.
 

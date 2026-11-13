@@ -4,9 +4,38 @@
 //
 
 @testable import TK8
+import Combine
 import XCTest
 
 final class MoveListFilteringTests: XCTestCase {
+    @MainActor
+    func testCacheReplacementReloadsOpenMoveListAndReappliesFilters() async {
+        let repository = RefreshingMoveRepository(moves: Array(moves.prefix(2)))
+        let viewModel = MoveListViewModel(moveRepository: repository)
+        let initial = expectation(description: "Initial moves")
+        let initialSubscription = viewModel.$fetchState.first { $0 == .loaded }.sink { _ in initial.fulfill() }
+        viewModel.fetchMoves(characterName: "kazuya")
+        await fulfillment(of: [initial], timeout: 2)
+        initialSubscription.cancel()
+
+        viewModel.applyFilter(FilterCondition(keyword: "rp+lk", attributes: ["powercrush"], startupRange: 15...15))
+        XCTAssertEqual(viewModel.filtered.map(\.id), [2])
+
+        repository.moves = [moves[1], moves[2], moves[3]]
+        let refreshed = expectation(description: "New moves with the previous filters applied")
+        let refreshSubscription = viewModel.$filtered.dropFirst().first().sink { result in
+            XCTAssertEqual(result.map(\.id), [2])
+            refreshed.fulfill()
+        }
+
+        NotificationCenter.default.post(name: .frameDataReplaced, object: nil)
+        await fulfillment(of: [refreshed], timeout: 2)
+        refreshSubscription.cancel()
+        XCTAssertEqual(viewModel.moves.map(\.id), [2, 3, 4])
+        XCTAssertEqual(repository.requestedCharacters, ["kazuya", "kazuya"])
+        XCTAssertEqual(viewModel.filterCondition.keyword, "rp+lk")
+    }
+
     private let moves: [Move] = [
         Move(
             id: 1,
@@ -303,5 +332,18 @@ final class MoveListFilteringTests: XCTestCase {
         XCTAssertEqual(state.activeCount, 0)
         XCTAssertNil(state.startup.selectedRange)
         XCTAssertNil(state.guardFrame.selectedRange)
+    }
+}
+
+private final class RefreshingMoveRepository: MoveRepository {
+    var moves: [Move]
+    private(set) var requestedCharacters: [String] = []
+
+    init(moves: [Move]) { self.moves = moves }
+
+    @MainActor
+    func fetchMoves(characterName name: String) async throws -> [Move] {
+        requestedCharacters.append(name)
+        return moves
     }
 }

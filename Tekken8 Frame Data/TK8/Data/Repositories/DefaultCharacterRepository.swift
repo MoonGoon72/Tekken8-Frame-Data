@@ -63,15 +63,28 @@ final class DefaultCharacterRepository: CharacterRepository {
         let existingCharacters = try context.fetch(request)
         let existingCharacterDict = Dictionary(uniqueKeysWithValues: existingCharacters.map { ($0.id, $0) })
         
+        let originalValues = existingCharacters.map { entity in
+            let keys = Array(entity.entity.attributesByName.keys)
+            return (entity, entity.dictionaryWithValues(forKeys: keys))
+        }
+        var inserted: [CharacterEntity] = []
         for characterData in data {
             let dto = CharacterDTO(domain: characterData)
             if let existingEntity = existingCharacterDict[characterData.id] {
                 dto.update(existingEntity)
             } else {
-                dto.toEntity(in: context)
+                inserted.append(dto.toEntity(in: context))
             }
         }
         
-        try coreData.saveContext()
+        do {
+            try coreData.saveContext()
+        } catch {
+            inserted.forEach(coreData.delete)
+            for (entity, original) in originalValues {
+                entity.setValuesForKeys(original)
+            }
+            throw error
+        }
     }
 }

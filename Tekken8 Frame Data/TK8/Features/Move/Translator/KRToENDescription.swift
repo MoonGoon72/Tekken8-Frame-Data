@@ -6,6 +6,15 @@
 import Foundation
 
 enum KRToENDescription {
+    private static let commandPattern: NSRegularExpression = {
+        let tokens = GlobalConstants.commands.sorted { $0.count > $1.count }
+            .map(NSRegularExpression.escapedPattern(for:))
+            .joined(separator: "|")
+        return try! NSRegularExpression(
+            pattern: #"(?<![\p{L}\p{N}_+])(?>\#(tokens))+(?:\+(?>\#(tokens))+)*(?![A-Za-z0-9_+])(?=[^가-힣]|(?:을|를|로)(?![가-힣])|$)"#
+        )
+    }()
+
     /// description 전체를 번역하되, 커맨드 토큰은 그대로 보존한다.
     /// 파이프("| ")로 분할된 각 줄을 독립적으로 처리.
     static func translatePreservingCommands(_ description: String) -> String {
@@ -16,38 +25,19 @@ enum KRToENDescription {
     }
 
     private static func translateLineMaskingCommands(_ line: String) -> String {
-        // 1) 토큰화
-        let tokens = line.tokenizeCommands()
-
-        // 2) 커맨드 판정: GlobalConstants + 버튼 콤보(lk+rp 등) 정규식
-        let cmdSet = Set(GlobalConstants.commands)
-        let comboRegex = try! NSRegularExpression(
-            pattern: #"(?:lp|rp|lk|rk|ap|ak|al|ar|all)(?:\+(?:lp|rp|lk|rk|ap|ak|al|ar|all))+"#
-        )
-        func isCommandLike(_ t: String) -> Bool {
-            if cmdSet.contains(t) { return true }
-            let r = NSRange(t.startIndex..., in: t)
-            return comboRegex.firstMatch(in: t, range: r) != nil
+        // Mask complete inputs, including commands followed by a Korean particle.
+        // Reuse the command alphabet used by the UI and search renderer.
+        let input = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        let source = input as NSString
+        let commandMatches = commandPattern.matches(in: input, range: NSRange(location: 0, length: source.length))
+        var masked = source
+        for (index, match) in commandMatches.enumerated().reversed() {
+            masked = masked.replacingCharacters(in: match.range, with: "__CMD\(index)__") as NSString
         }
 
-        // 3) 커맨드 토큰을 플레이스홀더로 마스킹
-        var maskedPieces: [String] = []
-        var placeholders: [String: String] = [:]
-        var cmdIndex = 0
-        for t in tokens {
-            if isCommandLike(t) {
-                let ph = "__CMD\(cmdIndex)__"
-                cmdIndex += 1
-                placeholders[ph] = t
-                maskedPieces.append(ph)
-            } else {
-                maskedPieces.append(t)
-            }
-        }
+        var translated = KRToENTranslator.translate(masked as String)
 
-        // 4) 문장 단위 번역 (패턴들이 제대로 작동)
-        let masked = maskedPieces.joined(separator: " ")
-        var translated = KRToENTranslator.translate(masked)
+        translated = translated.replacingOccurrences(of: #"(__CMD\d+__)\s*\("#, with: "$1 (", options: .regularExpression)
 
         // 4.5) 괄호 안 텍스트도 동일 파이프라인으로 번역 (단일 패스, 뒤에서부터 치환)
         let parenRx = try! NSRegularExpression(pattern: #"\(([^)]*)\)"#)
@@ -57,16 +47,22 @@ enum KRToENDescription {
             // 뒤에서부터 치환해야 인덱스가 안 틀어짐
             for m in matches.reversed() {
                 let inner = newText.substring(with: m.range(at: 1))
-                let innerEN = translateLineMaskingCommands(inner) // 커맨드 보존 규칙 그대로 적용
+                let innerEN = translateLineMaskingCommands(inner)
+                    .replacingOccurrences(of: #"^Or\b"#, with: "or", options: .regularExpression)
                 newText = newText.replacingCharacters(in: m.range, with: "(\(innerEN))") as NSString
             }
             translated = newText as String
         }
         
         // 5) 플레이스홀더를 원래 커맨드로 복원
-        for (ph, original) in placeholders {
-            translated = translated.replacingOccurrences(of: ph, with: original)
+        for (index, match) in commandMatches.enumerated() {
+            let command = source.substring(with: match.range)
+            translated = translated.replacingOccurrences(of: "__CMD\(index)__", with: command)
         }
+
+        translated = translated.replacingOccurrences(
+            of: #"(on hit or block|on ground hit|on hit|on block|cannot block)\("#, with: "$1 (", options: .regularExpression
+        )
 
         // 6) 공백 정리
         translated = translated

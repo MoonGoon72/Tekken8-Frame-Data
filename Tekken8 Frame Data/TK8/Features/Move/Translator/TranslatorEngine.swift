@@ -46,7 +46,7 @@ final class TranslatorEngine {
 
         // 설명/섹션: 문장만 EN (커맨드는 그대로)
         let descEN = move.description.map { KRToENDescription.translatePreservingCommands($0) }
-        let sectionEN = KRToENTranslator.translate(move.section) // 섹션은 보통 문장/라벨이므로 그대로 변환
+        let sectionEN = KRToENTranslator.translateSection(move.section) // 섹션은 보통 문장/라벨이므로 그대로 변환
 
         let localized = LocalizedMove(
             id: move.id,

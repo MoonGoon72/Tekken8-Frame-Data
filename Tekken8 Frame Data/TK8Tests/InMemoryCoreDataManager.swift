@@ -33,5 +33,4 @@ final class InMemoryCoreDataManager: CoreDataManageable {
         context.delete(object)
     }
 
-    func deleteAll() throws {}
 }

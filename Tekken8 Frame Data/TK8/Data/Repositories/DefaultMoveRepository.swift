@@ -8,7 +8,7 @@
 import CoreData
 
 protocol MoveRepository {
-    func fetchMoves(characterName name: String) async throws -> [Move]
+    @MainActor func fetchMoves(characterName name: String) async throws -> [Move]
 }
 
 final class DefaultMoveRepository: MoveRepository {
@@ -20,7 +20,7 @@ final class DefaultMoveRepository: MoveRepository {
         self.coreData = coreData
     }
     
-    func fetchMoves(characterName name: String) async throws -> [Move] {
+    @MainActor func fetchMoves(characterName name: String) async throws -> [Move] {
         let request = MoveEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
         request.predicate = NSPredicate(format: "characterName == %@", name)
@@ -30,8 +30,12 @@ final class DefaultMoveRepository: MoveRepository {
             return result.map({ MoveDTO(entity: $0).toDomain() })
         }
         
+        let generation = coreData.frameDataGeneration
         let fetchedMoves = try await manager.fetchMoves(characterName: name)
-        try await addToCoreData(fetchedMoves)
+        guard generation == coreData.frameDataGeneration else {
+            return try coreData.fetch(request).map { MoveDTO(entity: $0).toDomain() }
+        }
+        try addToCoreData(fetchedMoves)
         
         return fetchedMoves
     }

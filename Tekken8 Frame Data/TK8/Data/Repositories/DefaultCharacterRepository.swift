@@ -8,7 +8,7 @@
 import CoreData
 
 protocol CharacterRepository {
-    func fetchCharacters() async throws -> [Character]
+    @MainActor func fetchCharacters() async throws -> [Character]
     func characterImageURL(character: Character) throws -> URL
 }
 
@@ -21,15 +21,19 @@ final class DefaultCharacterRepository: CharacterRepository {
         self.coreData = coreData
     }
     
-    func fetchCharacters() async throws -> [Character] {
+    @MainActor func fetchCharacters() async throws -> [Character] {
         let request = CharacterEntity.fetchRequest()
         
         if let result = try? coreData.fetch(request), !result.isEmpty {
             return result.map({ CharacterDTO(entity: $0).toDomain() })
         }
         
+        let generation = coreData.frameDataGeneration
         let fetchedCharacters = try await manager.fetchCharacter()
-        try await addToCoreData(fetchedCharacters)
+        guard generation == coreData.frameDataGeneration else {
+            return try coreData.fetch(request).map { CharacterDTO(entity: $0).toDomain() }
+        }
+        try addToCoreData(fetchedCharacters)
         
         return fetchedCharacters
     }

@@ -46,7 +46,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
     init(characterRepository repository: CharacterRepository) {
         self.repository = repository
         
-        NotificationCenter.default.publisher(for: .allDatabaseDeleted)
+        NotificationCenter.default.publisher(for: .frameDataReplaced)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.fetchCharacters()

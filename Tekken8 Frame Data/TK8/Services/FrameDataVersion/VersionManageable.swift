@@ -6,6 +6,6 @@
 //
 
 protocol VersionManageable {
-    func invalidateCacheIfAppUpdated() throws
+    @MainActor
     func checkFrameDataVersion() async throws
 }

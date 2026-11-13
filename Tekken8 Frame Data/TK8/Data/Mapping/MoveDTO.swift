@@ -24,6 +24,8 @@ struct MoveDTO {
     let counterFrame: String?
     let attribute: String?
     let description: String?
+    let commandEnglish: String?
+    let descriptionEnglish: String?
     
     init(entity: MoveEntity) {
         id = entity.id
@@ -42,6 +44,8 @@ struct MoveDTO {
         counterFrame = entity.counterFrame
         attribute = entity.attribute ?? ""
         description = entity.descriptions
+        commandEnglish = entity.commandEnglish
+        descriptionEnglish = entity.descriptionEnglish
     }
     
     init(domain: Move) {
@@ -61,6 +65,8 @@ struct MoveDTO {
         counterFrame = domain.counterFrame
         attribute = domain.attribute
         description = domain.description
+        commandEnglish = domain.commandEnglish
+        descriptionEnglish = domain.descriptionEnglish
     }
     
     func toDomain() -> Move {
@@ -80,7 +86,9 @@ struct MoveDTO {
             hitFrame: hitFrame,
             counterFrame: counterFrame,
             attribute: attribute,
-            description: description
+            description: description,
+            commandEnglish: commandEnglish,
+            descriptionEnglish: descriptionEnglish
         )
     }
     
@@ -100,6 +108,8 @@ struct MoveDTO {
         entity.counterFrame = counterFrame
         entity.attribute = attribute
         entity.descriptions = description
+        entity.commandEnglish = commandEnglish
+        entity.descriptionEnglish = descriptionEnglish
     }
     
     @discardableResult
@@ -121,6 +131,8 @@ struct MoveDTO {
         entity.counterFrame = counterFrame
         entity.attribute = attribute
         entity.descriptions = description
+        entity.commandEnglish = commandEnglish
+        entity.descriptionEnglish = descriptionEnglish
         return entity
     }
 }

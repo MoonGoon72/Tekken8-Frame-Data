@@ -39,6 +39,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
     @Published private(set) var characterImages: [String: UIImage] = [:]
     @Published private(set) var filteredCharacters: [Character] = []
     private(set) var characters: [Character] = []
+    private var searchKeyword = ""
     private var cancellables = Set<AnyCancellable>()
     private let repository: CharacterRepository
     private let preferredLanguage = Bundle.main.preferredLocalizations.first ?? "en"
@@ -46,7 +47,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
     init(characterRepository repository: CharacterRepository) {
         self.repository = repository
         
-        NotificationCenter.default.publisher(for: .allDatabaseDeleted)
+        NotificationCenter.default.publisher(for: .frameDataReplaced)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.fetchCharacters()
@@ -64,7 +65,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
                             $1.localizedName(preferredLanguage: preferredLanguage)
                         ) == .orderedAscending
                 }
-                filteredCharacters = characters
+                filter(by: searchKeyword)
                 for character in characters {
                     loadImage(for: character)
                 }
@@ -75,6 +76,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
     }
     
     func filter(by keyword: String) {
+        searchKeyword = keyword
         if keyword.isEmpty {
             filteredCharacters = characters
         } else {
@@ -90,7 +92,7 @@ final class CharacterListViewModel: CharacterFetchable, CharacterSelectable {
     }
     
     func resetFilter() {
-        filteredCharacters = characters
+        filter(by: "")
     }
     
     func loadImage(for character: Character) {

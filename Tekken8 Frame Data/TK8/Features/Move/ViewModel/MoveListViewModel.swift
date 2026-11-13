@@ -46,6 +46,9 @@ final class MoveListViewModel {
     private let repository: MoveRepository
     private let moveVideoRepository: MoveVideoRepository?
     private let translator = TranslatorEngine()
+    private var characterName: String?
+    private var moveFetchTask: Task<Void, Never>?
+    private var moveRevision = 0
     private var moveVideoRequestID = UUID()
     private var moveVideoCharacterName: String?
     
@@ -62,10 +65,17 @@ final class MoveListViewModel {
     init(moveRepository repository: MoveRepository, moveVideoRepository: MoveVideoRepository? = nil) {
         self.repository = repository
         self.moveVideoRepository = moveVideoRepository
-        $filterCondition.sink { condition in
-            self.filter(by: condition)
+        $filterCondition.sink { [weak self] condition in
+            self?.filter(by: condition)
         }
         .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: .frameDataReplaced)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, let name = self.characterName else { return }
+                self.fetchMoves(characterName: name, preservesDisplay: self.fetchState == .loaded)
+            }
+            .store(in: &cancellables)
     }
     
     func setLanguage(code: String?) {
@@ -76,15 +86,27 @@ final class MoveListViewModel {
     }
     
     func fetchMoves(characterName name: String) {
-        Task {
-            fetchState = .loading
+        fetchMoves(characterName: name, preservesDisplay: false)
+    }
+
+    private func fetchMoves(characterName name: String, preservesDisplay: Bool) {
+        characterName = name
+        moveFetchTask?.cancel()
+        if !preservesDisplay { fetchState = .loading }
+
+        let repository = self.repository
+        moveFetchTask = Task { [weak self] in
             do {
-                let fetchedMoves: [Move] = try await repository.fetchMoves(characterName: name)
-                moves = fetchedMoves
-                await relocalizeAndSort()
-                fetchState = .loaded
+                let fetchedMoves = try await repository.fetchMoves(characterName: name)
+                guard !Task.isCancelled, let self else { return }
+                self.moves = fetchedMoves
+                self.moveRevision += 1
+                await self.relocalizeAndSort()
+                guard !Task.isCancelled else { return }
+                self.fetchState = .loaded
             } catch {
-                fetchState = .failed
+                guard !Task.isCancelled else { return }
+                if !preservesDisplay { self?.fetchState = .failed }
                 NSLog("❌ Error fetching \(name)'s moves: \(error)")
             }
         }
@@ -171,25 +193,27 @@ final class MoveListViewModel {
     }
     
     func resetFilter() {
-        filtered = sortLocalized(localized)
+        filterCondition = FilterCondition()
     }
     
     // MARK: private functions
     
     private func relocalizeAndSort() async {
-        // 상위에서 한 번에 로컬라이즈
+        let revision = moveRevision
+        let language = lang
         let mapped: [LocalizedMove] = await withTaskGroup(of: LocalizedMove.self, returning: [LocalizedMove].self) { group in
             for m in moves {
-                group.addTask { await self.translator.localize(move: m, to: self.lang) }
+                group.addTask { await self.translator.localize(move: m, to: language) }
             }
             var acc: [LocalizedMove] = []
             for await lm in group { acc.append(lm) }
             return acc
         }
 
+        guard !Task.isCancelled, revision == moveRevision, language == lang else { return }
         localized = mapped
         overallSections = Array<LocalizedMove>.overallSectionOrder(from: localized)
-        filtered  = sortLocalized(mapped)
+        filter(by: filterCondition)
     }
     
     private func sortLocalized(_ items: [LocalizedMove]) -> [LocalizedMove] {

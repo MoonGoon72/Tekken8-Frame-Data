@@ -8,7 +8,7 @@
 import CoreData
 
 protocol MoveRepository {
-    func fetchMoves(characterName name: String) async throws -> [Move]
+    @MainActor func fetchMoves(characterName name: String) async throws -> [Move]
 }
 
 final class DefaultMoveRepository: MoveRepository {
@@ -20,7 +20,7 @@ final class DefaultMoveRepository: MoveRepository {
         self.coreData = coreData
     }
     
-    func fetchMoves(characterName name: String) async throws -> [Move] {
+    @MainActor func fetchMoves(characterName name: String) async throws -> [Move] {
         let request = MoveEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
         request.predicate = NSPredicate(format: "characterName == %@", name)
@@ -30,8 +30,15 @@ final class DefaultMoveRepository: MoveRepository {
             return result.map({ MoveDTO(entity: $0).toDomain() })
         }
         
+        let generation = coreData.frameDataGeneration
         let fetchedMoves = try await manager.fetchMoves(characterName: name)
-        try await addToCoreData(fetchedMoves)
+        guard generation == coreData.frameDataGeneration else {
+            return try coreData.fetch(request).map { MoveDTO(entity: $0).toDomain() }
+        }
+        try Task.checkCancellation()
+        if !coreData.isReplacingFrameData {
+            try addToCoreData(fetchedMoves)
+        }
         
         return fetchedMoves
     }
@@ -47,15 +54,28 @@ final class DefaultMoveRepository: MoveRepository {
         let existingMoves = try context.fetch(request)
         let existingMoveDict = Dictionary(uniqueKeysWithValues: existingMoves.map { ($0.id, $0) })
         
+        let originalValues = existingMoves.map { entity in
+            let keys = Array(entity.entity.attributesByName.keys)
+            return (entity, entity.dictionaryWithValues(forKeys: keys))
+        }
+        var inserted: [MoveEntity] = []
         for moveData in data {
             let dto = MoveDTO(domain: moveData)
             if let existingEntity = existingMoveDict[moveData.id] {
                 dto.update(existingEntity)
             } else {
-                dto.toEntity(context: context)
+                inserted.append(dto.toEntity(context: context))
             }
         }
         
-        try coreData.saveContext()
+        do {
+            try coreData.saveContext()
+        } catch {
+            inserted.forEach(coreData.delete)
+            for (entity, original) in originalValues {
+                entity.setValuesForKeys(original)
+            }
+            throw error
+        }
     }
 }

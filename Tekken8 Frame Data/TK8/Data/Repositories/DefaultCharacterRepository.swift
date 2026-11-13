@@ -8,7 +8,7 @@
 import CoreData
 
 protocol CharacterRepository {
-    func fetchCharacters() async throws -> [Character]
+    @MainActor func fetchCharacters() async throws -> [Character]
     func characterImageURL(character: Character) throws -> URL
 }
 
@@ -21,15 +21,22 @@ final class DefaultCharacterRepository: CharacterRepository {
         self.coreData = coreData
     }
     
-    func fetchCharacters() async throws -> [Character] {
+    @MainActor func fetchCharacters() async throws -> [Character] {
         let request = CharacterEntity.fetchRequest()
         
         if let result = try? coreData.fetch(request), !result.isEmpty {
             return result.map({ CharacterDTO(entity: $0).toDomain() })
         }
         
+        let generation = coreData.frameDataGeneration
         let fetchedCharacters = try await manager.fetchCharacter()
-        try await addToCoreData(fetchedCharacters)
+        guard generation == coreData.frameDataGeneration else {
+            return try coreData.fetch(request).map { CharacterDTO(entity: $0).toDomain() }
+        }
+        try Task.checkCancellation()
+        if !coreData.isReplacingFrameData {
+            try addToCoreData(fetchedCharacters)
+        }
         
         return fetchedCharacters
     }
@@ -56,15 +63,28 @@ final class DefaultCharacterRepository: CharacterRepository {
         let existingCharacters = try context.fetch(request)
         let existingCharacterDict = Dictionary(uniqueKeysWithValues: existingCharacters.map { ($0.id, $0) })
         
+        let originalValues = existingCharacters.map { entity in
+            let keys = Array(entity.entity.attributesByName.keys)
+            return (entity, entity.dictionaryWithValues(forKeys: keys))
+        }
+        var inserted: [CharacterEntity] = []
         for characterData in data {
             let dto = CharacterDTO(domain: characterData)
             if let existingEntity = existingCharacterDict[characterData.id] {
                 dto.update(existingEntity)
             } else {
-                dto.toEntity(in: context)
+                inserted.append(dto.toEntity(in: context))
             }
         }
         
-        try coreData.saveContext()
+        do {
+            try coreData.saveContext()
+        } catch {
+            inserted.forEach(coreData.delete)
+            for (entity, original) in originalValues {
+                entity.setValuesForKeys(original)
+            }
+            throw error
+        }
     }
 }

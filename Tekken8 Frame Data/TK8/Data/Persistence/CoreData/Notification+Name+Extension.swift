@@ -8,6 +8,6 @@
 import Foundation
 
 extension Notification.Name {
-    static let allDatabaseDeleted = Notification.Name("allDatabaseDeleted")
+    static let frameDataReplaced = Notification.Name("frameDataReplaced")
 }
 

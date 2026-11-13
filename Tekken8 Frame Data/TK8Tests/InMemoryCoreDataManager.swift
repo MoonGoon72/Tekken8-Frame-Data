@@ -8,6 +8,7 @@ import CoreData
 
 final class InMemoryCoreDataManager: CoreDataManageable {
     let context: NSManagedObjectContext
+    var saveError: Error?
 
     init() {
         let container = NSPersistentContainer(name: "Tekken8FrameData")
@@ -22,6 +23,7 @@ final class InMemoryCoreDataManager: CoreDataManageable {
     }
 
     func saveContext() throws {
+        if let saveError { throw saveError }
         if context.hasChanges { try context.save() }
     }
 
@@ -33,5 +35,4 @@ final class InMemoryCoreDataManager: CoreDataManageable {
         context.delete(object)
     }
 
-    func deleteAll() throws {}
 }

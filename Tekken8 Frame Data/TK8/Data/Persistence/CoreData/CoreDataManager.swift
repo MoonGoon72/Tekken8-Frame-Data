@@ -34,10 +34,13 @@ final class CoreDataManager: CoreDataManageable {
     }
     
     @MainActor private(set) var frameDataGeneration = 0
+    @MainActor private(set) var isReplacingFrameData = false
 
     @MainActor
-    func replaceFrameData(characters: [Character], moves: [Move]) throws {
-        try saveFrameDataSnapshot(characters: characters, moves: moves)
+    func replaceFrameData(characters: [Character], moves: [Move]) async throws {
+        isReplacingFrameData = true
+        defer { isReplacingFrameData = false }
+        try await saveFrameDataSnapshot(characters: characters, moves: moves)
         frameDataGeneration += 1
     }
 }

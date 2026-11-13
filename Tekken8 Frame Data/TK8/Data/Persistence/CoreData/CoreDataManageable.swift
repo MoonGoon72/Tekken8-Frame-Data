@@ -14,35 +14,39 @@ protocol CoreDataManageable {
     func fetch<Entity: NSManagedObject>(_ request: NSFetchRequest<Entity>) throws -> [Entity]
     func delete(_ object: NSManagedObject)
     @MainActor var frameDataGeneration: Int { get }
-    @MainActor func replaceFrameData(characters: [Character], moves: [Move]) throws
+    @MainActor var isReplacingFrameData: Bool { get }
+    @MainActor func replaceFrameData(characters: [Character], moves: [Move]) async throws
 }
 
 extension CoreDataManageable {
     @MainActor var frameDataGeneration: Int { 0 }
+    @MainActor var isReplacingFrameData: Bool { false }
 
     @MainActor
-    func replaceFrameData(characters: [Character], moves: [Move]) throws {
-        try saveFrameDataSnapshot(characters: characters, moves: moves)
+    func replaceFrameData(characters: [Character], moves: [Move]) async throws {
+        try await saveFrameDataSnapshot(characters: characters, moves: moves)
     }
 
     @MainActor
-    func saveFrameDataSnapshot(characters: [Character], moves: [Move]) throws {
-        let staging = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    func saveFrameDataSnapshot(characters: [Character], moves: [Move]) async throws {
+        let staging = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         staging.persistentStoreCoordinator = context.persistentStoreCoordinator
 
-        let oldMoves = try staging.fetch(MoveEntity.fetchRequest())
-        let oldCharacters = try staging.fetch(CharacterEntity.fetchRequest())
-        oldMoves.forEach(staging.delete)
-        oldCharacters.forEach(staging.delete)
+        let changes: [AnyHashable: Any] = try await staging.perform {
+            let oldMoves = try staging.fetch(MoveEntity.fetchRequest())
+            let oldCharacters = try staging.fetch(CharacterEntity.fetchRequest())
+            oldMoves.forEach(staging.delete)
+            oldCharacters.forEach(staging.delete)
 
-        let newCharacters = characters.map { CharacterDTO(domain: $0).toEntity(in: staging) }
-        let newMoves = moves.map { MoveDTO(domain: $0).toEntity(context: staging) }
-        try staging.save()
+            let newCharacters = characters.map { CharacterDTO(domain: $0).toEntity(in: staging) }
+            let newMoves = moves.map { MoveDTO(domain: $0).toEntity(context: staging) }
+            try staging.save()
 
-        let changes: [AnyHashable: Any] = [
-            NSDeletedObjectsKey: oldMoves.map(\.objectID) + oldCharacters.map(\.objectID),
-            NSInsertedObjectsKey: newCharacters.map(\.objectID) + newMoves.map(\.objectID),
-        ]
+            return [
+                NSDeletedObjectsKey: oldMoves.map(\.objectID) + oldCharacters.map(\.objectID),
+                NSInsertedObjectsKey: newCharacters.map(\.objectID) + newMoves.map(\.objectID),
+            ]
+        }
         NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
     }
 }

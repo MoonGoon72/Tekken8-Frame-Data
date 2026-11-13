@@ -33,7 +33,10 @@ final class DefaultCharacterRepository: CharacterRepository {
         guard generation == coreData.frameDataGeneration else {
             return try coreData.fetch(request).map { CharacterDTO(entity: $0).toDomain() }
         }
-        try addToCoreData(fetchedCharacters)
+        try Task.checkCancellation()
+        if !coreData.isReplacingFrameData {
+            try addToCoreData(fetchedCharacters)
+        }
         
         return fetchedCharacters
     }

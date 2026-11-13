@@ -57,7 +57,7 @@ final class VersionManager: VersionManageable {
             throw FrameDataRefreshError.versionChangedDuringDownload
         }
         try Task.checkCancellation()
-        try coreDataManager.replaceFrameData(characters: characters, moves: moves)
+        try await coreDataManager.replaceFrameData(characters: characters, moves: moves)
         store.set(serverVersion, forKey: Constants.Texts.version)
         store.set(tekkenVersion, forKey: Constants.Texts.tekkenVersion)
         store.set(Self.currentDataSchemaVersion, forKey: Constants.Texts.localDataSchemaVersion)

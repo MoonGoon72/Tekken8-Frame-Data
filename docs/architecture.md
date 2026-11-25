@@ -227,18 +227,20 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 1. `CharacterListViewController`가 `fetchCharacters()`를 요청한다.
 2. `DefaultCharacterRepository`가 `Data/Repositories/FrameData/FrameDataCache`를 통해 Core Data를 먼저 조회한다. 캐시가 있으면 Repository가 DTO를 `Character`로 변환해 반환한다.
 3. 캐시가 비었거나 읽기에 실패하면 Repository는 현재 캐시 세대를 기록하고 `SupabaseManager.fetchCharacter()`를 호출한다.
-4. `FrameDataCache`는 응답이 도착하면 세대와 교체 상태를 확인한다. 세대가 바뀌었으면 Repository가 새 캐시를 읽어 반환한다. 같은 세대에서 교체가 진행 중이면 원격 결과를 반환하고 캐시 쓰기를 건너뛴다. 저장에 실패하면 해당 쓰기로 추가된 캐릭터를 제거하고 수정된 캐릭터의 이전 값을 복구한 뒤 오류를 반환한다. 미저장 메모는 컨텍스트에 보존된다.
+4. Repository가 원격 결과를 DTO로 변환해 공통 캐시 정책을 적용한다.
 5. ViewModel이 기기 언어 기준으로 정렬하고 `@Published` 상태를 갱신한다.
 6. ViewController가 Combine 구독을 통해 diffable data source snapshot을 적용한다.
 
 ### 5. 기술 목록과 필터
 
 1. 캐릭터 선택 시 `DIContainer`가 해당 캐릭터용 `MoveListViewController`와 `DefaultMoveRepository`를 만든다.
-2. Repository가 캐릭터 이름으로 `MoveEntity`를 `sortOrder` 오름차순 조회한다.
-3. 캐시가 비었으면 Supabase `move` 테이블을 `character_name`으로 필터하고 `sort_order` 순으로 가져와 Core Data에 저장한다.
+2. Repository가 `FrameDataCache`를 통해 캐릭터 이름으로 캐시를 `sortOrder` 오름차순 조회하고 DTO를 `Move`로 변환한다.
+3. 캐시가 비었으면 현재 캐시 세대를 기록하고, Supabase `move` 테이블에서 `character_name`으로 필터한 결과를 `sort_order` 순으로 가져온다. Repository가 원격 결과를 DTO로 변환해 공통 캐시 정책을 적용한다.
 4. `MoveListViewModel`이 `TranslatorEngine`으로 표시 언어에 맞는 `LocalizedMove`를 병렬 생성한다.
 5. 키워드, 섹션, 속성, 발동/가드 프레임 조건을 적용하고 섹션 및 `sortOrder` 기준으로 정렬한다.
 6. UIKit collection view가 SwiftUI `MoveCell`을 `UIHostingConfiguration`으로 렌더링한다.
+
+`DIContainer`는 캐릭터·기술 Repository에 하나의 `FrameDataCache`를 공유한다. 모듈은 응답이 도착하면 요청을 시작할 때 기록한 세대와 현재 세대를 비교한다. 세대가 바뀌었으면 Repository가 새 캐시를 읽어 반환한다. 같은 세대에서 교체가 진행 중이면 원격 결과를 반환하고 캐시 쓰기를 건너뛴다. 저장 실패 시 해당 쓰기로 추가된 캐릭터·기술을 제거하고 수정된 항목의 이전 값을 복구한 뒤 오류를 전달한다. 미저장 메모는 컨텍스트에 보존된다.
 
 ### 6. 기술 보조 영상
 

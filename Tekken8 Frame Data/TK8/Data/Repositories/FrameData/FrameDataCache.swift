@@ -44,6 +44,38 @@ final class FrameDataCache {
     }
 
     @MainActor
+    func fetchMoves(characterName name: String) throws -> [MoveDTO] {
+        let request = MoveEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
+        request.predicate = NSPredicate(format: "characterName == %@", name)
+        return try coreData.fetch(request).map(MoveDTO.init(entity:))
+    }
+
+    @MainActor
+    func reconcileMoveResponse(_ moves: [MoveDTO], requestGeneration generation: Int) throws -> ResponseFreshness {
+        try reconcileResponse(requestGeneration: generation) {
+            let request = MoveEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "id IN %@", moves.map(\.id))
+            let existing = try coreData.fetch(request)
+            var byID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+
+            try save(restoring: existing) {
+                var inserted: [MoveEntity] = []
+                for move in moves {
+                    if let entity = byID[move.id] {
+                        move.update(entity)
+                    } else {
+                        let entity = move.toEntity(context: coreData.context)
+                        inserted.append(entity)
+                        byID[move.id] = entity
+                    }
+                }
+                return inserted
+            }
+        }
+    }
+
+    @MainActor
     private func reconcileResponse(requestGeneration generation: Int, write: () throws -> Void) throws -> ResponseFreshness {
         guard generation == self.generation else { return .superseded }
         try Task.checkCancellation()

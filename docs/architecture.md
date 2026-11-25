@@ -84,7 +84,7 @@ UIKit ViewController ------> SwiftUI Cell / Filter
 │   │   │   ├── Onboarding/          # 버전별 온보딩 표시
 │   │   │   └── Settings/            # 버전 정보, 문의, 광고 제거 구매·복원·Apple 환불 링크
 │   │   ├── Data/
-│   │   │   ├── Repositories/        # Repository protocol/구현체, 데이터 출처 선택
+│   │   │   ├── Repositories/        # Repository protocol/구현체, 데이터 출처 선택과 프레임 캐시 정책
 │   │   │   ├── Mapping/             # DTO와 영속 모델 매핑
 │   │   │   ├── Network/             # Supabase adapter와 범용 URLSession 추상화
 │   │   │   └── Persistence/         # Core Data/UserDefaults adapter, 캐시 교체 알림
@@ -225,9 +225,9 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 ### 4. 캐릭터 목록
 
 1. `CharacterListViewController`가 `fetchCharacters()`를 요청한다.
-2. `DefaultCharacterRepository`가 Core Data의 `CharacterEntity`를 먼저 조회한다.
-3. 캐시가 있으면 DTO를 `Character`로 바꾸어 반환한다.
-4. 캐시가 없으면 `SupabaseManager.fetchCharacter()`가 `character` 테이블을 조회하고 Core Data에 저장한다.
+2. `DefaultCharacterRepository`가 `Data/Repositories/FrameData/FrameDataCache`를 통해 Core Data를 먼저 조회한다. 캐시가 있으면 Repository가 DTO를 `Character`로 변환해 반환한다.
+3. 캐시가 비었거나 읽기에 실패하면 Repository는 현재 캐시 세대를 기록하고 `SupabaseManager.fetchCharacter()`를 호출한다.
+4. `FrameDataCache`는 응답이 도착하면 세대와 교체 상태를 확인한다. 세대가 바뀌었으면 Repository가 새 캐시를 읽어 반환한다. 같은 세대에서 교체가 진행 중이면 원격 결과를 반환하고 캐시 쓰기를 건너뛴다. 저장에 실패하면 해당 쓰기로 추가된 캐릭터를 제거하고 수정된 캐릭터의 이전 값을 복구한 뒤 오류를 반환한다. 미저장 메모는 컨텍스트에 보존된다.
 5. ViewModel이 기기 언어 기준으로 정렬하고 `@Published` 상태를 갱신한다.
 6. ViewController가 Combine 구독을 통해 diffable data source snapshot을 적용한다.
 

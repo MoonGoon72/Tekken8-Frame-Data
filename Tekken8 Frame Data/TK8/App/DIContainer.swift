@@ -49,7 +49,10 @@ final class DIContainer {
     }
     
     @MainActor func makeCharacterListViewController() -> CharacterListViewController {
-        let repository = DefaultCharacterRepository(manager: supabaseManager, coreData: coreDataManager)
+        let repository = DefaultCharacterRepository(
+            manager: supabaseManager,
+            cache: FrameDataCache(coreData: coreDataManager)
+        )
         let viewModel = CharacterListViewModel(characterRepository: repository)
         let noticeModel = AdRemovalNoticeViewModel(purchases: purchases,
             repository: DefaultAdRemovalNoticeRepository(manager: userDefaultsManager))

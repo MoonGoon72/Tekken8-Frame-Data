@@ -5,7 +5,7 @@
 //  Created by 문영균 on 4/16/25.
 //
 
-import CoreData
+import Foundation
 
 protocol CharacterRepository {
     @MainActor func fetchCharacters() async throws -> [Character]
@@ -14,33 +14,31 @@ protocol CharacterRepository {
 
 final class DefaultCharacterRepository: CharacterRepository {
     private let manager: SupabaseManageable
-    private let coreData: CoreDataManageable
+    private let cache: FrameDataCache
     
-    init(manager: SupabaseManageable, coreData: CoreDataManageable) {
+    init(manager: SupabaseManageable, cache: FrameDataCache) {
         self.manager = manager
-        self.coreData = coreData
+        self.cache = cache
     }
     
     @MainActor func fetchCharacters() async throws -> [Character] {
-        let request = CharacterEntity.fetchRequest()
-        
-        if let result = try? coreData.fetch(request), !result.isEmpty {
-            return result.map({ CharacterDTO(entity: $0).toDomain() })
+        if let characters = try? cache.fetchCharacters(), !characters.isEmpty {
+            return characters.map { $0.toDomain() }
         }
-        
-        let generation = coreData.frameDataGeneration
-        let fetchedCharacters = try await manager.fetchCharacter()
-        guard generation == coreData.frameDataGeneration else {
-            return try coreData.fetch(request).map { CharacterDTO(entity: $0).toDomain() }
+
+        let generation = cache.generation
+        let characters = try await manager.fetchCharacter()
+        switch try cache.reconcileCharacterResponse(
+            characters.map(CharacterDTO.init(domain:)),
+            requestGeneration: generation
+        ) {
+        case .current:
+            return characters
+        case .superseded:
+            return try cache.fetchCharacters().map { $0.toDomain() }
         }
-        try Task.checkCancellation()
-        if !coreData.isReplacingFrameData {
-            try addToCoreData(fetchedCharacters)
-        }
-        
-        return fetchedCharacters
     }
-    
+
     func characterImageURL(character: Character) throws -> URL {
         guard let url = URL(string: character.imageURL),
               let scheme = url.scheme?.lowercased(),
@@ -50,41 +48,5 @@ final class DefaultCharacterRepository: CharacterRepository {
         }
 
         return url
-    }
-
-    @MainActor
-    private func addToCoreData(_ data: [Character]) throws {
-        let context = coreData.context
-        let characterIDs = data.map { $0.id }
-        
-        let request = CharacterEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "id IN %@", characterIDs)
-        
-        let existingCharacters = try context.fetch(request)
-        let existingCharacterDict = Dictionary(uniqueKeysWithValues: existingCharacters.map { ($0.id, $0) })
-        
-        let originalValues = existingCharacters.map { entity in
-            let keys = Array(entity.entity.attributesByName.keys)
-            return (entity, entity.dictionaryWithValues(forKeys: keys))
-        }
-        var inserted: [CharacterEntity] = []
-        for characterData in data {
-            let dto = CharacterDTO(domain: characterData)
-            if let existingEntity = existingCharacterDict[characterData.id] {
-                dto.update(existingEntity)
-            } else {
-                inserted.append(dto.toEntity(in: context))
-            }
-        }
-        
-        do {
-            try coreData.saveContext()
-        } catch {
-            inserted.forEach(coreData.delete)
-            for (entity, original) in originalValues {
-                entity.setValuesForKeys(original)
-            }
-            throw error
-        }
     }
 }

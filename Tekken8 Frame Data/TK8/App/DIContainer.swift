@@ -8,6 +8,7 @@
 import UIKit
 
 final class DIContainer {
+    private let frameDataCache: FrameDataCache
     private let coreDataManager: CoreDataManageable
     private let supabaseManager: SupabaseManageable
     private let userDefaultsManager: UserDefaultsManageable
@@ -40,7 +41,9 @@ final class DIContainer {
     }
 
     init(analytics: AnalyticsClient? = nil) {
-        coreDataManager = CoreDataManager()
+        let coreDataManager = CoreDataManager()
+        self.coreDataManager = coreDataManager
+        frameDataCache = FrameDataCache(coreData: coreDataManager)
         supabaseManager = SupabaseManager()
         userDefaultsManager = UserDefaultsManager()
         preference = CharacterLayoutPreference(manager: userDefaultsManager)
@@ -49,7 +52,10 @@ final class DIContainer {
     }
     
     @MainActor func makeCharacterListViewController() -> CharacterListViewController {
-        let repository = DefaultCharacterRepository(manager: supabaseManager, coreData: coreDataManager)
+        let repository = DefaultCharacterRepository(
+            manager: supabaseManager,
+            cache: frameDataCache
+        )
         let viewModel = CharacterListViewModel(characterRepository: repository)
         let noticeModel = AdRemovalNoticeViewModel(purchases: purchases,
             repository: DefaultAdRemovalNoticeRepository(manager: userDefaultsManager))
@@ -66,7 +72,7 @@ final class DIContainer {
     }
     
     @MainActor func makeMoveListViewController(character: Character) -> MoveListViewController {
-        let repository = DefaultMoveRepository(manager: supabaseManager, coreData: coreDataManager)
+        let repository = DefaultMoveRepository(manager: supabaseManager, cache: frameDataCache)
         let moveVideoRepository = DefaultMoveVideoRepository(
             dataSource: supabaseManager,
             urlBuilder: ConfiguredMoveVideoURLBuilder()

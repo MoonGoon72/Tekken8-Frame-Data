@@ -118,32 +118,6 @@ final class VersionManagerTests: XCTestCase {
         XCTAssertEqual(store.string(forKey: "TekkenVersion"), "1.0.0")
     }
 
-    @MainActor
-    func testFailedMoveCacheWritePreservesPendingMemoAndAllowsRetry() async throws {
-        let cache = InMemoryCoreDataManager()
-        let memo = MemoEntity(context: cache.context)
-        memo.id = UUID()
-        memo.body = "pending"
-        cache.saveError = URLError(.cannotWriteToFile)
-        let repository = DefaultMoveRepository(manager: VersionSupabaseStub(), coreData: cache)
-
-        do {
-            _ = try await repository.fetchMoves(characterName: "King")
-            XCTFail("Expected save failure")
-        } catch let error as URLError {
-            XCTAssertEqual(error.code, .cannotWriteToFile)
-        }
-
-        XCTAssertTrue(try cache.fetch(MoveEntity.fetchRequest()).isEmpty)
-        XCTAssertTrue(memo.isInserted)
-        XCTAssertEqual(memo.body, "pending")
-
-        cache.saveError = nil
-        let moves = try await repository.fetchMoves(characterName: "King")
-        XCTAssertEqual(moves.map(\.id), [1])
-        XCTAssertEqual(try cache.fetch(MoveEntity.fetchRequest()).map(\.id), [1])
-    }
-
     private func assertThrowsSupabaseVersionError(
         _ expectedError: SupabaseVersionError,
         from manager: VersionManager

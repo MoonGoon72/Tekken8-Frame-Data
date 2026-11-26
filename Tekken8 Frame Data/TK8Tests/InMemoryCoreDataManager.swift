@@ -9,6 +9,16 @@ import CoreData
 final class InMemoryCoreDataManager: CoreDataManageable {
     let context: NSManagedObjectContext
     var saveError: Error?
+    @MainActor private(set) var frameDataGeneration = 0
+    @MainActor var isReplacingFrameData = false
+
+    @MainActor
+    func replaceFrameData(characters: [Character], moves: [Move]) async throws {
+        isReplacingFrameData = true
+        defer { isReplacingFrameData = false }
+        try await saveFrameDataSnapshot(characters: characters, moves: moves)
+        frameDataGeneration += 1
+    }
 
     init() {
         let container = NSPersistentContainer(name: "Tekken8FrameData")

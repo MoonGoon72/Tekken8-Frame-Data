@@ -78,7 +78,7 @@ final class MemoAutosaveRecoveryTests: XCTestCase {
     }
 
     @MainActor
-    func test_failedExistingMemoReopensFromListAndRetryPreservesUUIDAndRawBody() async throws {
+    func test_failedExistingMemoStillOpensReadOnlyAndDraftRetryPreservesUUIDAndRawBody() async throws {
         let repository = MockMemoRepository()
         let baseline = try repository.save(character: "jin", title: "Old", body: "Old\nOriginal", isPinned: false)
         let drafts = MemoDraftStore()
@@ -119,6 +119,17 @@ final class MemoAutosaveRecoveryTests: XCTestCase {
 
         try await dismissAlert(on: list)
         list.collectionView(collectionView, didSelectItemAt: indexPath)
+        let reader = try XCTUnwrap(navigation.topViewController as? MemoComposeViewController)
+        try await awaitAppearance(of: reader)
+        let readingView = try XCTUnwrap(reader.view as? MemoComposeView)
+        XCTAssertFalse(readingView.bodyField.isEditable)
+        XCTAssertEqual(readingView.titleField.text, baseline.title)
+        XCTAssertEqual(readingView.bodyField.text, baseline.rawBody)
+        XCTAssertTrue(navigation.popViewController(animated: false) === reader)
+        try await awaitAppearance(of: list)
+        XCTAssertEqual(drafts.drafts.map(\.id), [baseline.id])
+
+        list.reopenDraft(id: baseline.id)
         let recovered = try XCTUnwrap(navigation.topViewController as? MemoComposeViewController)
         try await awaitAppearance(of: recovered)
         let recoveredView = try XCTUnwrap(recovered.view as? MemoComposeView)
@@ -136,6 +147,87 @@ final class MemoAutosaveRecoveryTests: XCTestCase {
         XCTAssertEqual(repository.memos.first?.body, "Jin\n# Matchup\n- 2,1")
         XCTAssertTrue(drafts.drafts.isEmpty)
         XCTAssertEqual(analytics.events.filter { $0 == .memoSaveSucceeded(mode: .edit) }.count, 1)
+    }
+
+    @MainActor
+    func test_restoredDraftKeepsOriginalUUIDWhenLoadedListMissesMemoAndRefreshFails() async throws {
+        let repository = MockMemoRepository()
+        let drafts = MemoDraftStore()
+        let analytics = RecordingAnalyticsClient()
+        let list = makeList(repository: repository, drafts: drafts, analytics: analytics)
+        let navigation = UINavigationController(rootViewController: list)
+        let window = try show(navigation)
+        defer { window.isHidden = true }
+        try await awaitAppearance(of: list)
+
+        let original = try repository.save(character: "common", title: "Old", body: "Old\nBody", isPinned: false)
+        drafts.retain(makeDraft(for: original))
+        repository.fetchError = CocoaError(.fileReadUnknown)
+
+        list.reopenDraft(id: original.id)
+        let recovered = try XCTUnwrap(navigation.topViewController as? MemoComposeViewController)
+        try await awaitAppearance(of: recovered)
+        try tapDoneButton(in: recovered)
+
+        XCTAssertEqual(repository.memos.map(\.id), [original.id])
+        XCTAssertEqual(repository.memos.first?.body, "Retry\n- Draft")
+        XCTAssertTrue(drafts.drafts.isEmpty)
+        XCTAssertTrue(analytics.events.contains(.memoSaveSucceeded(mode: .edit)))
+        XCTAssertFalse(analytics.events.contains(.memoSaveSucceeded(mode: .create)))
+    }
+
+    @MainActor
+    func test_listDeletionClearsOnlyMatchingDraftEvenWhenRefreshFails() throws {
+        let repository = MockMemoRepository()
+        let first = try repository.save(character: "common", title: "First", body: "First\nBody", isPinned: false)
+        let second = try repository.save(character: "common", title: "Second", body: "Second\nBody", isPinned: false)
+        let drafts = MemoDraftStore()
+        drafts.retain(makeDraft(for: first))
+        drafts.retain(makeDraft(for: second))
+        let list = makeList(repository: repository, drafts: drafts, analytics: RecordingAnalyticsClient())
+        list.loadViewIfNeeded()
+        repository.fetchError = CocoaError(.fileReadUnknown)
+
+        list.deleteMemos([first])
+
+        XCTAssertEqual(repository.memos.map(\.id), [second.id])
+        XCTAssertEqual(drafts.drafts.map(\.id), [second.id])
+    }
+
+    @MainActor
+    func test_composeDeletionClearsPendingDraftOnlyAfterRepositorySucceeds() throws {
+        let repository = MockMemoRepository()
+        let memo = try repository.save(character: "common", title: "Old", body: "Old\nBody", isPinned: false)
+        let drafts = MemoDraftStore()
+        drafts.retain(makeDraft(for: memo))
+        let viewModel = MemoComposeViewModel(
+            memoViewModel: MemoViewModel(memoRepository: repository),
+            memo: memo,
+            analytics: RecordingAnalyticsClient(),
+            draftStore: drafts
+        )
+        repository.deleteError = CocoaError(.fileWriteOutOfSpace)
+
+        XCTAssertThrowsError(try viewModel.delete())
+        XCTAssertEqual(drafts.drafts.map(\.id), [memo.id])
+        XCTAssertEqual(repository.memos, [memo])
+
+        repository.deleteError = nil
+        repository.fetchError = CocoaError(.fileReadUnknown)
+        XCTAssertNoThrow(try viewModel.delete())
+        XCTAssertTrue(drafts.drafts.isEmpty)
+        XCTAssertTrue(repository.memos.isEmpty)
+    }
+
+    private func makeDraft(for memo: Memo) -> MemoDraft {
+        MemoDraft(
+            id: memo.id,
+            memo: memo,
+            title: "Retry",
+            rawBody: "- Draft",
+            characterName: memo.characterName,
+            isPinned: memo.isPinned
+        )
     }
 
     @MainActor

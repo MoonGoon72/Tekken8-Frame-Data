@@ -98,29 +98,37 @@ final class MemoComposeViewModel {
             analytics.log(.memoSaveSkipped(mode: mode, reason: .noChanges))
             return .skipped
         case .create, .update:
-            var persistedMemo: Memo?
+            var didPersist = false
+            func recordPersistence(_ persistedMemo: Memo) {
+                memo = persistedMemo
+                didPersist = true
+                clearRestoredDraft()
+                analytics.log(.memoSaveSucceeded(mode: mode))
+            }
+
             do {
                 if var updated = memo {
                     updated.characterName = characterName
                     updated.title = title
                     updated.body = storedBody
                     updated.isPinned = isPinned
-                    try memoViewModel.update(memo: updated) { persistedMemo = updated }
+                    try memoViewModel.update(memo: updated) { recordPersistence(updated) }
                 } else {
-                    try memoViewModel.create(character: characterName, title: title, body: storedBody, isPinned: isPinned) {
-                        persistedMemo = $0
-                    }
+                    try memoViewModel.create(
+                        character: characterName,
+                        title: title,
+                        body: storedBody,
+                        isPinned: isPinned,
+                        onPersisted: recordPersistence
+                    )
                 }
             } catch {
                 // A refresh failure can follow a successful write.
             }
-            guard let persistedMemo else {
+            guard didPersist else {
                 analytics.log(.memoSaveFailed(mode: mode, failureCode: .repositoryError))
                 return .failed
             }
-            memo = persistedMemo
-            clearRestoredDraft()
-            analytics.log(.memoSaveSucceeded(mode: mode))
             return .persisted
         }
     }

@@ -119,8 +119,7 @@ final class DefaultMemoRepository: MemoRepository {
 
     private func isPinOnlyChanged(from entity: MemoEntity, to memo: Memo) -> Bool {
         return entity.characterNameEN == memo.characterName &&
-            entity.title?.utf8.elementsEqual(memo.title.utf8) == true &&
-            entity.body?.utf8.elementsEqual(memo.body.utf8) == true &&
+            memo.hasSameContent(title: entity.title, body: entity.body) &&
             entity.isPinned != memo.isPinned
     }
 

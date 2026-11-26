@@ -126,10 +126,20 @@ final class MemoComposeViewModel {
     }
 
     func delete() throws {
-        if let memo {
-            try memoViewModel.delete(memos: [memo])
+        guard let memo else {
+            clearRestoredDraft()
+            return
         }
-        clearRestoredDraft()
+
+        var didDelete = false
+        do {
+            try memoViewModel.delete(memos: [memo]) { deletedMemo in
+                draftStore.remove(id: deletedMemo.id)
+                didDelete = true
+            }
+        } catch where didDelete {
+            // The write completed before the list refresh failed.
+        }
     }
 
     private func clearRestoredDraft() {

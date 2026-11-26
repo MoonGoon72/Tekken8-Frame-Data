@@ -10,6 +10,7 @@ final class MockMemoRepository: MemoRepository {
     var memos: [Memo] = []
     var saveError: Error?
     var updateError: Error?
+    var deleteError: Error?
     var fetchError: Error?
 
     func save(character: String, title: String, body: String, isPinned: Bool) throws -> Memo {
@@ -31,7 +32,8 @@ final class MockMemoRepository: MemoRepository {
         return true
     }
 
-    func delete(memo: Memo) {
+    func delete(memo: Memo) throws {
+        if let error = deleteError { throw error }
         memos.removeAll { $0.id == memo.id }
     }
 

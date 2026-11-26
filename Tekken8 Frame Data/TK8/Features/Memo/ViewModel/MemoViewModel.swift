@@ -43,9 +43,12 @@ final class MemoViewModel: ObservableObject {
         return didPersist
     }
 
-    func delete(memos: [Memo]) throws {
+    func delete(memos: [Memo], onDeleted: (Memo) -> Void = { _ in }) throws {
         try performAndFetch {
-            try memos.forEach { try memoRepository.delete(memo: $0) }
+            for memo in memos {
+                try memoRepository.delete(memo: memo)
+                onDeleted(memo)
+            }
         }
     }
 

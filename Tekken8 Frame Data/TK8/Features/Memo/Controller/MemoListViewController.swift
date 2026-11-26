@@ -122,7 +122,7 @@ final class MemoListViewController: BaseViewController {
     func reopenDraft(id: UUID) {
         guard let draft = draftStore.drafts.first(where: { $0.id == id }) else { return }
         let memo = memoViewModel.memos.first { $0.id == draft.memo?.id }
-        openEditor(memo: memo ?? (hasLoadedMemos ? nil : draft.memo), draft: draft)
+        openEditor(memo: memo ?? draft.memo, draft: draft)
     }
 
     private func presentAutosaveFailureIfPossible() {
@@ -162,13 +162,18 @@ final class MemoListViewController: BaseViewController {
         let willDeleteMemos = memoListView.collectionView.indexPathsForSelectedItems?.compactMap {
             dataSource?.itemIdentifier(for: $0)
         }
-        do {
-            try memoViewModel.delete(memos: willDeleteMemos ?? [])
-        } catch {
-
-        }
+        deleteMemos(willDeleteMemos ?? [])
         toggleEditingMode()
         navigationController?.isToolbarHidden = true
+    }
+
+    func deleteMemos(_ memos: [Memo]) {
+        do {
+            try memoViewModel.delete(memos: memos) { draftStore.remove(id: $0.id) }
+        } catch {
+            // Any deletions that completed are acknowledged before a refresh error.
+        }
+        composeRightBarButtons()
     }
 
     @objc private func doneButtonTapped() {
@@ -448,11 +453,7 @@ extension MemoListViewController: UICollectionViewDelegate {
         if isEditing { return }
         let memo = dataSource?.itemIdentifier(for: indexPath)
         guard let memo else { return }
-        if draftStore.drafts.contains(where: { $0.id == memo.id }) {
-            reopenDraft(id: memo.id)
-        } else {
-            openEditor(memo: memo)
-        }
+        openEditor(memo: memo)
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
@@ -469,13 +470,8 @@ extension MemoListViewController: UICollectionViewDelegate {
                 let previewProvider = self.makeMemoComposeViewController(memo, nil)
             return previewProvider
         }) { _ in
-            MemoMenuFactory.menu(isPinned: memo.isPinned) {
-                // Delete
-                do {
-                    try self.memoViewModel.delete(memos: [memo])
-                } catch {
-
-                }
+            MemoMenuFactory.menu(isPinned: memo.isPinned) { [weak self] in
+                self?.deleteMemos([memo])
             } togglePin: {
                 memo.isPinned.toggle()
                 do {

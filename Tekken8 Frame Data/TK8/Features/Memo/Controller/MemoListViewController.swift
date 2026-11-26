@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 final class MemoListViewController: BaseViewController {
     private typealias Snapshot = NSDiffableDataSourceSnapshot<MemoSection, Memo>
     private typealias memoDataSource = UICollectionViewDiffableDataSource<MemoSection, Memo>
-    private typealias MemoComposeFactory = (Memo?) -> MemoComposeViewController
+    private typealias MemoComposeFactory = (Memo?, MemoDraft?) -> MemoComposeViewController
 
     private let memoListView: MemoListView
     private let searchController: UISearchController
@@ -21,6 +21,8 @@ final class MemoListViewController: BaseViewController {
     private let analytics: AnalyticsClient
     private let searchAnalyticsTracker: SearchAnalyticsTracker
     private var hasLoadedMemos = false
+    private let draftStore: MemoDraftStore
+    private var pendingAutosaveFailure: UUID?
 
     private let makeMemoComposeViewController: MemoComposeFactory
 
@@ -28,13 +30,15 @@ final class MemoListViewController: BaseViewController {
         viewModel: MemoViewModel,
         characterListViewModel: any CharacterSelectable,
         analytics: AnalyticsClient,
-        makeMemoComposeViewController: @escaping (Memo?) -> MemoComposeViewController
+        draftStore: MemoDraftStore,
+        makeMemoComposeViewController: @escaping (Memo?, MemoDraft?) -> MemoComposeViewController
     ) {
         self.memoListView = MemoListView()
         searchController = UISearchController(searchResultsController: nil)
         memoViewModel = viewModel
         self.characterListViewModel = characterListViewModel
         self.analytics = analytics
+        self.draftStore = draftStore
         searchAnalyticsTracker = SearchAnalyticsTracker(
             scope: .memoList,
             analytics: analytics
@@ -62,6 +66,8 @@ final class MemoListViewController: BaseViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         analytics.log(.screenViewed(.memoList))
+        composeRightBarButtons()
+        presentAutosaveFailureIfPossible()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -95,22 +101,79 @@ final class MemoListViewController: BaseViewController {
     }
 
     @objc private func composeButtonTapped() {
-        analytics.log(.memoComposeStarted(mode: .create))
-        let memoComposeViewController = makeMemoComposeViewController(nil)
-        navigationController?.pushViewController(memoComposeViewController, animated: true)
+        openEditor(memo: nil)
+    }
+
+    private func openEditor(memo: Memo?, draft: MemoDraft? = nil) {
+        guard let navigationController, navigationController.topViewController === self else { return }
+        if memo == nil || draft != nil {
+            analytics.log(.memoComposeStarted(mode: memo == nil ? .create : .edit))
+        }
+        let controller = makeMemoComposeViewController(memo, draft)
+        controller.onAutosaveFailure = { [weak self] id in
+            self?.pendingAutosaveFailure = id
+            DispatchQueue.main.async { [weak self] in
+                self?.presentAutosaveFailureIfPossible()
+            }
+        }
+        navigationController.pushViewController(controller, animated: true)
+    }
+
+    func reopenDraft(id: UUID) {
+        guard let draft = draftStore.drafts.first(where: { $0.id == id }) else { return }
+        let memo = memoViewModel.memos.first { $0.id == draft.memo?.id }
+        openEditor(memo: memo ?? draft.memo, draft: draft)
+    }
+
+    private func presentAutosaveFailureIfPossible() {
+        guard let id = pendingAutosaveFailure,
+              navigationController?.topViewController === self,
+              viewIfLoaded?.window != nil else { return }
+        guard draftStore.drafts.contains(where: { $0.id == id }) else {
+            pendingAutosaveFailure = nil
+            return
+        }
+
+        if let coordinator = transitionCoordinator,
+           coordinator.animate(alongsideTransition: nil, completion: { [weak self] _ in
+               DispatchQueue.main.async { [weak self] in
+                   self?.presentAutosaveFailureIfPossible()
+               }
+           }) { return }
+
+        composeRightBarButtons()
+        if searchController.isActive {
+            searchController.isActive = false
+        }
+        guard presentedViewController == nil,
+              searchController.presentingViewController == nil,
+              !isBeingPresented, !isBeingDismissed else { return }
+
+        pendingAutosaveFailure = nil
+        let alert = UIAlertController(title: "Could not save memo".localized(), message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Return to Editing".localized(), style: .default) { [weak self] _ in
+            self?.reopenDraft(id: id)
+        })
+        alert.addAction(UIAlertAction(title: "Close".localized(), style: .cancel))
+        present(alert, animated: true)
     }
 
     @objc private func deleteButtonTapped() {
         let willDeleteMemos = memoListView.collectionView.indexPathsForSelectedItems?.compactMap {
             dataSource?.itemIdentifier(for: $0)
         }
-        do {
-            try memoViewModel.delete(memos: willDeleteMemos ?? [])
-        } catch {
-
-        }
+        deleteMemos(willDeleteMemos ?? [])
         toggleEditingMode()
         navigationController?.isToolbarHidden = true
+    }
+
+    func deleteMemos(_ memos: [Memo]) {
+        do {
+            try memoViewModel.delete(memos: memos) { draftStore.remove(id: $0.id) }
+        } catch {
+            // Any deletions that completed are acknowledged before a refresh error.
+        }
+        composeRightBarButtons()
     }
 
     @objc private func doneButtonTapped() {
@@ -211,7 +274,23 @@ final class MemoListViewController: BaseViewController {
         if isEditing {
             navigationItem.rightBarButtonItems = [doneButton]
         } else {
-            navigationItem.rightBarButtonItems = [ellipsisButton, composeButton]
+            var buttons = [ellipsisButton, composeButton]
+            if !draftStore.drafts.isEmpty {
+                let entries = draftStore.drafts.map { draft in
+                    let title = draft.title.split(whereSeparator: \.isNewline).first.map(String.init)
+                    let rawBody = draft.rawBody.split(whereSeparator: \.isNewline).first.map(String.init)
+                    return UIAction(title: title ?? rawBody ?? "Untitled Memo".localized()) { [weak self] _ in
+                        self?.reopenDraft(id: draft.id)
+                    }
+                }
+                let draftsButton = UIBarButtonItem(
+                    image: UIImage(systemName: "clock.arrow.circlepath"),
+                    menu: UIMenu(title: "Memo Drafts".localized(), children: entries)
+                )
+                draftsButton.accessibilityLabel = "Memo Drafts".localized()
+                buttons.insert(draftsButton, at: 1)
+            }
+            navigationItem.rightBarButtonItems = buttons
         }
     }
 
@@ -290,6 +369,12 @@ private extension MemoListViewController {
 // MARK: - UISearchBar conformance
 
 extension MemoListViewController: UISearchControllerDelegate {
+    func didDismissSearchController(_ searchController: UISearchController) {
+        DispatchQueue.main.async { [weak self] in
+            self?.presentAutosaveFailureIfPossible()
+        }
+    }
+
     func willDismissSearchController(_ searchController: UISearchController) {
         searchAnalyticsTracker.cancel()
         memoViewModel.resetFilter()
@@ -368,9 +453,7 @@ extension MemoListViewController: UICollectionViewDelegate {
         if isEditing { return }
         let memo = dataSource?.itemIdentifier(for: indexPath)
         guard let memo else { return }
-        analytics.log(.memoComposeStarted(mode: .edit))
-        let memoComposeViewController = makeMemoComposeViewController(memo)
-        navigationController?.pushViewController(memoComposeViewController, animated: true)
+        openEditor(memo: memo)
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
@@ -384,16 +467,11 @@ extension MemoListViewController: UICollectionViewDelegate {
 
         let config = UIContextMenuConfiguration(
             previewProvider: {
-                let previewProvider = self.makeMemoComposeViewController(memo)
+                let previewProvider = self.makeMemoComposeViewController(memo, nil)
             return previewProvider
         }) { _ in
-            MemoMenuFactory.menu(isPinned: memo.isPinned) {
-                // Delete
-                do {
-                    try self.memoViewModel.delete(memos: [memo])
-                } catch {
-
-                }
+            MemoMenuFactory.menu(isPinned: memo.isPinned) { [weak self] in
+                self?.deleteMemos([memo])
             } togglePin: {
                 memo.isPinned.toggle()
                 do {

@@ -39,7 +39,7 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 | `filter_opened` | 기술 목록의 필터 화면을 열 때 | `character_id` |
 | `filter_applied` | 필터 화면에서 활성 조건을 `Apply`로 확정할 때 | `character_id`, `active_filter_count`, `section_count`, `attribute_count`, `startup_range_active`, `guard_range_active`, `result_count` |
 | `filter_reset` | 활성 조건이 있는 상태에서 사용자가 전체 `Reset`을 탭할 때 | `character_id`, `previous_active_filter_count` |
-| `memo_compose_started` | 새 메모 작성 또는 기존 메모 편집 화면으로 실제 이동할 때 | memo_mode=`create`\|`edit` |
+| `memo_compose_started` | 새 메모를 열거나 기존 메모에서 편집을 시작할 때 | memo_mode=`create`\|`edit` |
 | `memo_save_succeeded` | 메모 create/update의 영속 저장 성공 직후 | memo_mode=`create`\|`edit` |
 | `memo_save_failed` | 메모 create/update가 실패한 뒤 | `memo_mode`, `failure_code=repository_error` |
 | `memo_save_skipped` | 빈 메모 또는 변경 없는 편집을 저장하지 않고 종료할 때 | `memo_mode`, reason=`empty_content`\|`no_changes` |
@@ -76,7 +76,7 @@ Firebase의 자동 `screen_view` swizzling은 `Info.plist`의 `FirebaseAutomatic
 
 ### 메모
 
-작성 시작은 새 메모 진입과 기존 메모 편집 진입을 `memo_mode`로 구분한다. 저장 성공은 실제 repository 쓰기가 끝난 뒤 기록한다. 이후 목록 fetch가 실패해도 저장 실패로 중복 기록하지 않는다. 완료 버튼 탭 자체는 성공이 아니다. 빈 메모와 변경 없는 편집은 각각 `memo_save_skipped`로 구분한다. 저장 시도 오류율의 분모에서는 제외하지만, 메모 생성 CVR에서는 작성 시작 세션을 분모에 유지한다. 뒤로 가기가 실제 완료된 viewDidDisappear에서 저장하므로 취소된 interactive pop은 저장하지 않는다. 동일한 dismiss 저장은 1회 처리한다.
+작성 시작은 새 메모 진입과 기존 메모 편집 진입을 `memo_mode`로 구분한다. 저장 성공은 실제 repository 쓰기가 끝난 뒤 기록한다. 이후 목록 fetch가 실패해도 저장 실패로 중복 기록하지 않는다. 완료 버튼 탭 자체는 성공이 아니다. 빈 메모로 나가는 경우와 변경 없는 편집을 마치는 경우는 각각 `memo_save_skipped`로 구분한다. 저장 시도 오류율의 분모에서는 제외하지만, 메모 생성 CVR에서는 작성 시작 세션을 분모에 유지한다. 뒤로 가기가 완료되어 상세 화면이 navigation controller에서 제거될 때 저장하므로 취소된 interactive pop은 저장하지 않는다. 동일한 dismiss 저장은 1회 처리한다.
 
 ## 지표 정의
 

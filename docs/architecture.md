@@ -220,7 +220,7 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 3. 분석 이벤트
 
-화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Services/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 `MemoComposeViewController`가 MemoViewModel의 onPersisted 콜백으로 repository 쓰기 성공 직후 성공 이벤트를 기록하고, 빈 내용·변경 없음·repository 오류를 서로 다른 계약으로 보낸다. 저장은 실제 pop 완료 후 수행하며 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
+화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Services/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 완료 버튼을 누르거나 편집 화면의 pop이 완료되면 실행된다. `MemoComposeViewModel`은 `MemoViewModel`에서 쓰기 성공을 확인한 뒤 성공 이벤트를 기록하며, 빈 내용으로 종료·변경 없음·repository 오류를 별도 이벤트로 보낸다. 쓰기 이후 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
 
 ### 4. 캐릭터 목록
 
@@ -262,7 +262,7 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 8. 메모와 백업
 
-메모는 원격 서버를 사용하지 않는다. `MemoViewModel`이 `DefaultMemoRepository`를 통해 `MemoEntity`를 직접 CRUD하며 최신 수정일 순으로 읽는다. export는 전체 메모를 앱 전용 JSON 문서(`.tk8memos`)로 인코딩하고, import는 UUID가 같은 메모 중 가져온 `updatedAt`이 더 최신인 항목만 갱신한다.
+메모는 원격 서버를 사용하지 않는다. `MemoViewModel`은 `MemoRepository`를 통해 메모를 CRUD하고 최신 수정일 순으로 읽으며, `DefaultMemoRepository`가 `MemoEntity`로 매핑한다. 상세 화면의 `MemoComposeViewModel`은 읽기·편집 상태와 저장 결과를 관리한다. UIKit 상세 화면은 완료 시 쓰기 성공을 확인하고 읽기 모드로 전환하며, 부모 navigation controller에서 실제로 제거될 때 편집 중인 변경을 한 번 저장한다. 뒤로 가기 자동 저장이 실패하면 `MemoComposeViewModel`이 제목·본문 원문·캐릭터·고정 상태를 `MemoDraftStore`에 메모별로 보관한다. `DIContainer`가 장면 수명 동안 같은 저장소를 주입하므로 목록을 다시 만들어도 목록의 알림 또는 임시 메모 메뉴에서 입력을 복원할 수 있다. 기존 메모의 목록 행은 저장된 내용을 읽기 모드로 열고 임시 입력은 기존 UUID로 재시도한다. 재시도 저장이나 해당 메모 삭제가 영속 저장소에서 성공하면 임시 메모를 정리한다. Markdown 서식은 읽기 화면에서만 적용한다. export는 전체 메모를 앱 전용 JSON 문서(`.tk8memos`)로 인코딩하고, import는 UUID가 같은 메모 중 가져온 `updatedAt`이 더 최신인 항목만 갱신한다.
 
 ### 9. 프레임 데이터 운영 흐름
 

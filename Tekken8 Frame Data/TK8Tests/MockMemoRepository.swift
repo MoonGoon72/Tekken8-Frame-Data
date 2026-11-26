@@ -9,11 +9,15 @@ import Foundation
 final class MockMemoRepository: MemoRepository {
     var memos: [Memo] = []
     var saveError: Error?
+    var updateError: Error?
+    var deleteError: Error?
     var fetchError: Error?
 
-    func save(character: String, title: String, body: String, isPinned: Bool) throws {
+    func save(character: String, title: String, body: String, isPinned: Bool) throws -> Memo {
         if let error = saveError { throw error }
-        memos.append(Memo(id: UUID(), characterName: character, title: title, body: body, isPinned: isPinned, updatedAt: Date()))
+        let memo = Memo(id: UUID(), characterName: character, title: title, body: body, isPinned: isPinned, updatedAt: Date())
+        memos.append(memo)
+        return memo
     }
 
     func fetchMemos() throws -> [Memo] {
@@ -22,12 +26,14 @@ final class MockMemoRepository: MemoRepository {
     }
 
     func update(memo: Memo) throws -> Bool {
+        if let error = updateError { throw error }
         guard let index = memos.firstIndex(where: { $0.id == memo.id }) else { return false }
         memos[index] = memo
         return true
     }
 
-    func delete(memo: Memo) {
+    func delete(memo: Memo) throws {
+        if let error = deleteError { throw error }
         memos.removeAll { $0.id == memo.id }
     }
 

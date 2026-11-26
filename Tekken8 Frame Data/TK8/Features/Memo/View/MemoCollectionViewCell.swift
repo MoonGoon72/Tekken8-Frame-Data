@@ -90,7 +90,7 @@ final class MemoCollectionViewCell: UICollectionViewCell, ReuseIdentifiable {
     func configure(memo: Memo, image: UIImage?) {
         iconView.image = image ?? UIImage(named: "mokujin")
         title.text = memo.title
-        body.text = memo.body.components(separatedBy: .newlines).dropFirst().joined(separator: "\n")
+        body.text = memo.rawBody
         updatedAt.text = memo.updatedAt.formatted(date: .abbreviated, time: .omitted)
     }
 

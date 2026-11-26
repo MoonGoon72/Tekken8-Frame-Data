@@ -153,12 +153,12 @@ extension MemoComposeTests {
         navigation.delegate = transition
         navigation.popViewController(animated: true)
         await fulfillment(of: [transition.started], timeout: 2)
-        XCTAssertTrue(sut.transitionCoordinator?.isInteractive == true)
         transition.interaction.update(0.25)
         transition.interaction.cancel()
 
         await fulfillment(of: [transition.completed], timeout: 3)
 
+        XCTAssertTrue(transition.wasCancelled)
         XCTAssertTrue(navigation.topViewController === sut)
         XCTAssertTrue(screen.bodyField.isEditable)
         XCTAssertEqual(screen.bodyField.text, "- pending")
@@ -224,6 +224,7 @@ private final class MemoTestCharacters: CharacterSelectable {
 @MainActor
 private final class MemoTestPopTransition: NSObject, UINavigationControllerDelegate, UIViewControllerAnimatedTransitioning {
     let interaction = UIPercentDrivenInteractiveTransition()
+    private(set) var wasCancelled = false
     let started = XCTestExpectation(description: "Started interactive navigation transition")
     let completed = XCTestExpectation(description: "Completed interactive navigation transition")
 
@@ -259,7 +260,8 @@ private final class MemoTestPopTransition: NSObject, UINavigationControllerDeleg
             from.alpha = 0
         } completion: { _ in
             from.alpha = 1
-            context.completeTransition(!context.transitionWasCancelled)
+            self.wasCancelled = context.transitionWasCancelled
+            context.completeTransition(!self.wasCancelled)
             self.completed.fulfill()
         }
     }

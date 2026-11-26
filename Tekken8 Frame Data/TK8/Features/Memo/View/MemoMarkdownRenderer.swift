@@ -13,7 +13,10 @@ enum MemoMarkdownRenderer {
         let linkOrImage = #"(?<!\\)!?\["# + label + #"\]\("# + destination + #"\)"#
         let autolink = #"<(?:[a-zA-Z][a-zA-Z0-9+.-]*:|[^<>\s@]+@)[^<>\s]+>"#
         let strike = #"(?<!\\)~~(?=\S).*?(?<=\S)~~"#
-        return try? NSRegularExpression(pattern: [code, linkOrImage, autolink, strike].joined(separator: "|"))
+        return try? NSRegularExpression(
+            pattern: [code, linkOrImage, autolink, strike].joined(separator: "|"),
+            options: .dotMatchesLineSeparators
+        )
     }()
 
     static func render(_ source: String, traits: UITraitCollection) -> NSAttributedString {
@@ -24,10 +27,36 @@ enum MemoMarkdownRenderer {
         let headingFont = UIFontMetrics(forTextStyle: .headline)
             .scaledFont(for: .systemFont(ofSize: 20, weight: .semibold), compatibleWith: traits)
         var orderedList: (separator: Swift.Character, nextNumber: Int)?
+        var openFence: Substring?
+        var plainLines: [String] = []
+        let plainAttributes: [NSAttributedString.Key: Any] = [.font: bodyFont, .foregroundColor: UIColor.tkPrimaryText]
+
+        func flushPlainParagraph(followedByLine: Bool) {
+            guard !plainLines.isEmpty else { return }
+            appendInline(plainLines.joined(separator: "\n"), font: bodyFont, attributes: plainAttributes, to: output)
+            if followedByLine { output.append(NSAttributedString(string: "\n", attributes: plainAttributes)) }
+            plainLines.removeAll(keepingCapacity: true)
+        }
 
         for (index, line) in lines.enumerated() {
             let indentation = line.prefix { $0 == " " }.count
             let block = indentation < 4 ? line.dropFirst(indentation) : line[...]
+            let fence = block.prefix { $0 == block.first && ($0 == "`" || $0 == "~") }
+            let afterFence = block.dropFirst(fence.count)
+            let opensFence = fence.count >= 3 && (fence.first != "`" || !afterFence.contains("`"))
+            if openFence != nil || opensFence {
+                flushPlainParagraph(followedByLine: true)
+                output.append(NSAttributedString(
+                    string: line + (index < lines.count - 1 ? "\n" : ""), attributes: plainAttributes
+                ))
+                orderedList = nil
+                if let opened = openFence {
+                    if fence.hasPrefix(opened) && afterFence.allSatisfy(\.isWhitespace) { openFence = nil }
+                } else {
+                    openFence = fence
+                }
+                continue
+            }
             let digits = block.prefix { ("0"..."9").contains($0) }
             let afterDigits = block.dropFirst(digits.count)
             let blockText: String
@@ -59,6 +88,9 @@ enum MemoMarkdownRenderer {
                     blockText = String(block.dropFirst().drop(while: { $0.isWhitespace }))
                     marker = "▎ "
                     font = bodyFont
+                } else if !line.allSatisfy(\.isWhitespace) {
+                    plainLines.append(line)
+                    continue
                 } else {
                     blockText = line
                     marker = ""
@@ -66,6 +98,7 @@ enum MemoMarkdownRenderer {
                 }
             }
 
+            flushPlainParagraph(followedByLine: true)
             let paragraph = NSMutableParagraphStyle()
             paragraph.lineBreakMode = .byWordWrapping
             paragraph.headIndent = (marker as NSString).size(withAttributes: [.font: font]).width
@@ -80,6 +113,7 @@ enum MemoMarkdownRenderer {
                 output.append(NSAttributedString(string: "\n", attributes: attributes))
             }
         }
+        flushPlainParagraph(followedByLine: false)
         return output
     }
 
@@ -91,24 +125,21 @@ enum MemoMarkdownRenderer {
     ) {
         let text = source as NSString
         let spans = verbatimSpans?.matches(in: source, range: NSRange(location: 0, length: text.length)) ?? []
-        var start = 0
-        for span in spans where span.range(at: 1).location == NSNotFound {
-            let before = text.substring(with: NSRange(location: start, length: span.range.location - start))
-            appendFormattedInline(before, font: font, attributes: attributes, to: output)
-            output.append(NSAttributedString(string: text.substring(with: span.range), attributes: attributes))
-            start = NSMaxRange(span.range)
-        }
-        appendFormattedInline(text.substring(from: start), font: font, attributes: attributes, to: output)
-    }
+        let literals = spans.filter { $0.range(at: 1).location == NSNotFound }
+            .map { (range: $0.range, text: text.substring(with: $0.range)) }
 
-    private static func appendFormattedInline(
-        _ source: String,
-        font: UIFont,
-        attributes: [NSAttributedString.Key: Any],
-        to output: NSMutableAttributedString
-    ) {
-        let mayContainExplicitLink = source.contains("[") || source.contains("<")
-        guard let formatted = try? AttributedString(markdown: source, options: inlineOptions),
+        // Opaque text lets emphasis enclose a literal span without interpreting its contents.
+        let marker = "\u{F0000}"
+        var token = marker
+        while source.contains(token) { token += marker }
+        let maskedSource = NSMutableString(string: source)
+        for literal in literals.reversed() {
+            maskedSource.replaceCharacters(in: literal.range, with: token)
+        }
+
+        let masked = maskedSource as String
+        let mayContainExplicitLink = masked.contains("[") || masked.contains("<")
+        guard let formatted = try? AttributedString(markdown: masked, options: inlineOptions),
               !formatted.runs.contains(where: { run in
                   run.imageURL != nil || (mayContainExplicitLink && run.link != nil) ||
                       run.inlinePresentationIntent?.contains(.strikethrough) == true
@@ -118,6 +149,7 @@ enum MemoMarkdownRenderer {
             return
         }
 
+        var restored = literals.makeIterator()
         for run in formatted.runs {
             var runAttributes = attributes
             let intent = run.inlinePresentationIntent ?? []
@@ -133,10 +165,13 @@ enum MemoMarkdownRenderer {
                 runAttributes[.font] = baseFont
             }
             if isCode { runAttributes[.backgroundColor] = UIColor.tkMutedSurface }
-            output.append(NSAttributedString(
-                string: String(formatted.characters[run.range]),
-                attributes: runAttributes
-            ))
+            let pieces = String(formatted.characters[run.range]).components(separatedBy: token)
+            for (index, piece) in pieces.enumerated() {
+                if index > 0, let literal = restored.next() {
+                    output.append(NSAttributedString(string: literal.text, attributes: runAttributes))
+                }
+                output.append(NSAttributedString(string: piece, attributes: runAttributes))
+            }
         }
     }
 }

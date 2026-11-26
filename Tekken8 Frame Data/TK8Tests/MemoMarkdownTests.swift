@@ -62,49 +62,80 @@ final class MemoMarkdownTests: XCTestCase {
     }
 
     @MainActor
+    func test_inlineMarkupContinuesAcrossSoftLineBreaks() throws {
+        let source = "**Important\non block** next `u/f\n2`\nlast line"
+        let text = try XCTUnwrap(readingBody(in: makeView(source: source)).attributedText)
+
+        XCTAssertEqual(text.string, "Important\non block next u/f 2\nlast line")
+        XCTAssertTrue(try font(for: "on block", in: text).fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertTrue(try font(for: "u/f 2", in: text).fontDescriptor.symbolicTraits.contains(.traitMonoSpace))
+    }
+
+    @MainActor
+    func test_literalLinkCanStayInsideAnEmphasizedSpan() throws {
+        let source = "**Before [Site](url) after**"
+        let text = try XCTUnwrap(readingBody(in: makeView(source: source)).attributedText)
+
+        XCTAssertEqual(text.string, "Before [Site](url) after")
+        XCTAssertTrue(try font(for: "Before", in: text).fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertTrue(try font(for: "after", in: text).fontDescriptor.symbolicTraits.contains(.traitBold))
+    }
+
+    @MainActor
+    func test_longPlainTitleAndMarkdownBodyShareTheAccessibilityScrollView() throws {
+        let title = "# " + String(repeating: "Long matchup note ", count: 45)
+        let view = makeView(source: "## Punishes", title: title)
+        try withNarrowWindow(hosting: view) { host in
+            host.traitOverrides.preferredContentSizeCategory = .accessibilityExtraExtraExtraLarge
+            host.view.layoutIfNeeded()
+            view.layoutIfNeeded()
+
+            let body = try readingBody(in: view)
+            let scroll = try XCTUnwrap(body.superview as? UIScrollView)
+            let titleLabel = try XCTUnwrap(scroll.subviews.compactMap { $0 as? UILabel }.first)
+            XCTAssertEqual(titleLabel.text, title)
+            XCTAssertEqual(body.text, "Punishes")
+            XCTAssertGreaterThan(scroll.bounds.height, 0)
+            XCTAssertGreaterThan(body.frame.minY, scroll.bounds.maxY)
+            XCTAssertGreaterThan(body.bounds.height, 0)
+
+            scroll.scrollRectToVisible(body.frame, animated: false)
+
+            XCTAssertGreaterThan(scroll.contentOffset.y, 0)
+            XCTAssertTrue(scroll.bounds.intersects(body.frame))
+        }
+    }
+
+    @MainActor
     func test_readingBodyWrapsInsideNarrowDarkAccessibilityLayout() throws {
         let source = "## Notes\n5. A long punish description wraps below the number while reading with a large accessibility font."
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previousWindow = scene.keyWindow
-        let window = UIWindow(windowScene: scene)
-        let host = UIViewController()
-        window.rootViewController = host
-        host.traitOverrides.preferredContentSizeCategory = .large
-        window.makeKeyAndVisible()
-        defer {
-            window.isHidden = true
-            previousWindow?.makeKey()
-        }
-
         let view = makeView(source: source)
-        view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
-        host.view.addSubview(view)
-        window.layoutIfNeeded()
-        view.layoutIfNeeded()
-        let headingBefore = try font(for: "Notes", in: readingBody(in: view).attributedText)
+        try withNarrowWindow(hosting: view) { host in
+            let headingBefore = try font(for: "Notes", in: readingBody(in: view).attributedText)
 
-        host.traitOverrides.userInterfaceStyle = .dark
-        host.traitOverrides.preferredContentSizeCategory = .accessibilityExtraExtraExtraLarge
-        host.view.setNeedsLayout()
-        window.layoutIfNeeded()
-        view.layoutIfNeeded()
+            host.traitOverrides.userInterfaceStyle = .dark
+            host.traitOverrides.preferredContentSizeCategory = .accessibilityExtraExtraExtraLarge
+            host.view.setNeedsLayout()
+            host.view.layoutIfNeeded()
+            view.layoutIfNeeded()
 
-        let body = try readingBody(in: view)
-        let text = try XCTUnwrap(body.attributedText)
-        let headingAfter = try font(for: "Notes", in: text)
-        let listFont = try font(for: "A long", in: text)
-        let listLocation = (text.string as NSString).range(of: "5.").location
-        let paragraph = try XCTUnwrap(text.attribute(.paragraphStyle, at: listLocation, effectiveRange: nil) as? NSParagraphStyle)
-        let foreground = try XCTUnwrap(text.attribute(.foregroundColor, at: listLocation, effectiveRange: nil) as? UIColor)
+            let body = try readingBody(in: view)
+            let text = try XCTUnwrap(body.attributedText)
+            let headingAfter = try font(for: "Notes", in: text)
+            let listFont = try font(for: "A long", in: text)
+            let listLocation = (text.string as NSString).range(of: "5.").location
+            let paragraph = try XCTUnwrap(text.attribute(.paragraphStyle, at: listLocation, effectiveRange: nil) as? NSParagraphStyle)
+            let foreground = try XCTUnwrap(text.attribute(.foregroundColor, at: listLocation, effectiveRange: nil) as? UIColor)
 
-        XCTAssertGreaterThan(headingAfter.pointSize, headingBefore.pointSize)
-        XCTAssertEqual(view.traitCollection.userInterfaceStyle, .dark)
-        XCTAssertEqual(foreground.resolvedColor(with: view.traitCollection), UIColor.tkPrimaryText.resolvedColor(with: view.traitCollection))
-        XCTAssertGreaterThan(paragraph.headIndent, 0)
-        XCTAssertEqual(body.bounds.width, 280, accuracy: 0.5)
-        let fitted = body.sizeThatFits(CGSize(width: body.bounds.width, height: .greatestFiniteMagnitude))
-        XCTAssertLessThanOrEqual(fitted.width, body.bounds.width)
-        XCTAssertGreaterThan(fitted.height, headingAfter.lineHeight + listFont.lineHeight)
+            XCTAssertGreaterThan(headingAfter.pointSize, headingBefore.pointSize)
+            XCTAssertEqual(view.traitCollection.userInterfaceStyle, .dark)
+            XCTAssertEqual(foreground.resolvedColor(with: view.traitCollection), UIColor.tkPrimaryText.resolvedColor(with: view.traitCollection))
+            XCTAssertGreaterThan(paragraph.headIndent, 0)
+            XCTAssertEqual(body.bounds.width, 280, accuracy: 0.5)
+            let fitted = body.sizeThatFits(CGSize(width: body.bounds.width, height: .greatestFiniteMagnitude))
+            XCTAssertLessThanOrEqual(fitted.width, body.bounds.width)
+            XCTAssertGreaterThan(fitted.height, headingAfter.lineHeight + listFont.lineHeight)
+        }
     }
 
     @MainActor
@@ -145,10 +176,10 @@ final class MemoMarkdownTests: XCTestCase {
     }
 
     @MainActor
-    private func makeView(source: String) -> MemoComposeView {
+    private func makeView(source: String, title: String = "# Title") -> MemoComposeView {
         let view = MemoComposeView()
         view.configure(memo: Memo(
-            id: UUID(), characterName: "common", title: "# Title", body: "# Title\n" + source,
+            id: UUID(), characterName: "common", title: title, body: title + "\n" + source,
             isPinned: false, updatedAt: Date()
         ))
         view.setEditing(false)
@@ -163,7 +194,28 @@ final class MemoMarkdownTests: XCTestCase {
 
     @MainActor
     private func readingBody(in view: MemoComposeView) throws -> UITextView {
-        try XCTUnwrap(view.subviews.compactMap { $0 as? UITextView }
-            .first { !$0.isHidden && $0 !== view.titleField })
+        let scroll = try XCTUnwrap(view.subviews.first { $0 is UIScrollView && !$0.isHidden })
+        return try XCTUnwrap(scroll.subviews.compactMap { $0 as? UITextView }.first)
+    }
+
+    @MainActor
+    private func withNarrowWindow(hosting view: MemoComposeView, run: (UIViewController) throws -> Void) throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousWindow = scene.keyWindow
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        host.traitOverrides.preferredContentSizeCategory = .large
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            previousWindow?.makeKey()
+        }
+
+        view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        host.view.addSubview(view)
+        window.layoutIfNeeded()
+        view.layoutIfNeeded()
+        try run(host)
     }
 }

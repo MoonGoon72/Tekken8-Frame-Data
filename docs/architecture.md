@@ -220,7 +220,7 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 3. 분석 이벤트
 
-화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Services/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 `MemoComposeViewController`가 MemoViewModel의 onPersisted 콜백으로 repository 쓰기 성공 직후 성공 이벤트를 기록하고, 빈 내용·변경 없음·repository 오류를 서로 다른 계약으로 보낸다. 저장은 실제 pop 완료 후 수행하며 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
+화면·사용자 액션은 ViewController/SwiftUI 필터에서 `AnalyticsClient`에 타입화된 `TK8AnalyticsEvent`를 전달한다. Firebase SDK 호출과 파라미터 변환은 `Services/Analytics/AnalyticsClient.swift`에만 둔다. 검색은 UI 갱신을 지연시키지 않고, 실제 결과 snapshot 반영 뒤 `SearchAnalyticsTracker`가 검색 시도별 로컬 UUID로 오래된 완료를 거르고 500ms 디바운스와 동일 조건 중복 제거를 적용한다. 기술 목록 표시 이벤트는 snapshot 완료와 화면 노출을 모두 확인한다. 메모 저장은 완료 버튼을 누르거나 편집 화면의 pop이 완료되면 실행된다. `MemoComposeViewModel`은 `MemoViewModel`에서 쓰기 성공을 확인한 뒤 성공 이벤트를 기록하며, 빈 내용으로 종료·변경 없음·repository 오류를 별도 이벤트로 보낸다. 쓰기 이후 목록 재조회 실패는 저장 실패로 집계하지 않는다. 상세 이벤트 목록과 지표 분모/분자는 `docs/analytics-measurement.md`를 기준으로 한다.
 
 ### 4. 캐릭터 목록
 

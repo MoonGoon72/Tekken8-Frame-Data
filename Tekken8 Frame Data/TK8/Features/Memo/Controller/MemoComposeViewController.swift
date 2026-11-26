@@ -11,16 +11,15 @@ final class MemoComposeViewController: BaseViewController {
     private var hasBeenPushed = false
 
     init(
-        memoViewModel: MemoViewModel,
+        composeViewModel: MemoComposeViewModel,
         characterListViewModel: any CharacterSelectable,
-        memo: Memo?,
         analytics: AnalyticsClient,
         makeCharacterSelectViewController: @escaping () -> CharacterSelectViewController
     ) {
-        composeViewModel = MemoComposeViewModel(memoViewModel: memoViewModel, memo: memo, analytics: analytics)
+        self.composeViewModel = composeViewModel
         self.characterListViewModel = characterListViewModel
         self.analytics = analytics
-        autoFocusPolicy = MemoAutoFocusPolicy(isNewMemo: memo == nil)
+        autoFocusPolicy = MemoAutoFocusPolicy(isNewMemo: composeViewModel.memo == nil)
         self.makeCharacterSelectViewController = makeCharacterSelectViewController
         super.init(nibName: nil, bundle: nil)
     }
@@ -87,11 +86,11 @@ final class MemoComposeViewController: BaseViewController {
         let result = composeViewModel.finishEditing(title: memoComposeView.titleContent, body: memoComposeView.bodyContent)
         if result == .failed {
             showSaveError()
+        } else if result == .empty {
+            showAlert(title: "Enter a memo title or body".localized())
         } else {
             view.endEditing(true)
-            if !composeViewModel.isEditing {
-                memoComposeView.configure(memo: composeViewModel.memo)
-            }
+            memoComposeView.configure(memo: composeViewModel.memo)
             updateMode()
         }
     }
@@ -103,7 +102,11 @@ final class MemoComposeViewController: BaseViewController {
     }
 
     private func showSaveError() {
-        let alert = UIAlertController(title: "Could not save memo".localized(), message: nil, preferredStyle: .alert)
+        showAlert(title: "Could not save memo".localized())
+    }
+
+    private func showAlert(title: String) {
+        let alert = UIAlertController(title: title, message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Close".localized(), style: .cancel))
         present(alert, animated: true)
     }
@@ -142,10 +145,7 @@ final class MemoComposeViewController: BaseViewController {
             }
         } togglePin: { [weak self] in
             guard let self else { return }
-            composeViewModel.isPinned.toggle()
-            if !composeViewModel.isEditing,
-               composeViewModel.save(title: memoComposeView.titleContent, body: memoComposeView.bodyContent) == .failed {
-                composeViewModel.isPinned.toggle()
+            if !composeViewModel.togglePin(title: memoComposeView.titleContent, body: memoComposeView.bodyContent) {
                 showSaveError()
             }
             composeRightBarButtons()

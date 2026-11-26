@@ -2,6 +2,7 @@ import Foundation
 
 final class MemoComposeViewModel {
     enum SaveResult: Equatable {
+        case empty
         case skipped
         case persisted
         case failed
@@ -12,7 +13,7 @@ final class MemoComposeViewModel {
     private(set) var memo: Memo?
     private(set) var isEditing: Bool
     var characterName: String
-    var isPinned: Bool
+    private(set) var isPinned: Bool
 
     init(memoViewModel: MemoViewModel, memo: Memo?, analytics: AnalyticsClient) {
         self.memoViewModel = memoViewModel
@@ -29,18 +30,35 @@ final class MemoComposeViewModel {
     }
 
     func finishEditing(title: String, body: String) -> SaveResult {
-        let result = save(title: title, body: body)
-        if result != .failed, memo != nil {
+        let result = persist(title: title, body: body, isLeavingEditor: false)
+        if result == .persisted || result == .skipped {
             isEditing = false
         }
         return result
     }
 
     func save(title: String, body: String) -> SaveResult {
+        persist(title: title, body: body, isLeavingEditor: true)
+    }
+
+    func togglePin(title: String, body: String) -> Bool {
+        isPinned.toggle()
+        if !isEditing, persist(title: title, body: body, isLeavingEditor: false) == .failed {
+            isPinned.toggle()
+            return false
+        }
+        return true
+    }
+
+    private func persist(title: String, body: String, isLeavingEditor: Bool) -> SaveResult {
         let mode: TK8AnalyticsMemoMode = memo == nil ? .create : .edit
         // Reuse the original stored string when only metadata changes.
-        let storedBody = memo.flatMap { $0.title == title && $0.rawBody == body ? $0.body : nil }
-            ?? (title + "\n" + body)
+        let storedBody: String
+        if let memo, memo.title.utf8.elementsEqual(title.utf8), memo.rawBody.utf8.elementsEqual(body.utf8) {
+            storedBody = memo.body
+        } else {
+            storedBody = title + "\n" + body
+        }
         switch memoSaveDecision(
             memo: memo,
             selectedCharacterName: characterName,
@@ -49,8 +67,10 @@ final class MemoComposeViewModel {
             isPinned: isPinned
         ) {
         case .emptyContent:
-            analytics.log(.memoSaveSkipped(mode: mode, reason: .emptyContent))
-            return .skipped
+            if isLeavingEditor {
+                analytics.log(.memoSaveSkipped(mode: mode, reason: .emptyContent))
+            }
+            return .empty
         case .unchanged:
             analytics.log(.memoSaveSkipped(mode: mode, reason: .noChanges))
             return .skipped
@@ -104,15 +124,15 @@ func memoSaveDecision(
 ) -> MemoSaveDecision {
     let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
     let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmedTitle.isEmpty || !trimmedBody.isEmpty else {
+    let preservesStoredContent = memo.map { $0.hasSameContent(title: title, body: body) } ?? false
+    guard preservesStoredContent || !trimmedTitle.isEmpty || !trimmedBody.isEmpty else {
         return .emptyContent
     }
     guard let memo else { return .create }
 
     let selectedCharacter = selectedCharacterName ?? "common"
     guard memo.characterName != selectedCharacter ||
-            memo.title != title ||
-            memo.body != body ||
+            !preservesStoredContent ||
             memo.isPinned != isPinned else {
         return .unchanged
     }

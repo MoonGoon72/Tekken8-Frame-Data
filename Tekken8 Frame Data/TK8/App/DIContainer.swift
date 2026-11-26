@@ -122,9 +122,8 @@ final class DIContainer {
         memo: Memo?
     ) -> MemoComposeViewController {
         MemoComposeViewController(
-            memoViewModel: memoViewModel,
+            composeViewModel: MemoComposeViewModel(memoViewModel: memoViewModel, memo: memo, analytics: analytics),
             characterListViewModel: characterListViewModel,
-            memo: memo,
             analytics: analytics,
             makeCharacterSelectViewController: { self.makeCharacterSelectViewController(viewModel: characterListViewModel)
             }

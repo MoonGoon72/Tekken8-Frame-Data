@@ -91,6 +91,26 @@ extension MemoComposeTests {
     }
 
     @MainActor
+    func test_clearingAnExistingMemoKeepsDraftAndDoesNotLogASave() throws {
+        let repository = MockMemoRepository()
+        let analytics = RecordingAnalyticsClient()
+        let memo = try repository.save(character: "common", title: "Original", body: "Original\nBody", isPinned: false)
+        let sut = makeController(repository: repository, memo: memo, analytics: analytics)
+        sut.loadViewIfNeeded()
+        let screen = sut.view as! MemoComposeView
+        tapPrimaryButton(in: sut)
+        screen.titleField.text = ""
+        screen.bodyField.text = " "
+
+        tapPrimaryButton(in: sut)
+
+        XCTAssertTrue(screen.bodyField.isEditable)
+        XCTAssertEqual(screen.bodyField.text, " ")
+        XCTAssertEqual(repository.memos, [memo])
+        XCTAssertEqual(analytics.events, [.memoComposeStarted(mode: .edit)])
+    }
+
+    @MainActor
     func test_onlyCompletedRemovalAutomaticallySaves() {
         let repository = MockMemoRepository()
         let sut = makeController(repository: repository)
@@ -114,6 +134,53 @@ extension MemoComposeTests {
     }
 
     @MainActor
+    func test_cancellingInteractivePopKeepsEditorAndDoesNotSave() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let repository = MockMemoRepository()
+        let sut = makeController(repository: repository)
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        try await Task.sleep(for: .milliseconds(200))
+
+        navigation.pushViewController(sut, animated: false)
+        try await Task.sleep(for: .milliseconds(200))
+        let screen = sut.view as! MemoComposeView
+        screen.bodyField.text = "- pending"
+        let transition = MemoTestPopTransition()
+        navigation.delegate = transition
+        navigation.popViewController(animated: true)
+        await fulfillment(of: [transition.started], timeout: 2)
+        XCTAssertTrue(sut.transitionCoordinator?.isInteractive == true)
+        transition.interaction.update(0.25)
+        transition.interaction.cancel()
+
+        await fulfillment(of: [transition.completed], timeout: 3)
+
+        XCTAssertTrue(navigation.topViewController === sut)
+        XCTAssertTrue(screen.bodyField.isEditable)
+        XCTAssertEqual(screen.bodyField.text, "- pending")
+        XCTAssertTrue(repository.memos.isEmpty)
+    }
+
+    @MainActor
+    func test_donePersistsCanonicallyEquivalentMarkdownInputVerbatim() throws {
+        let repository = MockMemoRepository()
+        let memo = try repository.save(character: "common", title: "Title", body: "Title\ncafé", isPinned: false)
+        let sut = makeController(repository: repository, memo: memo)
+        sut.loadViewIfNeeded()
+        tapPrimaryButton(in: sut)
+        let body = "cafe\u{301}"
+        (sut.view as! MemoComposeView).bodyField.text = body
+
+        tapPrimaryButton(in: sut)
+
+        XCTAssertEqual(Array(repository.memos[0].body.utf8), Array("Title\n\(body)".utf8))
+    }
+
+    @MainActor
     private func tapPrimaryButton(in controller: UIViewController) {
         guard let button = controller.navigationItem.rightBarButtonItems?.first,
               let action = button.action else {
@@ -123,12 +190,20 @@ extension MemoComposeTests {
     }
 
     @MainActor
-    private func makeController(repository: MockMemoRepository, memo: Memo? = nil) -> MemoComposeViewController {
-        MemoComposeViewController(
+    private func makeController(
+        repository: MockMemoRepository,
+        memo: Memo? = nil,
+        analytics: RecordingAnalyticsClient = RecordingAnalyticsClient()
+    ) -> MemoComposeViewController {
+        let viewModel = MemoComposeViewModel(
             memoViewModel: MemoViewModel(memoRepository: repository),
-            characterListViewModel: MemoTestCharacters(),
             memo: memo,
-            analytics: RecordingAnalyticsClient(),
+            analytics: analytics
+        )
+        return MemoComposeViewController(
+            composeViewModel: viewModel,
+            characterListViewModel: MemoTestCharacters(),
+            analytics: analytics,
             makeCharacterSelectViewController: { fatalError("Unexpected character selection") }
         )
     }
@@ -144,4 +219,48 @@ private final class MemoTestCharacters: CharacterSelectable {
     func resetFilter() {}
     func loadImage(for character: Character) {}
     func image(for key: String) -> UIImage? { nil }
+}
+
+@MainActor
+private final class MemoTestPopTransition: NSObject, UINavigationControllerDelegate, UIViewControllerAnimatedTransitioning {
+    let interaction = UIPercentDrivenInteractiveTransition()
+    let started = XCTestExpectation(description: "Started interactive navigation transition")
+    let completed = XCTestExpectation(description: "Completed interactive navigation transition")
+
+    func navigationController(
+        _ navigationController: UINavigationController,
+        animationControllerFor operation: UINavigationController.Operation,
+        from fromVC: UIViewController,
+        to toVC: UIViewController
+    ) -> (any UIViewControllerAnimatedTransitioning)? {
+        operation == .pop ? self : nil
+    }
+
+    func navigationController(
+        _ navigationController: UINavigationController,
+        interactionControllerFor animationController: any UIViewControllerAnimatedTransitioning
+    ) -> (any UIViewControllerInteractiveTransitioning)? {
+        interaction
+    }
+
+    func transitionDuration(using context: (any UIViewControllerContextTransitioning)?) -> TimeInterval {
+        0.2
+    }
+
+    func animateTransition(using context: any UIViewControllerContextTransitioning) {
+        started.fulfill()
+        guard let from = context.view(forKey: .from), let to = context.view(forKey: .to) else {
+            context.completeTransition(false)
+            completed.fulfill()
+            return
+        }
+        context.containerView.insertSubview(to, belowSubview: from)
+        UIView.animate(withDuration: transitionDuration(using: context)) {
+            from.alpha = 0
+        } completion: { _ in
+            from.alpha = 1
+            context.completeTransition(!context.transitionWasCancelled)
+            self.completed.fulfill()
+        }
+    }
 }

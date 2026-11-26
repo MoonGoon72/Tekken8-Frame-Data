@@ -9,14 +9,17 @@ enum MemoMarkdownRenderer {
         let headingFont = UIFontMetrics(forTextStyle: .headline)
             .scaledFont(for: .systemFont(ofSize: 20, weight: .semibold), compatibleWith: traits)
         for (index, line) in lines.enumerated() {
-            let heading = line.prefix { $0 == "#" }
+            let indentation = line.prefix { $0 == " " }.count
+            let block = indentation < 4 ? line.dropFirst(indentation) : line[...]
+            let heading = block.prefix { $0 == "#" }
             let text: String
             let font: UIFont
-            if (1...6).contains(heading.count), line.dropFirst(heading.count).first?.isWhitespace == true {
-                text = String(line.dropFirst(heading.count).drop(while: { $0.isWhitespace }))
+            if (1...6).contains(heading.count), block.dropFirst(heading.count).first?.isWhitespace == true {
+                let content = block.dropFirst(heading.count).trimmingCharacters(in: .whitespaces)
+                text = content.replacingOccurrences(of: #"\s+#+$"#, with: "", options: .regularExpression)
                 font = headingFont
-            } else if let marker = line.first, "-+*".contains(marker), line.dropFirst().first?.isWhitespace == true {
-                text = "• " + line.dropFirst().drop(while: { $0.isWhitespace })
+            } else if let marker = block.first, "-+*".contains(marker), block.dropFirst().first?.isWhitespace == true {
+                text = "• " + block.dropFirst().drop(while: { $0.isWhitespace })
                 font = bodyFont
             } else {
                 text = line

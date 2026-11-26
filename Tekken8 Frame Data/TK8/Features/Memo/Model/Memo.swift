@@ -27,6 +27,10 @@ struct Memo: Hashable {
         return String(body[body.index(after: prefix.upperBound)...])
     }
 
+    func hasSameContent(title: String, body: String) -> Bool {
+        self.title.utf8.elementsEqual(title.utf8) && self.body.utf8.elementsEqual(body.utf8)
+    }
+
     static func ==(lhs: Memo, rhs: Memo) -> Bool {
         return lhs.id == rhs.id
         && lhs.characterName == rhs.characterName

@@ -9,6 +9,7 @@ import Foundation
 final class MockMemoRepository: MemoRepository {
     var memos: [Memo] = []
     var saveError: Error?
+    var updateError: Error?
     var fetchError: Error?
 
     func save(character: String, title: String, body: String, isPinned: Bool) throws -> Memo {
@@ -24,6 +25,7 @@ final class MockMemoRepository: MemoRepository {
     }
 
     func update(memo: Memo) throws -> Bool {
+        if let error = updateError { throw error }
         guard let index = memos.firstIndex(where: { $0.id == memo.id }) else { return false }
         memos[index] = memo
         return true

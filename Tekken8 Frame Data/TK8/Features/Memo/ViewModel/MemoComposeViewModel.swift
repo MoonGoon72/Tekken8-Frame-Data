@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 final class MemoComposeViewModel {
     enum SaveResult: Equatable {
         case empty
@@ -10,18 +11,30 @@ final class MemoComposeViewModel {
 
     private let memoViewModel: MemoViewModel
     private let analytics: AnalyticsClient
+    private let draftStore: MemoDraftStore
+    private let draftID: UUID
+    let restoredDraft: MemoDraft?
     private(set) var memo: Memo?
     private(set) var isEditing: Bool
     var characterName: String
     private(set) var isPinned: Bool
 
-    init(memoViewModel: MemoViewModel, memo: Memo?, analytics: AnalyticsClient) {
+    init(
+        memoViewModel: MemoViewModel,
+        memo: Memo?,
+        analytics: AnalyticsClient,
+        draft: MemoDraft? = nil,
+        draftStore: MemoDraftStore? = nil
+    ) {
         self.memoViewModel = memoViewModel
         self.analytics = analytics
+        self.draftStore = draftStore ?? MemoDraftStore()
+        draftID = draft?.id ?? memo?.id ?? UUID()
+        restoredDraft = draft
         self.memo = memo
-        isEditing = memo == nil
-        characterName = memo?.characterName ?? "common"
-        isPinned = memo?.isPinned ?? false
+        isEditing = memo == nil || draft != nil
+        characterName = draft?.characterName ?? memo?.characterName ?? "common"
+        isPinned = draft?.isPinned ?? memo?.isPinned ?? false
     }
 
     func beginEditing() {
@@ -37,8 +50,17 @@ final class MemoComposeViewModel {
         return result
     }
 
-    func save(title: String, body: String) -> SaveResult {
-        persist(title: title, body: body, isLeavingEditor: true)
+    func autosave(title: String, body: String) -> UUID? {
+        guard persist(title: title, body: body, isLeavingEditor: true) == .failed else { return nil }
+        draftStore.retain(MemoDraft(
+            id: draftID,
+            memo: memo,
+            title: title,
+            rawBody: body,
+            characterName: characterName,
+            isPinned: isPinned
+        ))
+        return draftID
     }
 
     func togglePin(title: String, body: String) -> Bool {
@@ -72,6 +94,7 @@ final class MemoComposeViewModel {
             }
             return .empty
         case .unchanged:
+            clearRestoredDraft()
             analytics.log(.memoSaveSkipped(mode: mode, reason: .noChanges))
             return .skipped
         case .create, .update:
@@ -96,6 +119,7 @@ final class MemoComposeViewModel {
                 return .failed
             }
             memo = persistedMemo
+            clearRestoredDraft()
             analytics.log(.memoSaveSucceeded(mode: mode))
             return .persisted
         }
@@ -104,6 +128,13 @@ final class MemoComposeViewModel {
     func delete() throws {
         if let memo {
             try memoViewModel.delete(memos: [memo])
+        }
+        clearRestoredDraft()
+    }
+
+    private func clearRestoredDraft() {
+        if restoredDraft != nil {
+            draftStore.remove(id: draftID)
         }
     }
 }

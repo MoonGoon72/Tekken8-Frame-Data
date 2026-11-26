@@ -14,6 +14,7 @@ final class DIContainer {
     private let userDefaultsManager: UserDefaultsManageable
     private let preference: CharacterLayoutPreference
     private let analytics: AnalyticsClient
+    @MainActor private lazy var memoDraftStore = MemoDraftStore()
     @MainActor private lazy var purchases = AdRemovalPurchaseService(store: StoreKitAdRemovalStore())
     @MainActor private lazy var ads = BannerAdService(purchases: purchases)
     @MainActor lazy var appearance = AppAppearance(repository: DefaultAppThemeRepository(manager: userDefaultsManager))
@@ -106,23 +107,32 @@ final class DIContainer {
         return withBottomAd(MemoListViewController(
             viewModel: viewModel,
             characterListViewModel: characterListViewModel,
-            analytics: analytics
-        ) { memo in
-                self.makeMemoComposeViewController(
-                    memoViewModel: viewModel,
-                    characterListViewModel: characterListViewModel,
-                    memo: memo
-                )
-            }, placement: .memoList)
+            analytics: analytics,
+            draftStore: memoDraftStore
+        ) { memo, draft in
+            self.makeMemoComposeViewController(
+                memoViewModel: viewModel,
+                characterListViewModel: characterListViewModel,
+                memo: memo,
+                draft: draft
+            )
+        }, placement: .memoList)
     }
 
     @MainActor func makeMemoComposeViewController(
         memoViewModel: MemoViewModel,
         characterListViewModel: any CharacterSelectable,
-        memo: Memo?
+        memo: Memo?,
+        draft: MemoDraft?
     ) -> MemoComposeViewController {
         MemoComposeViewController(
-            composeViewModel: MemoComposeViewModel(memoViewModel: memoViewModel, memo: memo, analytics: analytics),
+            composeViewModel: MemoComposeViewModel(
+                memoViewModel: memoViewModel,
+                memo: memo,
+                analytics: analytics,
+                draft: draft,
+                draftStore: memoDraftStore
+            ),
             characterListViewModel: characterListViewModel,
             analytics: analytics,
             makeCharacterSelectViewController: { self.makeCharacterSelectViewController(viewModel: characterListViewModel)

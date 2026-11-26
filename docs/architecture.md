@@ -262,7 +262,7 @@ Unity Ads는 AdMob 배너의 bidding 소스로만 준비한다. LevelPlay 미디
 
 ### 8. 메모와 백업
 
-메모는 원격 서버를 사용하지 않는다. `MemoViewModel`은 `MemoRepository`를 통해 메모를 CRUD하고 최신 수정일 순으로 읽으며, `DefaultMemoRepository`가 `MemoEntity`로 매핑한다. 상세 화면의 `MemoComposeViewModel`은 읽기·편집 상태와 저장 결과를 관리한다. UIKit 상세 화면은 완료 시 쓰기 성공을 확인하고 읽기 모드로 전환하며, 부모 navigation controller에서 실제로 제거될 때 편집 중인 변경을 한 번 저장한다. Markdown 서식은 읽기 화면에서만 적용한다. export는 전체 메모를 앱 전용 JSON 문서(`.tk8memos`)로 인코딩하고, import는 UUID가 같은 메모 중 가져온 `updatedAt`이 더 최신인 항목만 갱신한다.
+메모는 원격 서버를 사용하지 않는다. `MemoViewModel`은 `MemoRepository`를 통해 메모를 CRUD하고 최신 수정일 순으로 읽으며, `DefaultMemoRepository`가 `MemoEntity`로 매핑한다. 상세 화면의 `MemoComposeViewModel`은 읽기·편집 상태와 저장 결과를 관리한다. UIKit 상세 화면은 완료 시 쓰기 성공을 확인하고 읽기 모드로 전환하며, 부모 navigation controller에서 실제로 제거될 때 편집 중인 변경을 한 번 저장한다. 뒤로 가기 자동 저장이 실패하면 `MemoComposeViewModel`이 제목·본문 원문·캐릭터·고정 상태를 `MemoDraftStore`에 메모별로 보관한다. `DIContainer`가 장면 수명 동안 같은 저장소를 주입하므로 목록을 다시 만들어도 목록의 알림 또는 임시 메모 메뉴에서 입력을 복원할 수 있다. 재시도 저장이 성공하면 해당 임시 메모를 정리한다. Markdown 서식은 읽기 화면에서만 적용한다. export는 전체 메모를 앱 전용 JSON 문서(`.tk8memos`)로 인코딩하고, import는 UUID가 같은 메모 중 가져온 `updatedAt`이 더 최신인 항목만 갱신한다.
 
 ### 9. 프레임 데이터 운영 흐름
 

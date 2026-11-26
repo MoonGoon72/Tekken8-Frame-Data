@@ -2125,6 +2125,22 @@
         }
       }
     },
+    "Memo Drafts" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memo Drafts"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "임시 메모"
+          }
+        }
+      }
+    },
     "MEMOS" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2584,6 +2600,22 @@
         }
       }
     },
+    "Return to Editing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to Editing"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "편집으로 돌아가기"
+          }
+        }
+      }
+    },
     "Search" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2920,6 +2952,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "앱 버전"
+          }
+        }
+      }
+    },
+    "Untitled Memo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled Memo"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제목 없는 메모"
           }
         }
       }

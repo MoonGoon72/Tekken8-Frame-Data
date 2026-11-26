@@ -9,6 +9,7 @@ final class MemoComposeViewController: BaseViewController {
     private var autoFocusPolicy: MemoAutoFocusPolicy
     private var hasHandledDismissSave = false
     private var hasBeenPushed = false
+    var onAutosaveFailure: ((UUID) -> Void)?
 
     init(
         composeViewModel: MemoComposeViewModel,
@@ -19,7 +20,7 @@ final class MemoComposeViewController: BaseViewController {
         self.composeViewModel = composeViewModel
         self.characterListViewModel = characterListViewModel
         self.analytics = analytics
-        autoFocusPolicy = MemoAutoFocusPolicy(isNewMemo: composeViewModel.memo == nil)
+        autoFocusPolicy = MemoAutoFocusPolicy(startsEditing: composeViewModel.isEditing)
         self.makeCharacterSelectViewController = makeCharacterSelectViewController
         super.init(nibName: nil, bundle: nil)
     }
@@ -35,6 +36,10 @@ final class MemoComposeViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         memoComposeView.configure(memo: composeViewModel.memo)
+        if let draft = composeViewModel.restoredDraft {
+            memoComposeView.titleField.text = draft.title
+            memoComposeView.bodyField.text = draft.rawBody
+        }
         updateCharacter()
         memoComposeView.onCharacterChipTapped = { [weak self] in
             self?.openCharacterSelector()
@@ -98,7 +103,9 @@ final class MemoComposeViewController: BaseViewController {
     private func saveAfterPop() {
         guard composeViewModel.isEditing, !hasHandledDismissSave else { return }
         hasHandledDismissSave = true
-        _ = composeViewModel.save(title: memoComposeView.titleContent, body: memoComposeView.bodyContent)
+        if let draftID = composeViewModel.autosave(title: memoComposeView.titleContent, body: memoComposeView.bodyContent) {
+            onAutosaveFailure?(draftID)
+        }
     }
 
     private func showSaveError() {
@@ -155,16 +162,16 @@ final class MemoComposeViewController: BaseViewController {
 }
 
 struct MemoAutoFocusPolicy {
-    private let isNewMemo: Bool
+    private let startsEditing: Bool
     private var hasAppeared = false
 
-    init(isNewMemo: Bool) {
-        self.isNewMemo = isNewMemo
+    init(startsEditing: Bool) {
+        self.startsEditing = startsEditing
     }
 
     mutating func shouldFocusOnAppearance() -> Bool {
         defer { hasAppeared = true }
-        return isNewMemo && !hasAppeared
+        return startsEditing && !hasAppeared
     }
 }
 

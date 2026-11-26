@@ -26,7 +26,7 @@ final class MemoComposeTests: XCTestCase {
 
 extension MemoComposeTests {
     @MainActor
-    func test_doneShowsSavedMemoInReadingModeAndKeepsMarkdownSource() {
+    func test_doneShowsSavedMemoInReadingModeAndKeepsMarkdownSource() throws {
         let repository = MockMemoRepository()
         let sut = makeController(repository: repository)
         sut.loadViewIfNeeded()
@@ -42,8 +42,8 @@ extension MemoComposeTests {
         XCTAssertFalse(screen.bodyField.isEditable)
         XCTAssertEqual(screen.titleField.text, "# Matchup")
         XCTAssertEqual(repository.memos.map(\.body), ["# Matchup\n## Punishes\n- jab\n"])
-        XCTAssertEqual(screen.subviews.compactMap { $0 as? UITextView }
-            .first { !$0.isHidden && $0 !== screen.titleField }?.text, "Punishes\n• jab\n")
+        let readingScrollView = try XCTUnwrap(screen.subviews.first { $0 is UIScrollView && !$0.isHidden })
+        XCTAssertEqual(readingScrollView.subviews.compactMap { $0 as? UITextView }.first?.text, "Punishes\n• jab\n")
 
         tapPrimaryButton(in: sut)
 

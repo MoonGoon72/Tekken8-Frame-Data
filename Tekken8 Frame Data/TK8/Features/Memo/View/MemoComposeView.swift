@@ -74,11 +74,24 @@ final class MemoComposeView: BaseView {
         textView.textContainer.lineFragmentPadding = 0
         return textView
     }()
+    private let readingScrollView = UIScrollView()
+    private let readingTitleLabel: UILabel = {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.textColor = .tkPrimaryText
+        label.accessibilityTraits.insert(.header)
+        return label
+    }()
+    private let readingSeparator: UIView = {
+        let view = UIView()
+        view.backgroundColor = .tkSeparator
+        return view
+    }()
     private let readingBodyView: UITextView = {
         let textView = UITextView()
         textView.isEditable = false
+        textView.isScrollEnabled = false
         textView.backgroundColor = .clear
-        textView.alwaysBounceVertical = true
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         return textView
@@ -107,7 +120,7 @@ final class MemoComposeView: BaseView {
         updateFonts()
         registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (view: MemoComposeView, _) in
             view.updateFonts()
-            if !view.readingBodyView.isHidden {
+            if !view.readingScrollView.isHidden {
                 view.renderReadingBody()
             }
         }
@@ -123,8 +136,11 @@ final class MemoComposeView: BaseView {
         addSubview(titlePlaceholder)
         addSubview(separator)
         addSubview(bodyTextView)
-        addSubview(readingBodyView)
         addSubview(bodyPlaceholder)
+        addSubview(readingScrollView)
+        readingScrollView.addSubview(readingTitleLabel)
+        readingScrollView.addSubview(readingSeparator)
+        readingScrollView.addSubview(readingBodyView)
 
         characterChipButton.addTarget(self, action: #selector(chipTapped), for: .touchUpInside)
     }
@@ -153,9 +169,15 @@ final class MemoComposeView: BaseView {
             ) : nil
             characterChipButton.configuration = configuration
         }
+        titleTextView.isHidden = !isEditing
+        separator.isHidden = !isEditing
         bodyTextView.isHidden = !isEditing
-        readingBodyView.isHidden = isEditing
-        if !isEditing { renderReadingBody() }
+        readingScrollView.isHidden = isEditing
+        if !isEditing {
+            readingTitleLabel.text = titleContent
+            readingScrollView.setContentOffset(.zero, animated: false)
+            renderReadingBody()
+        }
         updatePlaceholders()
     }
 
@@ -166,6 +188,7 @@ final class MemoComposeView: BaseView {
         let bodyFont = UIFont.preferredFont(forTextStyle: .body, compatibleWith: traitCollection)
         titleTextView.font = titleFont
         titlePlaceholder.font = titleFont
+        readingTitleLabel.font = titleFont
         bodyTextView.font = bodyFont
         bodyPlaceholder.font = bodyFont
     }
@@ -223,6 +246,9 @@ private extension MemoComposeView {
         titlePlaceholder.translatesAutoresizingMaskIntoConstraints = false
         separator.translatesAutoresizingMaskIntoConstraints = false
         bodyTextView.translatesAutoresizingMaskIntoConstraints = false
+        readingScrollView.translatesAutoresizingMaskIntoConstraints = false
+        readingTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        readingSeparator.translatesAutoresizingMaskIntoConstraints = false
         readingBodyView.translatesAutoresizingMaskIntoConstraints = false
         bodyPlaceholder.translatesAutoresizingMaskIntoConstraints = false
 
@@ -262,10 +288,26 @@ private extension MemoComposeView {
             bodyTextView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             bodyTextView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -12),
 
-            readingBodyView.topAnchor.constraint(equalTo: bodyTextView.topAnchor),
-            readingBodyView.leadingAnchor.constraint(equalTo: bodyTextView.leadingAnchor),
-            readingBodyView.trailingAnchor.constraint(equalTo: bodyTextView.trailingAnchor),
-            readingBodyView.bottomAnchor.constraint(equalTo: bodyTextView.bottomAnchor),
+            // Reading content scrolls as one document.
+            readingScrollView.topAnchor.constraint(equalTo: characterRow.bottomAnchor),
+            readingScrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            readingScrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            readingScrollView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
+
+            readingTitleLabel.topAnchor.constraint(equalTo: readingScrollView.contentLayoutGuide.topAnchor, constant: 16),
+            readingTitleLabel.leadingAnchor.constraint(equalTo: readingScrollView.contentLayoutGuide.leadingAnchor, constant: 20),
+            readingTitleLabel.trailingAnchor.constraint(equalTo: readingScrollView.contentLayoutGuide.trailingAnchor, constant: -20),
+            readingTitleLabel.widthAnchor.constraint(equalTo: readingScrollView.frameLayoutGuide.widthAnchor, constant: -40),
+
+            readingSeparator.topAnchor.constraint(equalTo: readingTitleLabel.bottomAnchor, constant: 12),
+            readingSeparator.leadingAnchor.constraint(equalTo: readingTitleLabel.leadingAnchor),
+            readingSeparator.trailingAnchor.constraint(equalTo: readingTitleLabel.trailingAnchor),
+            readingSeparator.heightAnchor.constraint(equalToConstant: 0.5),
+
+            readingBodyView.topAnchor.constraint(equalTo: readingSeparator.bottomAnchor, constant: 12),
+            readingBodyView.leadingAnchor.constraint(equalTo: readingTitleLabel.leadingAnchor),
+            readingBodyView.trailingAnchor.constraint(equalTo: readingTitleLabel.trailingAnchor),
+            readingBodyView.bottomAnchor.constraint(equalTo: readingScrollView.contentLayoutGuide.bottomAnchor, constant: -12),
 
             bodyPlaceholder.topAnchor.constraint(equalTo: bodyTextView.topAnchor),
             bodyPlaceholder.leadingAnchor.constraint(equalTo: bodyTextView.leadingAnchor),

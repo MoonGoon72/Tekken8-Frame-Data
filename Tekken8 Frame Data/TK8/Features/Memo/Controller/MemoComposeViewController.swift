@@ -1,29 +1,14 @@
-//
-//  MemoComposeViewController.swift
-//  TK8
-//
-
-import Foundation
 import UIKit
 
 final class MemoComposeViewController: BaseViewController {
-    private let memoComposeView: MemoComposeView
-    private let memoViewModel: MemoViewModel
+    private let memoComposeView = MemoComposeView()
+    private let composeViewModel: MemoComposeViewModel
     private let characterListViewModel: any CharacterSelectable
     private let makeCharacterSelectViewController: () -> CharacterSelectViewController
     private let analytics: AnalyticsClient
-    private var memo: Memo?
-    private var selectedCharacterName: String?
-    private var isPinned: Bool
-    private var isTextEditing = false
     private var autoFocusPolicy: MemoAutoFocusPolicy
     private var hasHandledDismissSave = false
-    private var ellipsisButton: UIBarButtonItem?
-    private var ellipsisButtonState: EllipsisButtonState?
-
-    private struct EllipsisButtonState: Equatable {
-        let isPinned: Bool
-    }
+    private var hasBeenPushed = false
 
     init(
         memoViewModel: MemoViewModel,
@@ -32,46 +17,47 @@ final class MemoComposeViewController: BaseViewController {
         analytics: AnalyticsClient,
         makeCharacterSelectViewController: @escaping () -> CharacterSelectViewController
     ) {
-        self.memoViewModel = memoViewModel
+        composeViewModel = MemoComposeViewModel(memoViewModel: memoViewModel, memo: memo, analytics: analytics)
         self.characterListViewModel = characterListViewModel
-        self.memo = memo
         self.analytics = analytics
         autoFocusPolicy = MemoAutoFocusPolicy(isNewMemo: memo == nil)
-        selectedCharacterName = memo?.characterName ?? "common"
-        isPinned = memo?.isPinned ?? false
-        memoComposeView = MemoComposeView()
         self.makeCharacterSelectViewController = makeCharacterSelectViewController
         super.init(nibName: nil, bundle: nil)
     }
 
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        view = memoComposeView
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        memoComposeView.configure(memo: memo)
-        memoComposeView.updateCharacter(
-            name: selectedCharacterName ?? "common",
-            image: characterListViewModel.image(for: selectedCharacterName ?? "")
-        )
+        memoComposeView.configure(memo: composeViewModel.memo)
+        updateCharacter()
         memoComposeView.onCharacterChipTapped = { [weak self] in
-            self?.characterSelectButtonTapped()
+            self?.openCharacterSelector()
         }
+        updateMode()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         analytics.log(.screenViewed(.memoCompose))
         if autoFocusPolicy.shouldFocusOnAppearance() {
-            memoComposeView.activateTextView()
+            memoComposeView.focusBody()
         }
     }
 
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        if isMovingFromParent { save() }
-    }
-
-    override func loadView() {
-        super.loadView()
-        view = memoComposeView
+    override func didMove(toParent parent: UIViewController?) {
+        super.didMove(toParent: parent)
+        if parent is UINavigationController {
+            hasBeenPushed = true
+        } else if parent == nil, hasBeenPushed {
+            saveAfterPop()
+        }
     }
 
     override func setupNavigationBar() {
@@ -84,135 +70,87 @@ final class MemoComposeViewController: BaseViewController {
         memoComposeView.setTextViewDelegate(self)
     }
 
-    @objc private func characterSelectButtonTapped() {
-        let characterSelectViewController = makeCharacterSelectViewController()
-        characterSelectViewController.delegate = self
-        navigationController?.pushViewController(characterSelectViewController, animated: true)
+    private func openCharacterSelector() {
+        guard composeViewModel.isEditing else { return }
+        let controller = makeCharacterSelectViewController()
+        controller.delegate = self
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func editButtonTapped() {
+        composeViewModel.beginEditing()
+        updateMode()
+        memoComposeView.focusBody()
     }
 
     @objc private func doneButtonTapped() {
-        view.endEditing(true)
+        let result = composeViewModel.finishEditing(title: memoComposeView.titleContent, body: memoComposeView.bodyContent)
+        if result == .failed {
+            showSaveError()
+        } else {
+            view.endEditing(true)
+            if !composeViewModel.isEditing {
+                memoComposeView.configure(memo: composeViewModel.memo)
+            }
+            updateMode()
+        }
     }
 
-    private func save() {
-        guard !hasHandledDismissSave else { return }
+    private func saveAfterPop() {
+        guard composeViewModel.isEditing, !hasHandledDismissSave else { return }
         hasHandledDismissSave = true
+        _ = composeViewModel.save(title: memoComposeView.titleContent, body: memoComposeView.bodyContent)
+    }
 
-        let title = memoComposeView.titleContent
-        let body = title + "\n" + memoComposeView.bodyContent
-        let mode: TK8AnalyticsMemoMode = memo == nil ? .create : .edit
+    private func showSaveError() {
+        let alert = UIAlertController(title: "Could not save memo".localized(), message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Close".localized(), style: .cancel))
+        present(alert, animated: true)
+    }
 
-        switch memoSaveDecision(
-            memo: memo,
-            selectedCharacterName: selectedCharacterName,
-            title: title,
-            body: body,
-            isPinned: isPinned
-        ) {
-        case .emptyContent:
-            analytics.log(.memoSaveSkipped(mode: mode, reason: .emptyContent))
-        case .unchanged:
-            analytics.log(.memoSaveSkipped(mode: mode, reason: .noChanges))
-        case .create:
-            var didPersist = false
-            do {
-                try memoViewModel.create(
-                    character: selectedCharacterName ?? "common",
-                    title: title,
-                    body: body,
-                    isPinned: isPinned
-                ) {
-                    didPersist = true
-                    analytics.log(.memoSaveSucceeded(mode: .create))
-                }
-            } catch {
-                if !didPersist {
-                    analytics.log(.memoSaveFailed(mode: .create, failureCode: .repositoryError))
-                }
-            }
-        case .update:
-            guard var memo else { return }
-            memo.characterName = selectedCharacterName ?? "common"
-            memo.title = title
-            memo.body = body
-            memo.isPinned = isPinned
-            var didPersist = false
-            do {
-                try memoViewModel.update(memo: memo) {
-                    didPersist = true
-                    analytics.log(.memoSaveSucceeded(mode: .edit))
-                }
-            } catch {
-                if !didPersist {
-                    analytics.log(.memoSaveFailed(mode: .edit, failureCode: .repositoryError))
-                }
-            }
-        }
+    private func updateMode() {
+        memoComposeView.setEditing(composeViewModel.isEditing)
+        composeRightBarButtons()
+    }
+
+    private func updateCharacter() {
+        let name = composeViewModel.characterName
+        memoComposeView.updateCharacter(name: name, image: characterListViewModel.image(for: name))
     }
 
     private func composeRightBarButtons() {
-        let hasContent = !memoComposeView.bodyContent.isEmpty || !memoComposeView.titleContent.isEmpty
-        let ellipsisButton = currentEllipsisButton(hasContent: hasContent)
-
-        guard isTextEditing else {
-            navigationItem.rightBarButtonItems = ellipsisButton.map { [$0] }
-            return
-        }
-
-        let doneButton = UIBarButtonItem(
-            barButtonSystemItem: .done,
+        let primaryAction = UIBarButtonItem(
+            barButtonSystemItem: composeViewModel.isEditing ? .done : .edit,
             target: self,
-            action: #selector(doneButtonTapped)
+            action: composeViewModel.isEditing ? #selector(doneButtonTapped) : #selector(editButtonTapped)
         )
-        if let ellipsisButton {
-            navigationItem.rightBarButtonItems = [doneButton, ellipsisButton]
-        } else {
-            navigationItem.rightBarButtonItems = [doneButton]
-        }
+        let hasContent = !memoComposeView.bodyContent.isEmpty || !memoComposeView.titleContent.isEmpty
+        navigationItem.rightBarButtonItems = composeViewModel.memo != nil || hasContent
+            ? [primaryAction, makeEllipsisButton()]
+            : [primaryAction]
     }
 
-    private func currentEllipsisButton(hasContent: Bool) -> UIBarButtonItem? {
-        guard hasContent else {
-            ellipsisButton = nil
-            ellipsisButtonState = nil
-            return nil
-        }
-
-        let state = EllipsisButtonState(isPinned: isPinned)
-        if ellipsisButtonState != state {
-            ellipsisButton = generateEllipsisButton()
-            ellipsisButtonState = state
-        }
-        return ellipsisButton
-    }
-
-    private func generateEllipsisButton() -> UIBarButtonItem {
-        let menu = MemoMenuFactory.menu(isPinned: isPinned) { [weak self] in
+    private func makeEllipsisButton() -> UIBarButtonItem {
+        let menu = MemoMenuFactory.menu(isPinned: composeViewModel.isPinned) { [weak self] in
             guard let self else { return }
-            // Delete
             do {
-                if let memo = self.memo {
-                    try self.memoViewModel.delete(memos: [memo])
-                }
-                self.hasHandledDismissSave = true
-                self.navigationController?.popViewController(animated: true)
+                try composeViewModel.delete()
+                hasHandledDismissSave = true
+                navigationController?.popViewController(animated: true)
             } catch {
-
+                return
             }
         } togglePin: { [weak self] in
             guard let self else { return }
-            self.isPinned.toggle()
-            self.composeRightBarButtons()
+            composeViewModel.isPinned.toggle()
+            if !composeViewModel.isEditing,
+               composeViewModel.save(title: memoComposeView.titleContent, body: memoComposeView.bodyContent) == .failed {
+                composeViewModel.isPinned.toggle()
+                showSaveError()
+            }
+            composeRightBarButtons()
         }
-        let ellipsisButton = UIBarButtonItem(
-            image: UIImage(systemName: "ellipsis"),
-            menu: menu
-        )
-        return ellipsisButton
-    }
-
-    @MainActor required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        return UIBarButtonItem(image: UIImage(systemName: "ellipsis"), menu: menu)
     }
 }
 
@@ -230,58 +168,14 @@ struct MemoAutoFocusPolicy {
     }
 }
 
-enum MemoSaveDecision: Equatable {
-    case emptyContent
-    case create
-    case unchanged
-    case update
-}
-
-func memoSaveDecision(
-    memo: Memo?,
-    selectedCharacterName: String?,
-    title: String,
-    body: String,
-    isPinned: Bool
-) -> MemoSaveDecision {
-    let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-    let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmedTitle.isEmpty || !trimmedBody.isEmpty else {
-        return .emptyContent
-    }
-    guard let memo else { return .create }
-
-    let selectedCharacter = selectedCharacterName ?? "common"
-    guard memo.characterName != selectedCharacter ||
-            memo.title != title ||
-            memo.body != body ||
-            memo.isPinned != isPinned else {
-        return .unchanged
-    }
-    return .update
-}
-
 extension MemoComposeViewController: Selectable {
     func didSelectCharacter(_ character: Character) {
-        selectedCharacterName = character.nameEN
-        memoComposeView.updateCharacter(
-            name: character.nameEN,
-            image: characterListViewModel.image(for: character.nameEN)
-        )
+        composeViewModel.characterName = character.nameEN
+        updateCharacter()
     }
 }
 
 extension MemoComposeViewController: UITextViewDelegate {
-    func textViewDidBeginEditing(_ textView: UITextView) {
-        isTextEditing = true
-        composeRightBarButtons()
-    }
-
-    func textViewDidEndEditing(_ textView: UITextView) {
-        isTextEditing = false
-        composeRightBarButtons()
-    }
-
     func textViewDidChange(_ textView: UITextView) {
         memoComposeView.updatePlaceholders()
         memoComposeView.scrollCaretToVisible(in: textView)
@@ -293,7 +187,6 @@ extension MemoComposeViewController: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextInRanges ranges: [NSValue], replacementText text: String) -> Bool {
-        // Title에서 Enter 입력 시 body로 이동
         if textView === memoComposeView.titleField, text == "\n" {
             memoComposeView.focusBody()
             return false

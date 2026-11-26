@@ -13,6 +13,20 @@ struct Memo: Hashable {
     var isPinned: Bool
     var updatedAt: Date
 
+    var rawBody: String {
+        // Notes written by the editor store the title followed by a newline and the body.
+        // Older or imported values without that prefix are already body text.
+        guard let prefix = body.range(of: title, options: [.anchored, .literal]),
+              prefix.upperBound < body.endIndex,
+              body[prefix.upperBound].isNewline else {
+            if title.isEmpty, body.first?.isNewline == true {
+                return String(body.dropFirst())
+            }
+            return body
+        }
+        return String(body[body.index(after: prefix.upperBound)...])
+    }
+
     static func ==(lhs: Memo, rhs: Memo) -> Bool {
         return lhs.id == rhs.id
         && lhs.characterName == rhs.characterName

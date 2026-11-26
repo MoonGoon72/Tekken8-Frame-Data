@@ -74,6 +74,16 @@ final class MemoComposeView: BaseView {
         textView.textContainer.lineFragmentPadding = 0
         return textView
     }()
+    private let readingBodyView: UITextView = {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.backgroundColor = .clear
+        textView.alwaysBounceVertical = true
+        textView.textContainerInset = .zero
+        textView.textContainer.lineFragmentPadding = 0
+        return textView
+    }()
+
     private let bodyPlaceholder: UILabel = {
         let label = UILabel()
         label.text = "Write your memo here...".localized()
@@ -94,6 +104,13 @@ final class MemoComposeView: BaseView {
         self.backgroundColor = .tkBackground
         titleTextView.tintColor = UIColor.tkPositive
         bodyTextView.tintColor = UIColor.tkPositive
+        updateFonts()
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (view: MemoComposeView, _) in
+            view.updateFonts()
+            if !view.readingBodyView.isHidden {
+                view.renderReadingBody()
+            }
+        }
     }
 
     override func setupSubviews() {
@@ -106,6 +123,7 @@ final class MemoComposeView: BaseView {
         addSubview(titlePlaceholder)
         addSubview(separator)
         addSubview(bodyTextView)
+        addSubview(readingBodyView)
         addSubview(bodyPlaceholder)
 
         characterChipButton.addTarget(self, action: #selector(chipTapped), for: .touchUpInside)
@@ -119,20 +137,46 @@ final class MemoComposeView: BaseView {
     // MARK: - Configure
 
     func configure(memo: Memo?) {
-        guard let memo else { return }
-        titleTextView.text = memo.title
-        bodyTextView.text = bodyFromMemo(memo)
-        titlePlaceholder.isHidden = !memo.title.isEmpty
-        bodyPlaceholder.isHidden = !bodyFromMemo(memo).isEmpty
+        titleTextView.text = memo?.title ?? ""
+        bodyTextView.text = memo?.rawBody ?? ""
+        updatePlaceholders()
+    }
+
+    func setEditing(_ isEditing: Bool) {
+        titleTextView.isEditable = isEditing
+        bodyTextView.isEditable = isEditing
+        characterChipButton.isUserInteractionEnabled = isEditing
+        if var configuration = characterChipButton.configuration {
+            configuration.image = isEditing ? UIImage(
+                systemName: "chevron.down",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+            ) : nil
+            characterChipButton.configuration = configuration
+        }
+        bodyTextView.isHidden = !isEditing
+        readingBodyView.isHidden = isEditing
+        if !isEditing { renderReadingBody() }
+        updatePlaceholders()
+    }
+
+    private func updateFonts() {
+        let titleFont = UIFontMetrics(forTextStyle: .title2).scaledFont(
+            for: .systemFont(ofSize: 22, weight: .semibold), compatibleWith: traitCollection
+        )
+        let bodyFont = UIFont.preferredFont(forTextStyle: .body, compatibleWith: traitCollection)
+        titleTextView.font = titleFont
+        titlePlaceholder.font = titleFont
+        bodyTextView.font = bodyFont
+        bodyPlaceholder.font = bodyFont
+    }
+
+    private func renderReadingBody() {
+        readingBodyView.attributedText = MemoMarkdownRenderer.render(bodyContent, traits: traitCollection)
     }
 
     func updateCharacter(name: String, image: UIImage?) {
         characterChipButton.setTitle(name, for: .normal)
         characterIconView.image = image ?? UIImage(named: "mokujin")
-    }
-
-    func activateTextView() {
-        bodyTextView.becomeFirstResponder()
     }
 
     func scrollCaretToVisible(in textView: UITextView) {
@@ -148,15 +192,12 @@ final class MemoComposeView: BaseView {
         onCharacterChipTapped?()
     }
 
-    private func bodyFromMemo(_ memo: Memo) -> String {
-        memo.body.components(separatedBy: .newlines).dropFirst().joined(separator: "\n")
-    }
 }
 
 extension MemoComposeView {
     func updatePlaceholders() {
-        titlePlaceholder.isHidden = !titleTextView.text.isEmpty
-        bodyPlaceholder.isHidden = !bodyTextView.text.isEmpty
+        titlePlaceholder.isHidden = !titleTextView.isEditable || !titleContent.isEmpty
+        bodyPlaceholder.isHidden = !bodyTextView.isEditable || !bodyContent.isEmpty
     }
 
     func focusBody() {
@@ -182,6 +223,7 @@ private extension MemoComposeView {
         titlePlaceholder.translatesAutoresizingMaskIntoConstraints = false
         separator.translatesAutoresizingMaskIntoConstraints = false
         bodyTextView.translatesAutoresizingMaskIntoConstraints = false
+        readingBodyView.translatesAutoresizingMaskIntoConstraints = false
         bodyPlaceholder.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
@@ -219,6 +261,11 @@ private extension MemoComposeView {
             bodyTextView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             bodyTextView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             bodyTextView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -12),
+
+            readingBodyView.topAnchor.constraint(equalTo: bodyTextView.topAnchor),
+            readingBodyView.leadingAnchor.constraint(equalTo: bodyTextView.leadingAnchor),
+            readingBodyView.trailingAnchor.constraint(equalTo: bodyTextView.trailingAnchor),
+            readingBodyView.bottomAnchor.constraint(equalTo: bodyTextView.bottomAnchor),
 
             bodyPlaceholder.topAnchor.constraint(equalTo: bodyTextView.topAnchor),
             bodyPlaceholder.leadingAnchor.constraint(equalTo: bodyTextView.leadingAnchor),

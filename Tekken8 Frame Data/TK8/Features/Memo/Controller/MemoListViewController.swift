@@ -368,7 +368,6 @@ extension MemoListViewController: UICollectionViewDelegate {
         if isEditing { return }
         let memo = dataSource?.itemIdentifier(for: indexPath)
         guard let memo else { return }
-        analytics.log(.memoComposeStarted(mode: .edit))
         let memoComposeViewController = makeMemoComposeViewController(memo)
         navigationController?.pushViewController(memoComposeViewController, animated: true)
     }

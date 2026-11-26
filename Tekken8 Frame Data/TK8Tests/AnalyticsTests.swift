@@ -115,11 +115,11 @@ final class AnalyticsTests: XCTestCase {
         let sut = MemoViewModel(memoRepository: repository)
         repository.fetchError = NSError(domain: "test", code: 1)
         var persisted = 0
-        XCTAssertThrowsError(try sut.create(character: "jin", title: "a", body: "a", isPinned: false) { persisted += 1 })
+        XCTAssertThrowsError(try sut.create(character: "jin", title: "a", body: "a", isPinned: false) { _ in persisted += 1 })
         XCTAssertEqual(persisted, 1)
         XCTAssertEqual(repository.memos.count, 1)
         repository.saveError = NSError(domain: "test", code: 2)
-        XCTAssertThrowsError(try sut.create(character: "jin", title: "b", body: "b", isPinned: false) { persisted += 1 })
+        XCTAssertThrowsError(try sut.create(character: "jin", title: "b", body: "b", isPinned: false) { _ in persisted += 1 })
         XCTAssertEqual(persisted, 1)
         var memo = repository.memos[0]
         memo.body = "updated"

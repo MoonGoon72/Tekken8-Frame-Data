@@ -7,7 +7,8 @@ import CoreData
 
 protocol MemoRepository {
     // CRUD
-    func save(character: String, title: String, body: String, isPinned: Bool) throws
+    @discardableResult
+    func save(character: String, title: String, body: String, isPinned: Bool) throws -> Memo
     func fetchMemos() throws -> [Memo]
     func update(memo: Memo) throws -> Bool
     func delete(memo: Memo) throws
@@ -21,7 +22,8 @@ final class DefaultMemoRepository: MemoRepository {
         self.coreDataManager = coreDataManager
     }
 
-    func save(character: String, title: String, body: String, isPinned: Bool) throws {
+    @discardableResult
+    func save(character: String, title: String, body: String, isPinned: Bool) throws -> Memo {
         let context = coreDataManager.context
         let entity = MemoEntity(context: context)
         entity.id = UUID()
@@ -30,7 +32,13 @@ final class DefaultMemoRepository: MemoRepository {
         entity.body = body
         entity.isPinned = isPinned
         entity.updatedAt = Date()
-        try coreDataManager.saveContext()
+        do {
+            try coreDataManager.saveContext()
+        } catch {
+            context.delete(entity)
+            throw error
+        }
+        return makeMemo(from: entity)
     }
 
     func upsert(memos: [Memo]) throws -> MemoImportResult {
@@ -65,18 +73,20 @@ final class DefaultMemoRepository: MemoRepository {
         let request = MemoEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
         let result = try coreDataManager.fetch(request)
-        return result.map {
-            Memo(
-                id: $0.id ?? UUID(),
-                characterName: $0.characterNameEN ?? "none",
-                title: $0.title ?? "",
-                body: $0.body ?? "",
-                isPinned: $0.isPinned,
-                updatedAt: $0.updatedAt ?? Date()
-            )
-        }
+        return result.map(makeMemo(from:))
     }
-    
+
+    private func makeMemo(from entity: MemoEntity) -> Memo {
+        Memo(
+            id: entity.id ?? UUID(),
+            characterName: entity.characterNameEN ?? "none",
+            title: entity.title ?? "",
+            body: entity.body ?? "",
+            isPinned: entity.isPinned,
+            updatedAt: entity.updatedAt ?? Date()
+        )
+    }
+
     func update(memo: Memo) throws -> Bool {
         guard let entity = try fetchMemoEntity(id: memo.id) else { return false }
 
@@ -90,7 +100,12 @@ final class DefaultMemoRepository: MemoRepository {
             entity.isPinned = memo.isPinned
             entity.updatedAt = Date()
         }
-        try coreDataManager.saveContext()
+        do {
+            try coreDataManager.saveContext()
+        } catch {
+            coreDataManager.context.refresh(entity, mergeChanges: false)
+            throw error
+        }
         return true
     }
     

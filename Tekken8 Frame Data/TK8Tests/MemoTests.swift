@@ -25,6 +25,19 @@ final class MemoRepositoryTests: XCTestCase {
     // TODO(human): 아래 테스트 케이스들을 구현해주세요.
     // 힌트: save → fetchMemos 순서로 실제 동작을 검증합니다.
 
+    func test_failedInsertAndUpdateDoNotLeakIntoLaterWrites() throws {
+        let existing = try sut.save(character: "common", title: "Existing", body: "Original", isPinned: false)
+        coreDataManager.saveError = NSError(domain: "MemoRepositoryTests", code: 1)
+        XCTAssertThrowsError(try sut.save(character: "common", title: "Draft", body: "Unsaved", isPinned: false))
+        var changed = existing
+        changed.body = "Unsaved change"
+        XCTAssertThrowsError(try sut.update(memo: changed))
+
+        coreDataManager.saveError = nil
+        let new = try sut.save(character: "common", title: "Draft", body: "Saved", isPinned: false)
+        XCTAssertEqual(Set(try sut.fetchMemos()), [existing, new])
+    }
+
     func test_save_저장_후_fetchMemos_에서_조회됨() throws {
         // given
         let memos = [Memo(

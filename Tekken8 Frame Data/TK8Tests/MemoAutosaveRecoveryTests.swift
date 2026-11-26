@@ -194,6 +194,22 @@ final class MemoAutosaveRecoveryTests: XCTestCase {
         XCTAssertEqual(drafts.drafts.map(\.id), [second.id])
     }
 
+    func test_bulkDeletionRemovesCompletedWritesFromListWhenALaterWriteFails() throws {
+        let repository = MockMemoRepository()
+        let first = try repository.save(character: "common", title: "First", body: "Body", isPinned: false)
+        let second = try repository.save(character: "common", title: "Second", body: "Body", isPinned: false)
+        let viewModel = MemoViewModel(memoRepository: repository)
+        try viewModel.fetch()
+
+        XCTAssertThrowsError(try viewModel.delete(memos: [first, second]) { _ in
+            repository.deleteError = CocoaError(.fileWriteOutOfSpace)
+        })
+
+        XCTAssertEqual(repository.memos, [second])
+        XCTAssertEqual(viewModel.memos, [second])
+        XCTAssertEqual(viewModel.filteredMemos, [second])
+    }
+
     @MainActor
     func test_composeDeletionClearsPendingDraftOnlyAfterRepositorySucceeds() throws {
         let repository = MockMemoRepository()

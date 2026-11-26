@@ -72,6 +72,16 @@ final class MemoMarkdownTests: XCTestCase {
     }
 
     @MainActor
+    func test_inlineMarkupContinuesInsideListItemsAndQuotes() throws {
+        let source = "- **Important\n  on block**\n> Command: `u/f\n> 2`"
+        let text = try XCTUnwrap(readingBody(in: makeView(source: source)).attributedText)
+
+        XCTAssertEqual(text.string, "• Important on block\n▎ Command: u/f 2")
+        XCTAssertTrue(try font(for: "on block", in: text).fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertTrue(try font(for: "u/f 2", in: text).fontDescriptor.symbolicTraits.contains(.traitMonoSpace))
+    }
+
+    @MainActor
     func test_literalLinkCanStayInsideAnEmphasizedSpan() throws {
         let source = "**Before [Site](url) after**"
         let text = try XCTUnwrap(readingBody(in: makeView(source: source)).attributedText)

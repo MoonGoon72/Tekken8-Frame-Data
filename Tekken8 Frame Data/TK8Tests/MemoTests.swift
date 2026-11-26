@@ -25,6 +25,18 @@ final class MemoRepositoryTests: XCTestCase {
     // TODO(human): 아래 테스트 케이스들을 구현해주세요.
     // 힌트: save → fetchMemos 순서로 실제 동작을 검증합니다.
 
+    func test_failedDeleteIsNotCommittedByALaterWrite() throws {
+        let original = try sut.save(character: "common", title: "Original", body: "Body", isPinned: false)
+        coreDataManager.saveError = CocoaError(.fileWriteOutOfSpace)
+
+        XCTAssertThrowsError(try sut.delete(memo: original))
+        XCTAssertEqual(try sut.fetchMemos(), [original])
+
+        coreDataManager.saveError = nil
+        let other = try sut.save(character: "common", title: "Other", body: "Body", isPinned: false)
+        XCTAssertEqual(Set(try sut.fetchMemos()), [original, other])
+    }
+
     func test_failedInsertAndUpdateDoNotLeakIntoLaterWrites() throws {
         let existing = try sut.save(character: "common", title: "Existing", body: "Original", isPinned: false)
         coreDataManager.saveError = NSError(domain: "MemoRepositoryTests", code: 1)

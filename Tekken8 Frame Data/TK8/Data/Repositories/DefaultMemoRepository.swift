@@ -114,7 +114,12 @@ final class DefaultMemoRepository: MemoRepository {
         request.predicate = NSPredicate(format: "id == %@", memo.id as CVarArg)
         guard let willDeleteMemo = try coreDataManager.fetch(request).first else { return }
         coreDataManager.delete(willDeleteMemo)
-        try coreDataManager.saveContext()
+        do {
+            try coreDataManager.saveContext()
+        } catch {
+            coreDataManager.context.refresh(willDeleteMemo, mergeChanges: false)
+            throw error
+        }
     }
 
     private func isPinOnlyChanged(from entity: MemoEntity, to memo: Memo) -> Bool {

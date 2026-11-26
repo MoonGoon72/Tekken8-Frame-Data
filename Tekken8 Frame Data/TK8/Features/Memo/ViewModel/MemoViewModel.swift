@@ -44,11 +44,20 @@ final class MemoViewModel: ObservableObject {
     }
 
     func delete(memos: [Memo], onDeleted: (Memo) -> Void = { _ in }) throws {
-        try performAndFetch {
+        var deletedIDs = Set<UUID>()
+        do {
             for memo in memos {
                 try memoRepository.delete(memo: memo)
+                deletedIDs.insert(memo.id)
                 onDeleted(memo)
             }
+            try fetch()
+        } catch {
+            if !deletedIDs.isEmpty {
+                self.memos.removeAll { deletedIDs.contains($0.id) }
+                filteredMemos.removeAll { deletedIDs.contains($0.id) }
+            }
+            throw error
         }
     }
 

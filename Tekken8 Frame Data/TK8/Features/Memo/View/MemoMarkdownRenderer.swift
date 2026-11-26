@@ -38,7 +38,37 @@ enum MemoMarkdownRenderer {
             plainLines.removeAll(keepingCapacity: true)
         }
 
-        for (index, line) in lines.enumerated() {
+        var nextLine = 0
+
+        func appendContinuations(to firstLine: String, matching continuation: (String) -> String?) -> String {
+            var content = [firstLine]
+            while nextLine < lines.count, let line = continuation(lines[nextLine]) {
+                content.append(line)
+                nextLine += 1
+            }
+            return content.joined(separator: " ")
+        }
+
+        func listItem(after marker: Substring, indentation: Int) -> String {
+            let body = marker.drop(while: { $0.isWhitespace })
+            let contentIndentation = indentation + marker.count - body.count
+            return appendContinuations(to: String(body)) { line in
+                let prefix = line.prefix { $0 == " " }
+                guard prefix.count >= contentIndentation, prefix.count < line.count else { return nil }
+                return String(line.dropFirst(contentIndentation))
+            }
+        }
+
+        func quoteBody(_ line: Substring) -> String? {
+            let indent = line.prefix { $0 == " " }.count
+            let content = line.dropFirst(min(indent, 3))
+            guard content.first == ">" else { return nil }
+            return String(content.dropFirst().drop(while: { $0.isWhitespace }))
+        }
+
+        while nextLine < lines.count {
+            let line = lines[nextLine]
+            nextLine += 1
             let indentation = line.prefix { $0 == " " }.count
             let block = indentation < 4 ? line.dropFirst(indentation) : line[...]
             let fence = block.prefix { $0 == block.first && ($0 == "`" || $0 == "~") }
@@ -47,7 +77,7 @@ enum MemoMarkdownRenderer {
             if openFence != nil || opensFence {
                 flushPlainParagraph(followedByLine: true)
                 output.append(NSAttributedString(
-                    string: line + (index < lines.count - 1 ? "\n" : ""), attributes: plainAttributes
+                    string: line + (nextLine < lines.count ? "\n" : ""), attributes: plainAttributes
                 ))
                 orderedList = nil
                 if let opened = openFence {
@@ -69,7 +99,7 @@ enum MemoMarkdownRenderer {
                 let displayNumber = orderedList?.separator == separator ? orderedList?.nextNumber ?? number : number
                 orderedList = (separator, displayNumber + 1)
                 marker = "\(displayNumber). "
-                blockText = String(afterDigits.dropFirst().drop(while: { $0.isWhitespace }))
+                blockText = listItem(after: afterDigits.dropFirst(), indentation: indentation + digits.count + 1)
                 font = bodyFont
             } else {
                 orderedList = nil
@@ -81,11 +111,11 @@ enum MemoMarkdownRenderer {
                     font = headingFont
                 } else if let bullet = block.first, "-+*".contains(bullet),
                           block.dropFirst().first?.isWhitespace == true {
-                    blockText = String(block.dropFirst().drop(while: { $0.isWhitespace }))
+                    blockText = listItem(after: block.dropFirst(), indentation: indentation + 1)
                     marker = "• "
                     font = bodyFont
-                } else if block.first == ">" {
-                    blockText = String(block.dropFirst().drop(while: { $0.isWhitespace }))
+                } else if let quote = quoteBody(line[...]) {
+                    blockText = appendContinuations(to: quote) { quoteBody($0[...]) }
                     marker = "▎ "
                     font = bodyFont
                 } else if !line.allSatisfy(\.isWhitespace) {
@@ -109,7 +139,7 @@ enum MemoMarkdownRenderer {
             ]
             output.append(NSAttributedString(string: marker, attributes: attributes))
             appendInline(blockText, font: font, attributes: attributes, to: output)
-            if index < lines.count - 1 {
+            if nextLine < lines.count {
                 output.append(NSAttributedString(string: "\n", attributes: attributes))
             }
         }
